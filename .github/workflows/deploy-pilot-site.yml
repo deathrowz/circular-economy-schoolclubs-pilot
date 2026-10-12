@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -42,12 +42,9 @@ jobs:
         run: npm run build
 
   publish-pilot-site:
-    name: 2. Build & Publish Interactive Pilot Site to GitHub Pages
+    name: 2. Build & Publish Interactive Pilot Site (gh-pages & GitHub Pages)
     needs: verify-and-test
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -57,12 +54,6 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-        continue-on-error: true
 
       - name: Install dependencies
         run: npm ci
@@ -77,11 +68,36 @@ jobs:
           touch out/.nojekyll
           mv /tmp/nextjs-api-routes-backup src/app/api
 
-      - name: Upload GitHub Pages Artifact
+      - name: Publish Static Site Bundle to gh-pages Branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
+          force_orphan: true
+          commit_message: 'deploy: publish Next.js static export to gh-pages'
+
+      - name: Check if GitHub Pages (Actions Workflow Mode) is Enabled
+        id: config_pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
+
+      - name: Upload GitHub Pages Artifact (when Pages Actions mode is enabled)
+        if: steps.config_pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v3
         with:
           path: './out'
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages Environment (when Pages Actions mode is enabled)
+        if: steps.config_pages.outcome == 'success'
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Write Deployment Summary
+        run: |
+          echo "## 🚀 Circular-Economy Pilot Site Published" >> $GITHUB_STEP_SUMMARY
+          echo "- **Static Export Branch:** Published to [\`gh-pages\`](https://github.com/${{ github.repository }}/tree/gh-pages)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Live Site URL:** \`https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/\`" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.config_pages.outcome }}" != "success" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "> **One-Time GitHub Settings Step:** To activate the public URL on this new repository, open [**Settings → Pages**](https://github.com/${{ github.repository }}/settings/pages) and set **Branch** to \`gh-pages\` (or set **Source** to **GitHub Actions**)." >> $GITHUB_STEP_SUMMARY
+          fi

@@ -12,10 +12,12 @@ import {
   attachTeacherVerifiedDocumentToLog,
   createStudentImpactSubmission,
   dispatchTelegramNotification,
+  findOrFetchImpactLog,
   getPlatformStore,
   submitExpertScoresViaTelegram,
 } from '@/lib/store/platform-store';
 import { computeSchoolLeaderboard, formatLkr } from '@/lib/gamification/engine';
+import { getSupabaseBrowserClient, getSupabaseServiceClient } from '@/lib/supabase/client';
 
 export type BotConversationStage =
   | 'IDLE'
@@ -391,6 +393,35 @@ export async function handleTelegramBotUpdate(
 
   // 4. Invoices / Pending Verification Queue for Teachers & GIZ
   if (text.startsWith('/invoices') || text.startsWith('/expert_queue')) {
+    try {
+      const supabase = getSupabaseServiceClient() || getSupabaseBrowserClient();
+      if (supabase) {
+        const { data: dbLogs } = await supabase
+          .from('impact_logs')
+          .select('*')
+          .in('status', ['pending', 'pending_expert_review', 'flagged'])
+          .order('created_at', { ascending: false });
+
+        if (dbLogs) {
+          for (const d of dbLogs) {
+            if (!store.impactLogs.some((l) => l.id === d.id)) {
+              store.impactLogs.unshift({
+                ...d,
+                parent_log_id: d.resubmission_parent_log_id || d.parent_log_id,
+                verified_documents: d.verified_documents || [],
+                waste_kg: Number(d.waste_kg || 0),
+                revenue_usd: Number(d.revenue_usd || 0),
+                co2_saved_kg: Number(d.co2_saved_kg || 0),
+                points_awarded: Number(d.points_awarded || 0),
+                penalty_points: Number(d.penalty_points || 0),
+                campus_distance_meters: Number(d.campus_distance_meters || 0),
+              });
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
     const queue = store.impactLogs.filter(
       (l) =>
         l.status === 'pending_expert_review' ||
@@ -430,7 +461,7 @@ export async function handleTelegramBotUpdate(
       };
     }
 
-    const targetLog = store.impactLogs.find((l) => l.id === targetLogId);
+    const targetLog = await findOrFetchImpactLog(targetLogId);
     if (!targetLog) {
       return {
         ok: false,
@@ -543,7 +574,7 @@ export async function handleTelegramBotUpdate(
       };
     }
 
-    const log = store.impactLogs.find((l) => l.id === logId);
+    const log = await findOrFetchImpactLog(logId);
     if (!log) {
       return {
         ok: false,
@@ -600,7 +631,7 @@ export async function handleTelegramBotUpdate(
       };
     }
 
-    const targetLog = store.impactLogs.find((l) => l.id === parentId);
+    const targetLog = await findOrFetchImpactLog(parentId);
     if (!targetLog) {
       return {
         ok: false,
@@ -689,7 +720,7 @@ export async function handleTelegramBotUpdate(
   if (session.stage === 'AWAITING_TEACHER_INVOICE_DOC' && update.document) {
     const doc = update.document;
     const targetLogId = session.invoiceTargetLogId || 'log-102';
-    const targetLog = store.impactLogs.find((l) => l.id === targetLogId);
+    const targetLog = await findOrFetchImpactLog(targetLogId);
 
     if (!targetLog) {
       session.stage = 'IDLE';

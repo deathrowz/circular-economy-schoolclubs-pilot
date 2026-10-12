@@ -1,5 +1,6 @@
 import {
   getFullPlatformSnapshot,
+  getPlatformStore,
   performExpertAdjudication,
   performTeacherReview,
   updateGamificationConfig,
@@ -49,9 +50,18 @@ export async function fetchPlatformSnapshotClient() {
             ...l,
             parent_log_id: l.resubmission_parent_log_id || l.parent_log_id,
             verified_documents: l.verified_documents || [],
+            waste_kg: Number(l.waste_kg ?? 0),
+            revenue_usd: Number(l.revenue_usd ?? 0),
+            co2_saved_kg: Number(l.co2_saved_kg ?? 0),
+            points_awarded: Number(l.points_awarded ?? 0),
+            penalty_points: Number(l.penalty_points ?? 0),
+            campus_distance_meters: Number(l.campus_distance_meters ?? 0),
           })),
           ...snapshot.impactLogs.filter((l) => !dbLogMap.has(l.id)),
         ];
+
+        // Hydrate singleton in-memory platform store
+        getPlatformStore().impactLogs = mergedLogs;
 
         const updatedLeaderboard = computeSchoolLeaderboard({
           schools: snapshot.schools,
@@ -109,9 +119,10 @@ export async function postPlatformActionClient(body: Record<string, any>): Promi
         notesOrReason: body.notesOrReason,
         forceRandomAuditSelection: body.forceRandomAuditSelection,
       });
+      const freshSnapshot = await fetchPlatformSnapshotClient();
       return {
         resOk: true,
-        data: { ok: true, result, snapshot: getFullPlatformSnapshot() },
+        data: { ok: true, result, snapshot: freshSnapshot },
       };
     }
 
@@ -123,9 +134,10 @@ export async function postPlatformActionClient(body: Record<string, any>): Promi
         criteriaScores: body.criteriaScores,
         notesOrReason: body.notesOrReason,
       });
+      const freshSnapshot = await fetchPlatformSnapshotClient();
       return {
         resOk: true,
-        data: { ok: true, result, snapshot: getFullPlatformSnapshot() },
+        data: { ok: true, result, snapshot: freshSnapshot },
       };
     }
 
@@ -134,9 +146,10 @@ export async function postPlatformActionClient(body: Record<string, any>): Promi
         actorId: body.actorId,
         updates: body.updates,
       });
+      const freshSnapshot = await fetchPlatformSnapshotClient();
       return {
         resOk: true,
-        data: { ok: true, config, snapshot: getFullPlatformSnapshot() },
+        data: { ok: true, config, snapshot: freshSnapshot },
       };
     }
 

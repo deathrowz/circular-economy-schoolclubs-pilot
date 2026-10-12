@@ -31,7 +31,7 @@ import {
   shouldSelectForRandomExpertAudit,
 } from '@/lib/gamification/engine';
 import { calculateDistanceMeters } from '@/lib/exif/parser';
-import { getSupabaseServiceClient } from '@/lib/supabase/client';
+import { getSupabaseBrowserClient, getSupabaseServiceClient } from '@/lib/supabase/client';
 
 interface PlatformState {
   schools: School[];
@@ -68,6 +68,50 @@ export function getPlatformStore(): PlatformState {
     globalForStore.__CIRCULAR_PLATFORM_STORE__ = createInitialState();
   }
   return globalForStore.__CIRCULAR_PLATFORM_STORE__;
+}
+
+/**
+ * Robust async log lookup: checks in-memory platform store, and falls back to Supabase
+ * if the log was created by the Telegram Bot or another browser session.
+ */
+export async function findOrFetchImpactLog(logId: string): Promise<ImpactLog | undefined> {
+  const store = getPlatformStore();
+  let log = store.impactLogs.find((l) => l.id === logId);
+  if (log) return log;
+
+  // Fallback to Supabase PostgreSQL
+  try {
+    const supabase = getSupabaseServiceClient() || getSupabaseBrowserClient();
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('impact_logs')
+        .select('*')
+        .eq('id', logId)
+        .maybeSingle();
+
+      if (!error && data) {
+        const parsedLog: ImpactLog = {
+          ...data,
+          parent_log_id: data.resubmission_parent_log_id || data.parent_log_id,
+          verified_documents: data.verified_documents || [],
+          waste_kg: Number(data.waste_kg ?? 0),
+          revenue_usd: Number(data.revenue_usd ?? 0),
+          co2_saved_kg: Number(data.co2_saved_kg ?? 0),
+          points_awarded: Number(data.points_awarded ?? 0),
+          penalty_points: Number(data.penalty_points ?? 0),
+          campus_distance_meters: Number(data.campus_distance_meters ?? 0),
+          resubmission_count: Number(data.resubmission_count ?? 0),
+        };
+        // Unshift into in-memory store so subsequent synchronous lookups and leaderboard calculations succeed
+        store.impactLogs.unshift(parsedLog);
+        return parsedLog;
+      }
+    }
+  } catch (err) {
+    console.warn(`Supabase fallback lookup error for log "${logId}":`, err);
+  }
+
+  return undefined;
 }
 
 /**
@@ -178,7 +222,7 @@ export async function createStudentImpactSubmission(params: {
   // Check if this is a Step 5 Resolution Loop Resubmission
   let resubmissionCount = 0;
   if (params.parentLogId) {
-    const parentLog = store.impactLogs.find((l) => l.id === params.parentLogId);
+    const parentLog = await findOrFetchImpactLog(params.parentLogId);
     if (!parentLog) {
       throw new Error('Parent submission not found for resubmission.');
     }
@@ -379,7 +423,7 @@ export async function performTeacherReview(params: {
     );
   }
 
-  const log = store.impactLogs.find((l) => l.id === params.logId);
+  const log = await findOrFetchImpactLog(params.logId);
   if (!log) {
     throw new Error(`Impact log not found: ${params.logId}`);
   }
@@ -506,7 +550,7 @@ export async function performTeacherReview(params: {
   store.auditLogs.unshift(auditEntry);
 
   try {
-    const supabase = getSupabaseServiceClient();
+    const supabase = getSupabaseServiceClient() || getSupabaseBrowserClient();
     if (supabase) {
       await supabase.from('impact_logs').update({
         status: log.status,
@@ -548,7 +592,7 @@ export async function performExpertAdjudication(params: {
     );
   }
 
-  const log = store.impactLogs.find((l) => l.id === params.logId);
+  const log = await findOrFetchImpactLog(params.logId);
   if (!log) {
     throw new Error(`Impact log not found: ${params.logId}`);
   }
@@ -709,6 +753,26 @@ export async function performExpertAdjudication(params: {
   };
 
   store.auditLogs.unshift(auditEntry);
+
+  try {
+    const supabase = getSupabaseServiceClient() || getSupabaseBrowserClient();
+    if (supabase) {
+      await supabase.from('impact_logs').update({
+        status: log.status,
+        expert_reviewer_id: log.expert_reviewer_id,
+        expert_reviewer_name: log.expert_reviewer_name,
+        expert_reviewed_at: log.expert_reviewed_at,
+        expert_notes: log.expert_notes,
+        criteria_scores: log.criteria_scores,
+        points_awarded: log.points_awarded,
+        penalty_points: log.penalty_points,
+        audit_status: log.audit_status,
+        audit_flagged_fraud: log.audit_flagged_fraud,
+        updated_at: now,
+      }).eq('id', log.id);
+    }
+  } catch (_) {}
+
   return { log, auditEntry };
 }
 
@@ -740,7 +804,7 @@ export async function attachTeacherVerifiedDocumentToLog(params: {
     );
   }
 
-  const log = store.impactLogs.find((l) => l.id === params.logId);
+  const log = await findOrFetchImpactLog(params.logId);
   if (!log) {
     throw new Error(`Impact log not found: ${params.logId}`);
   }
@@ -832,7 +896,7 @@ export async function attachTeacherVerifiedDocumentToLog(params: {
   });
 
   try {
-    const supabase = getSupabaseServiceClient();
+    const supabase = getSupabaseServiceClient() || getSupabaseBrowserClient();
     if (supabase) {
       await supabase.from('impact_logs').update({
         verified_documents: log.verified_documents,
@@ -866,7 +930,7 @@ export async function submitExpertScoresViaTelegram(params: {
     );
   }
 
-  const log = store.impactLogs.find((l) => l.id === params.logId);
+  const log = await findOrFetchImpactLog(params.logId);
   if (!log) {
     throw new Error(`Impact log not found: ${params.logId}`);
   }
@@ -937,7 +1001,7 @@ export async function submitExpertScoresViaTelegram(params: {
   });
 
   try {
-    const supabase = getSupabaseServiceClient();
+    const supabase = getSupabaseServiceClient() || getSupabaseBrowserClient();
     if (supabase) {
       await supabase.from('impact_logs').update({
         status: log.status,

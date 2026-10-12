@@ -59,7 +59,7 @@ interface SnapshotData {
 export default function PlatformDashboardPage() {
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
   const [activeTab, setActiveTab] = useState<NavTab>('leaderboard');
-  const [activeUserId, setActiveUserId] = useState<string>('usr-super-admin');
+  const [activeUserId, setActiveUserId] = useState<string>('usr-giz-admin-01');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginPromptReason, setLoginPromptReason] = useState<string | null>(null);
@@ -86,19 +86,9 @@ export default function PlatformDashboardPage() {
     });
   }, []);
 
-  if (!snapshot) {
-    return (
-      <div className="min-h-screen bg-[#E6F1FA] flex items-center justify-center p-6">
-        <div className="hai-card px-6 py-4 flex items-center gap-3 text-[#005FA3] font-semibold text-sm shadow-xs">
-          <Recycle className="w-5 h-5 animate-spin" />
-          <span>Loading Haritha Pasal • Sri Lanka School Circular Index...</span>
-        </div>
-      </div>
-    );
-  }
-
-  const activeUser =
-    snapshot.users.find((u) => u.id === activeUserId) || snapshot.users[0];
+  const activeUser = snapshot
+    ? snapshot.users.find((u) => u.id === activeUserId) || snapshot.users[0]
+    : null;
 
   const handleSwitchUser = (newUserId: string, targetTab?: NavTab) => {
     setActiveUserId(newUserId);
@@ -106,7 +96,7 @@ export default function PlatformDashboardPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('haritha_auth_user_id', newUserId);
     }
-    const found = snapshot.users.find((u) => u.id === newUserId);
+    const found = snapshot?.users.find((u) => u.id === newUserId);
     if (found?.club_id) {
       setSelectedClubId(found.club_id);
     }
@@ -154,15 +144,20 @@ export default function PlatformDashboardPage() {
     setActiveTab(tabId);
   };
 
-  const pendingTeacherCount = snapshot.impactLogs.filter(
-    (l) => (l.status === 'pending' || l.status === 'flagged') && l.school_id === activeUser.school_id
-  ).length;
+  const pendingTeacherCount =
+    snapshot && activeUser
+      ? snapshot.impactLogs.filter(
+          (l) => (l.status === 'pending' || l.status === 'flagged') && l.school_id === activeUser.school_id
+        ).length
+      : 0;
 
-  const pendingExpertCount = snapshot.impactLogs.filter(
-    (l) =>
-      l.status === 'pending_expert_review' ||
-      (l.random_audit_selected && l.audit_status === 'pending_audit')
-  ).length;
+  const pendingExpertCount = snapshot
+    ? snapshot.impactLogs.filter(
+        (l) =>
+          l.status === 'pending_expert_review' ||
+          (l.random_audit_selected && l.audit_status === 'pending_audit')
+      ).length
+    : 0;
 
   // Role-customized navigation items (Shows ONLY tabs relevant to active user profile)
   const navItems: Array<{
@@ -171,6 +166,13 @@ export default function PlatformDashboardPage() {
     icon: React.ComponentType<{ className?: string }>;
     count?: number;
   }> = (() => {
+    if (!snapshot || !activeUser) {
+      return [
+        { id: 'leaderboard' as NavTab, label: '15-School Public Index', icon: Trophy },
+        { id: 'clubs' as NavTab, label: 'School Clubs & Models', icon: Building2 },
+      ];
+    }
+
     if (!isAuthenticated) {
       return [
         { id: 'leaderboard' as NavTab, label: '15-School Public Index', icon: Trophy },
@@ -280,12 +282,25 @@ export default function PlatformDashboardPage() {
     ];
   })();
 
+  const navTabKey = navItems.map((n) => n.id).join(',');
+
   // Synchronize activeTab if it doesn't belong to current role's navigation
   useEffect(() => {
     if (navItems.length > 0 && !navItems.some((item) => item.id === activeTab)) {
       setActiveTab(navItems[0].id);
     }
-  }, [navItems, activeTab]);
+  }, [navTabKey, activeTab]);
+
+  if (!snapshot || !activeUser) {
+    return (
+      <div className="min-h-screen bg-[#E6F1FA] flex items-center justify-center p-6">
+        <div className="hai-card px-6 py-4 flex items-center gap-3 text-[#005FA3] font-semibold text-sm shadow-xs">
+          <Recycle className="w-5 h-5 animate-spin" />
+          <span>Loading Haritha Pasal • Sri Lanka School Circular Index...</span>
+        </div>
+      </div>
+    );
+  }
 
   // Role-customized Page Editorial Headers
   const getPageHeaderMeta = () => {
@@ -474,7 +489,7 @@ export default function PlatformDashboardPage() {
                   Quick Switch:
                 </span>
                 <button
-                  onClick={() => handleSwitchUser('usr-super-admin', 'health_risk')}
+                  onClick={() => handleSwitchUser('usr-giz-admin-01', 'health_risk')}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
                     activeUser.role === 'super_admin'
                       ? 'bg-[#005FA3] text-[#9CF2F2]'

@@ -1,4 +1,9 @@
-export type UserRole = 'student' | 'teacher' | 'expert_admin' | 'mentor';
+export type UserRole =
+  | 'super_admin'
+  | 'expert_admin'
+  | 'teacher'
+  | 'student'
+  | 'mentor';
 
 export type TransactionTier = 'micro' | 'macro';
 
@@ -110,11 +115,15 @@ export interface Club {
 export interface UserProfile {
   id: string;
   email: string;
+  login_code?: string;
+  organization?: string;
   full_name: string;
   role: UserRole;
   school_id: string | null;
   school_name?: string;
+  school_code?: string;
   club_id: string | null;
+  club_name?: string;
   assigned_club_ids?: string[]; // Used for Mentor role read-only scoping
   telegram_user_id?: number;
   telegram_username?: string;

@@ -683,78 +683,89 @@ export const PILOT_CLUBS: Club[] = CLUB_DEFINITIONS.map((def) => {
   };
 });
 
+// 15 Single-User School Student Logins (1 shared gamified student login per school across all 15 schools)
+export const SCHOOL_STUDENT_LOGINS: UserProfile[] = CLUB_DEFINITIONS.map((def, idx) => {
+  const school = PILOT_SCHOOLS[def.schoolIdx];
+  const num = String(idx + 1).padStart(2, '0');
+  return {
+    id: `usr-student-${num}`,
+    email: `${school.code.toLowerCase()}.club@harithapasal.lk`,
+    login_code: `${school.code}-STUDENT`,
+    organization: school.name,
+    full_name: `${ def.studentLead } (${school.name} — Student Club Login)`,
+    role: 'student',
+    school_id: school.id,
+    school_name: school.name,
+    school_code: school.code,
+    club_id: def.id,
+    club_name: def.name,
+    telegram_user_id: 800100 + idx + 1,
+    telegram_username: `@haritha_${school.code.toLowerCase().replace('-', '_')}`,
+  };
+});
+
+// 15 School-Level Teacher Validator Logins (1 supervising teacher login per school)
+export const SCHOOL_TEACHER_LOGINS: UserProfile[] = CLUB_DEFINITIONS.map((def, idx) => {
+  const school = PILOT_SCHOOLS[def.schoolIdx];
+  const num = String(idx + 1).padStart(2, '0');
+  return {
+    id: `usr-teacher-${num}`,
+    email: `${school.code.toLowerCase()}.teacher@harithapasal.lk`,
+    login_code: `${school.code}-TEACHER`,
+    organization: school.name,
+    full_name: `${def.teacherAdvisor} (Teacher - ${school.name})`,
+    role: 'teacher',
+    school_id: school.id,
+    school_name: school.name,
+    school_code: school.code,
+    club_id: def.id,
+    club_name: def.name,
+  };
+});
+
 export const DEMO_USERS: UserProfile[] = [
+  // Category 1: Super Admin (GIZ)
   {
-    id: 'usr-student-01',
-    email: 'kavindu.perera@royal.sch.lk',
-    full_name: 'Kavindu Perera (Student President - Royal College)',
-    role: 'student',
-    school_id: 'sch-01',
-    school_name: 'Royal College Colombo',
-    club_id: 'club-01',
-    telegram_user_id: 800101,
-    telegram_username: '@kavindu_rc',
+    id: 'usr-giz-admin-01',
+    email: 'circular-pilot@giz.de',
+    login_code: 'GIZ-SUPER-ADMIN',
+    organization: 'GIZ Sri Lanka',
+    full_name: 'GIZ Sri Lanka Program Secretariat (Super Admin)',
+    role: 'super_admin',
+    school_id: null,
+    club_id: null,
   },
-  {
-    id: 'usr-student-02',
-    email: 'nethmi.w@visakha.sch.lk',
-    full_name: 'Nethmi Wickramasinghe (Student President - Visakha)',
-    role: 'student',
-    school_id: 'sch-02',
-    school_name: 'Visakha Vidyalaya',
-    club_id: 'club-02',
-    telegram_user_id: 800102,
-    telegram_username: '@nethmi_vv',
-  },
-  {
-    id: 'usr-student-03',
-    email: 'tharindu.b@trinity.sch.lk',
-    full_name: 'Tharindu Bandara (Student President - Trinity Kandy)',
-    role: 'student',
-    school_id: 'sch-03',
-    school_name: 'Trinity College Kandy',
-    club_id: 'club-03',
-    telegram_user_id: 800103,
-    telegram_username: '@tharindu_tck',
-  },
-  {
-    id: 'usr-teacher-01',
-    email: 'k.senanayake@royal.sch.lk',
-    full_name: 'Mrs. Kumari Senanayake (Teacher - Royal College)',
-    role: 'teacher',
-    school_id: 'sch-01',
-    school_name: 'Royal College Colombo',
-    club_id: 'club-01',
-  },
-  {
-    id: 'usr-teacher-02',
-    email: 'r.wijesinghe@visakha.sch.lk',
-    full_name: 'Mr. Rohan Wijesinghe (Teacher - Visakha Vidyalaya)',
-    role: 'teacher',
-    school_id: 'sch-02',
-    school_name: 'Visakha Vidyalaya',
-    club_id: 'club-02',
-  },
-  {
-    id: 'usr-teacher-03',
-    email: 'a.ekanayake@trinity.sch.lk',
-    full_name: 'Mr. Asanka Ekanayake (Teacher - Trinity Kandy)',
-    role: 'teacher',
-    school_id: 'sch-03',
-    school_name: 'Trinity College Kandy',
-    club_id: 'club-03',
-  },
+  // Category 2: Expert Panel (National Adjudicators)
   {
     id: 'usr-expert-01',
     email: 'nuwan.gunasekara@cea-panel.lk',
+    login_code: 'EXPERT-PANEL-01',
+    organization: 'National Expert Panel (CEA / Univ. of Moratuwa)',
     full_name: 'Dr. Nuwan Gunasekara (National Expert Panel)',
     role: 'expert_admin',
     school_id: null,
     club_id: null,
   },
   {
+    id: 'usr-expert-02',
+    email: 'priyanthi.fernando@cea-panel.lk',
+    login_code: 'EXPERT-PANEL-02',
+    organization: 'National Expert Panel (Circular Economy)',
+    full_name: 'Prof. Priyanthi Fernando (National Expert Panel)',
+    role: 'expert_admin',
+    school_id: null,
+    club_id: null,
+  },
+  // Category 3: School Teachers (15 Schools)
+  ...SCHOOL_TEACHER_LOGINS,
+  // Category 4: 15 Single-User Gamified School Student Logins (1 per School)
+  ...SCHOOL_STUDENT_LOGINS,
+  // Read-Only Industry Mentor
+  {
     id: 'usr-mentor-01',
     email: 'chamari.abeysekera@mentor.lk',
+    login_code: 'MENTOR-01',
+    organization: 'Ceylon Chamber Circular Mentors',
     full_name: 'Ms. Chamari Abeysekera (Industry Mentor)',
     role: 'mentor',
     school_id: null,

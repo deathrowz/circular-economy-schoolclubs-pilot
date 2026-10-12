@@ -490,9 +490,9 @@ export async function performExpertAdjudication(params: {
   const store = getPlatformStore();
   const actor = store.users.find((u) => u.id === params.actorId);
 
-  if (!actor || actor.role !== 'expert_admin') {
+  if (!actor || (actor.role !== 'expert_admin' && actor.role !== 'super_admin')) {
     throw new Error(
-      'RBAC_ROLE_VIOLATION: Only an Expert Panel / Admin (Tier 2 Adjudicator) can perform final scoring or random audits.'
+      'RBAC_ROLE_VIOLATION: Only an Expert Panel or GIZ Super Admin can perform final scoring or random audits.'
     );
   }
 
@@ -670,9 +670,9 @@ export function updateGamificationConfig(params: {
   const store = getPlatformStore();
   const actor = store.users.find((u) => u.id === params.actorId);
 
-  if (!actor || actor.role !== 'expert_admin') {
+  if (!actor || (actor.role !== 'expert_admin' && actor.role !== 'super_admin')) {
     throw new Error(
-      'RBAC_ROLE_VIOLATION: Only an Expert Panel / Admin can modify the gamification algorithm.'
+      'RBAC_ROLE_VIOLATION: Only GIZ Super Admin or Expert Panel can modify the gamification algorithm.'
     );
   }
 

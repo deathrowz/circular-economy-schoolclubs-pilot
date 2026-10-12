@@ -252,6 +252,11 @@ export function VerificationEngineView({
               <span className="hai-cyan-pill text-xs font-bold uppercase">
                 Role: {activeUser.role.replace('_', ' ')}
               </span>
+              {activeUser.login_code && (
+                <span className="hai-tag text-xs font-mono font-bold">
+                  ID: {activeUser.login_code}
+                </span>
+              )}
               {activeUser.school_name && (
                 <span className="hai-tag text-xs font-mono font-bold">
                   School: {activeUser.school_name}
@@ -263,43 +268,71 @@ export function VerificationEngineView({
             </h2>
             <p className="text-xs text-[#111010]/70 mt-0.5">
               {activeUser.role === 'teacher' &&
-                `Approve activities for ${activeUser.school_name}. Small logs (≤ ${formatLkr(
+                `School Validator for ${activeUser.school_name}. Small logs (≤ ${formatLkr(
                   config.macro_revenue_threshold_usd
                 )}) award points immediately; larger sales (> ${formatLkr(
                   config.macro_revenue_threshold_usd
                 )}) go to the National Panel.`}
-              {activeUser.role === 'expert_admin' &&
-                `National Panel: Score school sales > ${formatLkr(
+              {(activeUser.role === 'expert_admin' || activeUser.role === 'super_admin') &&
+                `National Panel & GIZ Admin: Score school sales > ${formatLkr(
                   config.macro_revenue_threshold_usd
-                )} across the 6 criteria and check the 10% random audit sample.`}
+                )} across the 6 criteria, check the 10% random audit sample, and configure scoring weights.`}
               {(activeUser.role === 'student' || activeUser.role === 'mentor') &&
-                'Read-only view. Switch to a Teacher or National Panel account on the right to approve submissions.'}
+                'Read-only view. Switch to a School Teacher, Expert Panel, or GIZ Super Admin account on the right to validate submissions.'}
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {users
-              .filter((u) =>
-                ['usr-teacher-01', 'usr-teacher-02', 'usr-expert-01', 'usr-student-01'].includes(
-                  u.id
-                )
-              )
-              .map((u) => (
-                <button
-                  key={u.id}
-                  onClick={() => {
-                    onSwitchUser(u.id);
-                    setFeedbackBanner(null);
-                  }}
-                  className={`px-3.5 py-2 rounded-full text-xs font-semibold transition cursor-pointer ${
-                    activeUser.id === u.id
-                      ? 'bg-[#005FA3] text-[#9CF2F2]'
-                      : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60 hover:text-[#005FA3]'
-                  }`}
-                >
-                  {u.full_name.split(' (')[0]} ({u.role === 'expert_admin' ? 'Panel' : u.role})
-                </button>
-              ))}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => {
+                onSwitchUser('usr-giz-admin-01');
+                setFeedbackBanner(null);
+              }}
+              className={`px-3.5 py-2 rounded-full text-xs font-semibold transition cursor-pointer ${
+                activeUser.id === 'usr-giz-admin-01'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60 hover:text-[#005FA3]'
+              }`}
+            >
+              Super Admin (GIZ)
+            </button>
+
+            <button
+              onClick={() => {
+                onSwitchUser('usr-expert-01');
+                setFeedbackBanner(null);
+              }}
+              className={`px-3.5 py-2 rounded-full text-xs font-semibold transition cursor-pointer ${
+                activeUser.role === 'expert_admin'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60 hover:text-[#005FA3]'
+              }`}
+            >
+              Expert Panel (Dr. Nuwan)
+            </button>
+
+            <select
+              aria-label="Select School Teacher Validator"
+              value={activeUser.role === 'teacher' ? activeUser.id : ''}
+              onChange={(e) => {
+                if (e.target.value) {
+                  onSwitchUser(e.target.value);
+                  setFeedbackBanner(null);
+                }
+              }}
+              className="hai-input px-3 py-2 text-xs font-semibold text-[#111010] cursor-pointer"
+            >
+              <option value="" disabled>
+                Switch School Teacher (15 Schools)...
+              </option>
+              {users
+                .filter((u) => u.role === 'teacher')
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.login_code} • {t.full_name}
+                  </option>
+                ))}
+            </select>
           </div>
         </div>
       </div>
@@ -526,8 +559,8 @@ export function VerificationEngineView({
         </div>
       )}
 
-      {/* TIER 2: NATIONAL EXPERT PANEL */}
-      {activeUser.role === 'expert_admin' && (
+      {/* TIER 2: NATIONAL EXPERT PANEL & GIZ SUPER ADMIN */}
+      {(activeUser.role === 'expert_admin' || activeUser.role === 'super_admin') && (
         <div className="space-y-6">
           <div className="flex flex-wrap gap-2 border-b border-[#111010]/15 pb-3">
             <button

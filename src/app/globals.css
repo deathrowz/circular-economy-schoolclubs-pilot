@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+
+  /* Figma MCP Design System Tokens (Extracted from T0J4d7sapn2no8t7ixmNY3 & UL6MdGaqnCWJiejfZj9CUG) */
+  --figma-bg-shell: #0C111D;       /* fill_b859dd92 */
+  --figma-bg-canvas: #181C21;      /* fill_81c1360f */
+  --figma-bg-card: #1C2126;        /* fill_6f4ce7c1 */
+  --figma-bg-panel: #161B26;       /* fill_6f3fc44e */
+  --figma-bg-elevated: #272D35;    /* fill_4463cf84 */
+
+  --figma-border-teal: #095856;    /* fill_e99b69c4 */
+  --figma-border-cyan: #0C7471;    /* fill_f0eb36ba */
+  --figma-border-subtle: #1F242F;  /* fill_8d3a492a */
+
+  --figma-brand-400: #14C7C3;      /* fill_654d539c */
+  --figma-brand-500: #12B0AD;      /* Brand/500 */
+  --figma-brand-300: #66E1DE;      /* fill_70d5513b */
+
+  --figma-text-display: #E0FFF9;   /* fill_56929e36 */
+  --figma-text-accent: #C8FFF5;    /* fill_1ef60ed2 */
+  --figma-text-secondary: #B8F4F3; /* fill_fb098d05 */
+  --figma-text-muted: #77889C;     /* fill_7394f9b0 */
+
+  --figma-emerald-bg: #053321;     /* fill_4935045d */
+  --figma-emerald-border: #085D3A; /* fill_861a1fdc */
+  --figma-emerald-text: #75E0A7;   /* fill_df4da133 */
+}
+
+body {
+  background-color: var(--figma-bg-canvas);
+  color: var(--figma-text-display);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Figma Card Component (#1512:12655 / #1353:10971) */
+.figma-card {
+  background-color: #1C2126;
+  border: 1px solid #095856;
+  border-radius: 12px;
+  box-shadow: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+}
+
+/* Figma Skeuomorphic Pill Button (#1353:2650) */
+.figma-skeuomorphic-btn {
+  background-color: #E0FFF9;
+  color: #074140;
+  border-radius: 9999px;
+  font-weight: 600;
+  box-shadow:
+    0px 1px 2px 0px rgba(255, 255, 255, 0),
+    inset 0px -2px 0px 0px rgba(12, 17, 29, 0.08),
+    inset 0px 0px 0px 1px rgba(12, 17, 29, 0.18);
+  transition: all 0.15s ease;
+}
+
+.figma-skeuomorphic-btn:hover {
+  background-color: #C8FFF5;
+  transform: translateY(-1px);
+}
+
+/* Figma Hash/Code Chip (#1353:2924) */
+.figma-code-chip {
+  background-color: #181C21;
+  border: 1px solid #0C7471;
+  color: #C8FFF5;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+/* Figma Emerald Verified Pill (#1353:116) */
+.figma-emerald-pill {
+  background-color: #053321;
+  border: 1px solid #085D3A;
+  color: #75E0A7;
+  border-radius: 9999px;
+  padding: 2px 10px 2px 8px;
+}

@@ -1,0 +1,85 @@
+name: CI/CD — Verify & Publish Circular-Economy Pilot Site
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  verify-and-test:
+    name: 1. TypeScript, RBAC/EXIF Validation Tests & Full-Stack Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript Static Analysis
+        run: npx tsc --noEmit
+
+      - name: Run 7-Step Validation, EXIF & RBAC Unit Test Suite
+        run: npm test
+
+      - name: Verify Full-Stack Next.js Build (App Router + API Routes)
+        run: npm run build
+
+  publish-pilot-site:
+    name: 2. Build & Publish Interactive Pilot Site to GitHub Pages
+    needs: verify-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Static Export Bundle for GitHub Pages (Isomorphic Client Mode)
+        env:
+          GITHUB_PAGES: 'true'
+          NEXT_PUBLIC_BASE_PATH: '/${{ github.event.repository.name }}'
+        run: |
+          mv src/app/api /tmp/nextjs-api-routes-backup
+          npm run build
+          touch out/.nojekyll
+          mv /tmp/nextjs-api-routes-backup src/app/api
+
+      - name: Upload GitHub Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './out'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

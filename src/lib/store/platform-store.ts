@@ -1,0 +1,715 @@
+import {
+  ActivityCategory,
+  AuditLogEntry,
+  Club,
+  CriteriaScores,
+  GamificationConfig,
+  ImpactLog,
+  School,
+  TelegramBotOutboundMessage,
+  UserProfile,
+} from '@/types/domain';
+import {
+  APPROVED_HISTORICAL_LOGS,
+  DEMO_USERS,
+  INITIAL_AUDIT_LOGS,
+  INITIAL_GAMIFICATION_CONFIG,
+  INITIAL_IMPACT_LOGS,
+  INITIAL_TELEGRAM_MESSAGES,
+  PILOT_CLUBS,
+  PILOT_SCHOOLS,
+} from './seed-data';
+import {
+  calculateMacroTransactionPoints,
+  calculateMicroTransactionPoints,
+  classifyTransactionTier,
+  computeSchoolLeaderboard,
+  detectHealthAndRiskAnomalies,
+  shouldSelectForRandomExpertAudit,
+} from '@/lib/gamification/engine';
+import { calculateDistanceMeters } from '@/lib/exif/parser';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
+
+interface PlatformState {
+  schools: School[];
+  clubs: Club[];
+  users: UserProfile[];
+  impactLogs: ImpactLog[];
+  auditLogs: AuditLogEntry[];
+  gamificationConfig: GamificationConfig;
+  telegramMessages: TelegramBotOutboundMessage[];
+}
+
+// Global singleton in-memory store (persists across hot-reloads in dev & API requests)
+const globalForStore = globalThis as unknown as {
+  __CIRCULAR_PLATFORM_STORE__?: PlatformState;
+};
+
+function createInitialState(): PlatformState {
+  return {
+    schools: structuredClone(PILOT_SCHOOLS),
+    clubs: structuredClone(PILOT_CLUBS),
+    users: structuredClone(DEMO_USERS),
+    impactLogs: [
+      ...structuredClone(INITIAL_IMPACT_LOGS),
+      ...structuredClone(APPROVED_HISTORICAL_LOGS),
+    ],
+    auditLogs: structuredClone(INITIAL_AUDIT_LOGS),
+    gamificationConfig: structuredClone(INITIAL_GAMIFICATION_CONFIG),
+    telegramMessages: structuredClone(INITIAL_TELEGRAM_MESSAGES),
+  };
+}
+
+export function getPlatformStore(): PlatformState {
+  if (!globalForStore.__CIRCULAR_PLATFORM_STORE__) {
+    globalForStore.__CIRCULAR_PLATFORM_STORE__ = createInitialState();
+  }
+  return globalForStore.__CIRCULAR_PLATFORM_STORE__;
+}
+
+/**
+ * Helper to dispatch a Telegram Bot message to the student (and optionally call live Telegram Bot API if token is set)
+ */
+export async function dispatchTelegramNotification(params: {
+  chatId: number | string;
+  studentName: string;
+  telegramUsername: string;
+  logId?: string;
+  type: TelegramBotOutboundMessage['type'];
+  text: string;
+}): Promise<TelegramBotOutboundMessage> {
+  const store = getPlatformStore();
+  const message: TelegramBotOutboundMessage = {
+    id: `tg-out-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    chat_id: params.chatId,
+    student_name: params.studentName,
+    telegram_username: params.telegramUsername,
+    log_id: params.logId,
+    type: params.type,
+    text: params.text,
+    sent_at: new Date().toISOString(),
+  };
+
+  store.telegramMessages.unshift(message);
+
+  // If live TELEGRAM_BOT_TOKEN is configured and chatId is numeric, fire real Telegram HTTP request
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (botToken && !botToken.includes('your-telegram-bot-token') && typeof params.chatId === 'number') {
+    try {
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: params.chatId,
+          text: params.text,
+        }),
+      });
+    } catch {
+      // Ignore network errors in offline/sandbox mode
+    }
+  }
+
+  return message;
+}
+
+/**
+ * STEP 1: Student Submission via Telegram Bot (Creates `status: 'pending'` record)
+ */
+export async function createStudentImpactSubmission(params: {
+  actorId: string;
+  clubId: string;
+  fileName: string;
+  mimeType: string;
+  isUncompressedDocument: boolean;
+  s3Url: string;
+  s3Key: string;
+  exifTimestamp: string;
+  exifLat: number;
+  exifLng: number;
+  exifDeviceMake?: string;
+  exifDeviceModel?: string;
+  activityTitle: string;
+  activityCategory: ActivityCategory;
+  description: string;
+  wasteKg: number;
+  revenueUsd: number;
+  isFinalPitch?: boolean;
+  parentLogId?: string;
+}): Promise<ImpactLog> {
+  const store = getPlatformStore();
+
+  // Enforce Metadata Constraint: Must be uncompressed Document with EXIF timestamp & GPS
+  if (!params.isUncompressedDocument) {
+    throw new Error(
+      'METADATA_CONSTRAINT_VIOLATION: Photos must be sent as uncompressed Documents/Files to preserve EXIF data.'
+    );
+  }
+
+  if (
+    !params.exifTimestamp ||
+    typeof params.exifLat !== 'number' ||
+    typeof params.exifLng !== 'number' ||
+    isNaN(params.exifLat) ||
+    isNaN(params.exifLng)
+  ) {
+    throw new Error(
+      'EXIF_MISSING: Submission rejected because EXIF timestamp or GPS coordinates are missing.'
+    );
+  }
+
+  const club = store.clubs.find((c) => c.id === params.clubId);
+  if (!club) {
+    throw new Error(`Club not found: ${params.clubId}`);
+  }
+
+  const school = store.schools.find((s) => s.id === club.school_id);
+  if (!school) {
+    throw new Error(`School not found for club: ${club.id}`);
+  }
+
+  const student =
+    store.users.find((u) => u.id === params.actorId) ||
+    store.users.find((u) => u.role === 'student' && u.school_id === school.id) ||
+    store.users[0];
+
+  // Check if this is a Step 5 Resolution Loop Resubmission
+  let resubmissionCount = 0;
+  if (params.parentLogId) {
+    const parentLog = store.impactLogs.find((l) => l.id === params.parentLogId);
+    if (!parentLog) {
+      throw new Error('Parent submission not found for resubmission.');
+    }
+    if (parentLog.status !== 'rejected') {
+      throw new Error('RESOLUTION_LOOP_VIOLATION: Only rejected submissions can be resubmitted.');
+    }
+    if (parentLog.resubmission_count >= 1) {
+      throw new Error(
+        'RESOLUTION_LOOP_LIMIT_EXCEEDED: Only a single (1) resubmission attempt is permitted per rejected transaction.'
+      );
+    }
+    parentLog.resubmission_count += 1;
+    resubmissionCount = 1;
+  }
+
+  const campusDistance = calculateDistanceMeters(
+    params.exifLat,
+    params.exifLng,
+    school.campus_lat,
+    school.campus_lng
+  );
+  const onCampusVerified = campusDistance <= school.campus_radius_meters;
+
+  const transactionType = classifyTransactionTier({
+    revenueUsd: params.revenueUsd,
+    isFinalPitch: params.isFinalPitch,
+    activityCategory: params.activityCategory,
+    config: store.gamificationConfig,
+  });
+
+  const now = new Date().toISOString();
+  const newLog: ImpactLog = {
+    id: `log-${Date.now().toString().slice(-5)}`,
+    club_id: club.id,
+    club_name: club.name,
+    school_id: school.id,
+    school_name: school.name,
+    school_code: school.code,
+    student_id: student.id,
+    student_name: student.full_name.split(' (')[0],
+    telegram_username: student.telegram_username || '@student_entrepreneur',
+    telegram_message_id: `tg-msg-${Date.now().toString().slice(-4)}`,
+    file_name: params.fileName,
+    mime_type: params.mimeType,
+    is_uncompressed_document: true,
+    s3_url: params.s3Url,
+    s3_key: params.s3Key,
+    exif_timestamp: params.exifTimestamp,
+    exif_lat: params.exifLat,
+    exif_lng: params.exifLng,
+    exif_device_make: params.exifDeviceMake || 'Apple',
+    exif_device_model: params.exifDeviceModel || 'iPhone 15 Pro (RAW Document)',
+    campus_distance_meters: campusDistance,
+    on_campus_verified: onCampusVerified,
+    activity_title: params.activityTitle,
+    activity_category: params.activityCategory,
+    description: params.description,
+    waste_kg: Number(params.wasteKg),
+    revenue_usd: Number(params.revenueUsd),
+    co2_saved_kg: Number((Number(params.wasteKg) * 2.4).toFixed(2)),
+    is_final_pitch: Boolean(params.isFinalPitch || params.activityCategory === 'final_funding_pitch'),
+    transaction_type: transactionType,
+    status: 'pending',
+    random_audit_selected: false,
+    audit_status: 'not_selected',
+    audit_flagged_fraud: false,
+    points_awarded: 0,
+    penalty_points: 0,
+    resubmission_count: resubmissionCount,
+    parent_log_id: params.parentLogId,
+    created_at: now,
+    updated_at: now,
+  };
+
+  store.impactLogs.unshift(newLog);
+  club.last_submission_at = now;
+
+  // Trigger-equivalent Audit Log entry
+  const auditEntry: AuditLogEntry = {
+    id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    impact_log_id: newLog.id,
+    club_id: club.id,
+    club_name: club.name,
+    school_id: school.id,
+    school_name: school.name,
+    school_code: school.code,
+    actor_id: student.id,
+    actor_name: student.full_name,
+    actor_role: 'student',
+    action_type: resubmissionCount > 0 ? 'STUDENT_RESUBMISSION' : 'STUDENT_SUBMISSION_CREATED',
+    previous_status: resubmissionCount > 0 ? 'rejected' : null,
+    new_status: 'pending',
+    points_delta: 0,
+    reason_or_notes:
+      resubmissionCount > 0
+        ? `Student resubmitted transaction (Attempt 1/1) for "${newLog.activity_title}"`
+        : `Submitted via Telegram Bot as ${transactionType.toUpperCase()} transaction ($${newLog.revenue_usd} rev, ${newLog.waste_kg} kg waste)`,
+    metadata: {
+      transaction_type: transactionType,
+      exif_lat: newLog.exif_lat,
+      exif_lng: newLog.exif_lng,
+      campus_distance_meters: campusDistance,
+      on_campus_verified: onCampusVerified,
+      s3_key: newLog.s3_key,
+    },
+    created_at: now,
+  };
+  store.auditLogs.unshift(auditEntry);
+
+  // Sync to Supabase if configured
+  const supabase = getSupabaseServiceClient();
+  if (supabase) {
+    await supabase.from('impact_logs').insert({
+      id: newLog.id,
+      club_id: newLog.club_id,
+      school_id: newLog.school_id,
+      student_id: newLog.student_id,
+      file_name: newLog.file_name,
+      mime_type: newLog.mime_type,
+      is_uncompressed_document: true,
+      s3_url: newLog.s3_url,
+      s3_key: newLog.s3_key,
+      exif_timestamp: newLog.exif_timestamp,
+      exif_lat: newLog.exif_lat,
+      exif_lng: newLog.exif_lng,
+      activity_title: newLog.activity_title,
+      activity_category: newLog.activity_category,
+      description: newLog.description,
+      waste_kg: newLog.waste_kg,
+      revenue_usd: newLog.revenue_usd,
+      is_final_pitch: newLog.is_final_pitch,
+      resubmission_count: newLog.resubmission_count,
+    });
+  }
+
+  await dispatchTelegramNotification({
+    chatId: student.telegram_user_id || 800101,
+    studentName: newLog.student_name,
+    telegramUsername: newLog.telegram_username || '@student',
+    logId: newLog.id,
+    type: 'SUBMISSION_RECEIPT',
+    text: `✅ SUBMISSION LOGGED (${newLog.id}): "${newLog.activity_title}"\n• Tier: ${newLog.transaction_type.toUpperCase()} ($${newLog.revenue_usd} / ${newLog.waste_kg} kg)\n• EXIF Campus Check: ${newLog.campus_distance_meters}m from ${newLog.school_code} (${
+      newLog.on_campus_verified ? 'Verified On-Campus' : 'Off-Campus Flag'
+    })\n• Status: PENDING Tier 1 Teacher Endorsement`,
+  });
+
+  return newLog;
+}
+
+/**
+ * STEP 2 & STEP 3: Supervising Teacher Endorsement (Tier 1 Local Audit) & Threshold Routing
+ * Enforces strict RBAC: Teacher can ONLY update logs belonging to their own school!
+ */
+export async function performTeacherReview(params: {
+  actorId: string;
+  logId: string;
+  decision: 'approve' | 'reject' | 'flag';
+  notesOrReason?: string;
+  forceRandomAuditSelection?: boolean; // Optional override for deterministic testing
+}): Promise<{ log: ImpactLog; auditEntry: AuditLogEntry }> {
+  const store = getPlatformStore();
+  const actor = store.users.find((u) => u.id === params.actorId);
+
+  if (!actor || actor.role !== 'teacher') {
+    throw new Error(
+      'RBAC_ROLE_VIOLATION: Only a Supervising Teacher (Tier 1 Approver) can execute Tier 1 local endorsement.'
+    );
+  }
+
+  const log = store.impactLogs.find((l) => l.id === params.logId);
+  if (!log) {
+    throw new Error(`Impact log not found: ${params.logId}`);
+  }
+
+  // STRICT RBAC SCHOOL CHECK (Matches Supabase RLS policy)
+  if (actor.school_id !== log.school_id) {
+    throw new Error(
+      `RBAC_SCHOOL_SCOPE_VIOLATION: Teacher ${actor.full_name} belongs to school ${actor.school_id} and is strictly prohibited by Row-Level Security from modifying logs belonging to ${log.school_name} (${log.school_id}).`
+    );
+  }
+
+  if (log.status !== 'pending' && log.status !== 'flagged') {
+    throw new Error(`Invalid state transition: Log ${log.id} is currently '${log.status}'.`);
+  }
+
+  const previousStatus = log.status;
+  const now = new Date().toISOString();
+  log.teacher_reviewer_id = actor.id;
+  log.teacher_reviewer_name = actor.full_name.split(' (')[0];
+  log.teacher_reviewed_at = now;
+  log.updated_at = now;
+
+  let actionType: AuditLogEntry['action_type'] = 'TEACHER_APPROVED_MICRO';
+  let pointsDelta = 0;
+  let auditReason = params.notesOrReason || '';
+
+  if (params.decision === 'approve') {
+    log.teacher_notes =
+      params.notesOrReason || 'Confirmed student activity occurred on campus with valid EXIF.';
+
+    // STEP 3: Threshold Routing (The Safeguard)
+    if (log.transaction_type === 'macro') {
+      // Macro-Transaction (>$50 revenue or final pitch) -> Route to Expert Panel!
+      // Teacher CANNOT award leaderboard points directly on Macro transactions.
+      log.status = 'pending_expert_review';
+      log.points_awarded = 0;
+      actionType = 'TEACHER_ENDORSED_MACRO_ROUTED';
+      auditReason = `Teacher endorsed Macro-Transaction ($${log.revenue_usd} rev). Routed to Expert Panel (status: pending_expert_review).`;
+    } else {
+      // Micro-Transaction -> Automatically post points to Leaderboard + 10% Random Audit Roll
+      const awarded = calculateMicroTransactionPoints({
+        wasteKg: log.waste_kg,
+        revenueUsd: log.revenue_usd,
+        onCampusVerified: log.on_campus_verified,
+      });
+      log.status = 'approved';
+      log.points_awarded = awarded;
+      pointsDelta = awarded;
+
+      const selectedForAudit =
+        typeof params.forceRandomAuditSelection === 'boolean'
+          ? params.forceRandomAuditSelection
+          : shouldSelectForRandomExpertAudit(store.gamificationConfig.micro_audit_sample_rate);
+
+      log.random_audit_selected = selectedForAudit;
+      log.audit_status = selectedForAudit ? 'pending_audit' : 'not_selected';
+      actionType = 'TEACHER_APPROVED_MICRO';
+      auditReason = selectedForAudit
+        ? `Teacher approved Micro-Transaction (+${awarded} pts). Selected by 10% Random Safeguard for Expert Panel Audit.`
+        : `Teacher approved Micro-Transaction (+${awarded} pts released to Leaderboard).`;
+    }
+  } else if (params.decision === 'reject') {
+    // STEP 5: Resolution Loop
+    if (!params.notesOrReason || params.notesOrReason.trim().length < 4) {
+      throw new Error(
+        'RESOLUTION_LOOP_VIOLATION: A specific rejection reason is required to notify the student via Telegram.'
+      );
+    }
+    log.status = 'rejected';
+    log.rejection_reason = params.notesOrReason.trim();
+    log.points_awarded = 0;
+    actionType = 'SUBMISSION_REJECTED_RESOLUTION_LOOP';
+    auditReason = `Teacher rejected submission: "${log.rejection_reason}"`;
+
+    const remainingAttempts = Math.max(0, 1 - log.resubmission_count);
+    const tgText =
+      remainingAttempts > 0
+        ? `⚠️ RESOLUTION LOOP (Tier 1 Teacher Rejection): Your submission "${log.activity_title}" (${log.id}) was rejected by ${log.teacher_reviewer_name}.\n\nReason: "${log.rejection_reason}"\n\n👉 You have 1 single resubmission attempt allowed. Use /resubmit ${log.id} with a corrected uncompressed Document.`
+        : `❌ FINAL REJECTION: Your resubmission "${log.activity_title}" (${log.id}) was rejected by ${log.teacher_reviewer_name}. Reason: "${log.rejection_reason}". Maximum resubmission attempts (1/1) reached.`;
+
+    log.telegram_notification_sent = true;
+    log.telegram_last_message = tgText;
+
+    await dispatchTelegramNotification({
+      chatId: 800101,
+      studentName: log.student_name,
+      telegramUsername: log.telegram_username || '@student',
+      logId: log.id,
+      type: 'REJECTION_RESOLUTION',
+      text: tgText,
+    });
+  } else if (params.decision === 'flag') {
+    log.status = 'flagged';
+    log.teacher_notes = params.notesOrReason || 'Flagged by Supervising Teacher for anomalous data.';
+    actionType = 'SUBMISSION_FLAGGED_FOR_INVESTIGATION';
+    auditReason = log.teacher_notes;
+  }
+
+  const auditEntry: AuditLogEntry = {
+    id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    impact_log_id: log.id,
+    club_id: log.club_id,
+    club_name: log.club_name,
+    school_id: log.school_id,
+    school_name: log.school_name,
+    school_code: log.school_code,
+    actor_id: actor.id,
+    actor_name: actor.full_name,
+    actor_role: 'teacher',
+    action_type: actionType,
+    previous_status: previousStatus,
+    new_status: log.status,
+    points_delta: pointsDelta,
+    reason_or_notes: auditReason,
+    metadata: {
+      transaction_type: log.transaction_type,
+      random_audit_selected: log.random_audit_selected,
+      audit_status: log.audit_status,
+      points_awarded: log.points_awarded,
+    },
+    created_at: now,
+  };
+
+  store.auditLogs.unshift(auditEntry);
+  return { log, auditEntry };
+}
+
+/**
+ * STEP 4, STEP 5 & PENALTY MECHANICS: Expert Panel / Admin Adjudication (Tier 2)
+ * Handles:
+ * 1. Macro-Transaction Final Scoring against the 6 criteria (`approve_macro` / `reject_macro`)
+ * 2. 10% Random Micro-Transaction Audit (`audit_pass` / `audit_fraud` with school point deduction)
+ */
+export async function performExpertAdjudication(params: {
+  actorId: string;
+  logId: string;
+  action: 'approve_macro' | 'reject_macro' | 'audit_pass' | 'audit_fraud';
+  criteriaScores?: CriteriaScores;
+  notesOrReason?: string;
+}): Promise<{ log: ImpactLog; auditEntry: AuditLogEntry }> {
+  const store = getPlatformStore();
+  const actor = store.users.find((u) => u.id === params.actorId);
+
+  if (!actor || actor.role !== 'expert_admin') {
+    throw new Error(
+      'RBAC_ROLE_VIOLATION: Only an Expert Panel / Admin (Tier 2 Adjudicator) can perform final scoring or random audits.'
+    );
+  }
+
+  const log = store.impactLogs.find((l) => l.id === params.logId);
+  if (!log) {
+    throw new Error(`Impact log not found: ${params.logId}`);
+  }
+
+  const school = store.schools.find((s) => s.id === log.school_id);
+  const previousStatus = log.status;
+  const now = new Date().toISOString();
+
+  log.expert_reviewer_id = actor.id;
+  log.expert_reviewer_name = actor.full_name.split(' (')[0];
+  log.expert_reviewed_at = now;
+  log.updated_at = now;
+
+  let actionType: AuditLogEntry['action_type'] = 'EXPERT_APPROVED_MACRO';
+  let pointsDelta = 0;
+  let auditReason = params.notesOrReason || '';
+
+  if (params.action === 'approve_macro') {
+    if (log.status !== 'pending_expert_review' && log.status !== 'flagged') {
+      throw new Error(
+        `Macro-transaction ${log.id} must be endorsed by a Supervising Teacher ('pending_expert_review') before Expert scoring.`
+      );
+    }
+
+    const scores: CriteriaScores = params.criteriaScores || {
+      relevance: 88,
+      business: 85,
+      feasibility: 86,
+      student_ownership: 90,
+      sustainability: 92,
+      institutional_commitment: school?.institutional_commitment_score ?? 85,
+    };
+
+    const awarded = calculateMacroTransactionPoints({
+      criteriaScores: scores,
+      wasteKg: log.waste_kg,
+      revenueUsd: log.revenue_usd,
+      config: store.gamificationConfig,
+    });
+
+    log.criteria_scores = scores;
+    log.status = 'approved';
+    log.points_awarded = awarded;
+    log.expert_notes =
+      params.notesOrReason ||
+      'Scored across all 6 core criteria; financial & environmental metrics verified.';
+    pointsDelta = awarded;
+    actionType = 'EXPERT_APPROVED_MACRO';
+    auditReason = `Expert Panel approved Macro-Transaction and released +${awarded} points to Leaderboard.`;
+
+    await dispatchTelegramNotification({
+      chatId: 800101,
+      studentName: log.student_name,
+      telegramUsername: log.telegram_username || '@student',
+      logId: log.id,
+      type: 'APPROVAL_NOTICE',
+      text: `🏆 MACRO-TRANSACTION APPROVED (${log.id}): Expert Panel scored "${log.activity_title}" and released +${awarded} pts to ${log.school_name}'s Leaderboard total!`,
+    });
+  } else if (params.action === 'reject_macro') {
+    // STEP 5: Resolution Loop from Expert Panel stage
+    if (!params.notesOrReason || params.notesOrReason.trim().length < 4) {
+      throw new Error(
+        'RESOLUTION_LOOP_VIOLATION: Expert Panel rejection requires a specific reason to send back to the student via Telegram.'
+      );
+    }
+
+    log.status = 'rejected';
+    log.rejection_reason = params.notesOrReason.trim();
+    log.expert_notes = log.rejection_reason;
+    log.points_awarded = 0;
+    actionType = 'SUBMISSION_REJECTED_RESOLUTION_LOOP';
+    auditReason = `Expert Panel rejected Macro-Transaction: "${log.rejection_reason}"`;
+
+    const remainingAttempts = Math.max(0, 1 - log.resubmission_count);
+    const tgText =
+      remainingAttempts > 0
+        ? `⚠️ RESOLUTION LOOP (Tier 2 Expert Panel Rejection): Your Macro-Transaction "${log.activity_title}" (${log.id}) was rejected by ${log.expert_reviewer_name}.\n\nReason: "${log.rejection_reason}"\n\n👉 You have 1 single resubmission attempt allowed via /resubmit ${log.id}.`
+        : `❌ FINAL REJECTION: Macro-Transaction "${log.activity_title}" (${log.id}) was rejected. Maximum resubmission attempts (1/1) reached.`;
+
+    log.telegram_notification_sent = true;
+    log.telegram_last_message = tgText;
+
+    await dispatchTelegramNotification({
+      chatId: 800101,
+      studentName: log.student_name,
+      telegramUsername: log.telegram_username || '@student',
+      logId: log.id,
+      type: 'REJECTION_RESOLUTION',
+      text: tgText,
+    });
+  } else if (params.action === 'audit_pass') {
+    // 10% Random Micro Audit Passed
+    log.audit_status = 'audit_passed';
+    log.audit_flagged_fraud = false;
+    log.expert_notes =
+      params.notesOrReason || 'Random 10% micro-transaction audit verified clean.';
+    actionType = 'EXPERT_AUDIT_PASSED';
+    auditReason = log.expert_notes;
+  } else if (params.action === 'audit_fraud') {
+    // PENALTY MECHANICS: Flagged as fraudulent during random 10% micro audit!
+    const previousPoints = log.points_awarded;
+    const penalty = store.gamificationConfig.fraud_penalty_points;
+
+    log.status = 'fraud_revoked';
+    log.audit_status = 'fraud_confirmed';
+    log.audit_flagged_fraud = true;
+    log.points_awarded = 0;
+    log.penalty_points = penalty;
+    log.expert_notes =
+      params.notesOrReason ||
+      `Flagged as fraudulent during 10% random audit. Revoked ${previousPoints} pts and deducted -${penalty} penalty points from school.`;
+
+    if (school) {
+      school.penalty_points_deducted = Number(
+        (school.penalty_points_deducted + penalty).toFixed(2)
+      );
+    }
+
+    pointsDelta = -(previousPoints + penalty);
+    actionType = 'EXPERT_AUDIT_FRAUD_PENALTY';
+    auditReason = log.expert_notes;
+
+    await dispatchTelegramNotification({
+      chatId: 800101,
+      studentName: log.student_name,
+      telegramUsername: log.telegram_username || '@student',
+      logId: log.id,
+      type: 'FRAUD_PENALTY_NOTICE',
+      text: `🚨 RANDOM AUDIT FRAUD PENALTY (${log.id}): The Expert Panel flagged Micro-Transaction "${log.activity_title}" as fraudulent during a random 10% audit.\n• Original +${previousPoints} pts revoked\n• Penalty Applied: -${penalty} pts deducted from ${log.school_name}'s Leaderboard score.\n• Notes: "${log.expert_notes}"`,
+    });
+  }
+
+  const auditEntry: AuditLogEntry = {
+    id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    impact_log_id: log.id,
+    club_id: log.club_id,
+    club_name: log.club_name,
+    school_id: log.school_id,
+    school_name: log.school_name,
+    school_code: log.school_code,
+    actor_id: actor.id,
+    actor_name: actor.full_name,
+    actor_role: 'expert_admin',
+    action_type: actionType,
+    previous_status: previousStatus,
+    new_status: log.status,
+    points_delta: Number(pointsDelta.toFixed(2)),
+    reason_or_notes: auditReason,
+    metadata: {
+      transaction_type: log.transaction_type,
+      audit_status: log.audit_status,
+      audit_flagged_fraud: log.audit_flagged_fraud,
+      points_awarded: log.points_awarded,
+      penalty_points: log.penalty_points,
+      criteria_scores: log.criteria_scores,
+    },
+    created_at: now,
+  };
+
+  store.auditLogs.unshift(auditEntry);
+  return { log, auditEntry };
+}
+
+/**
+ * Updates Gamification Algorithm Weights & Thresholds (Expert Admin Only)
+ */
+export function updateGamificationConfig(params: {
+  actorId: string;
+  updates: Partial<GamificationConfig>;
+}): GamificationConfig {
+  const store = getPlatformStore();
+  const actor = store.users.find((u) => u.id === params.actorId);
+
+  if (!actor || actor.role !== 'expert_admin') {
+    throw new Error(
+      'RBAC_ROLE_VIOLATION: Only an Expert Panel / Admin can modify the gamification algorithm.'
+    );
+  }
+
+  store.gamificationConfig = {
+    ...store.gamificationConfig,
+    ...params.updates,
+    updated_at: new Date().toISOString(),
+  };
+
+  return store.gamificationConfig;
+}
+
+/**
+ * Returns full platform snapshot with computed Leaderboard and Health/Risk Alerts
+ */
+export function getFullPlatformSnapshot() {
+  const store = getPlatformStore();
+  const leaderboard = computeSchoolLeaderboard({
+    schools: store.schools,
+    clubs: store.clubs,
+    impactLogs: store.impactLogs,
+    config: store.gamificationConfig,
+  });
+  const healthAlerts = detectHealthAndRiskAnomalies({
+    schools: store.schools,
+    clubs: store.clubs,
+    impactLogs: store.impactLogs,
+  });
+
+  return {
+    schools: store.schools,
+    clubs: store.clubs,
+    users: store.users,
+    impactLogs: store.impactLogs,
+    auditLogs: store.auditLogs,
+    gamificationConfig: store.gamificationConfig,
+    telegramMessages: store.telegramMessages,
+    leaderboard,
+    healthAlerts,
+  };
+}

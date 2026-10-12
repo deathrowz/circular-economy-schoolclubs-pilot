@@ -8,22 +8,77 @@ import {
   handleTelegramBotUpdate,
   IncomingTelegramUpdate,
 } from '@/lib/telegram/bot-handler';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import {
+  computeSchoolLeaderboard,
+  detectHealthAndRiskAnomalies,
+} from '@/lib/gamification/engine';
 
 /**
  * Isomorphic Platform Bridge:
  * - In full-stack server environments (Next.js dev/start, Vercel, Docker), calls `/api/platform` & `/api/telegram/webhook`.
  * - In static export environments (GitHub Pages `output: 'export'`), falls back seamlessly to the isomorphic in-browser platform engine.
+ * - Always merges real-time records from Supabase PostgreSQL (e.g. newly uploaded Telegram bot submissions).
  */
 export async function fetchPlatformSnapshotClient() {
+  let snapshot = getFullPlatformSnapshot();
   try {
     const res = await fetch('/api/platform');
     if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-      return await res.json();
+      snapshot = await res.json();
     }
   } catch {
     // Static export mode (GitHub Pages) fallback
   }
-  return getFullPlatformSnapshot();
+
+  // Live Supabase Sync: Fetch any real-time logs from Supabase
+  try {
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      const { data: dbLogs, error } = await supabase
+        .from('impact_logs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(dbLogs) && dbLogs.length > 0) {
+        const dbLogMap = new Map(dbLogs.map((l: any) => [l.id, l]));
+
+        // Merge DB logs with base logs (DB logs take precedence)
+        const mergedLogs = [
+          ...dbLogs.map((l: any) => ({
+            ...l,
+            parent_log_id: l.resubmission_parent_log_id || l.parent_log_id,
+            verified_documents: l.verified_documents || [],
+          })),
+          ...snapshot.impactLogs.filter((l) => !dbLogMap.has(l.id)),
+        ];
+
+        const updatedLeaderboard = computeSchoolLeaderboard({
+          schools: snapshot.schools,
+          clubs: snapshot.clubs,
+          impactLogs: mergedLogs,
+          config: snapshot.gamificationConfig,
+        });
+
+        const updatedHealthAlerts = detectHealthAndRiskAnomalies({
+          schools: snapshot.schools,
+          clubs: snapshot.clubs,
+          impactLogs: mergedLogs,
+        });
+
+        snapshot = {
+          ...snapshot,
+          impactLogs: mergedLogs,
+          leaderboard: updatedLeaderboard,
+          healthAlerts: updatedHealthAlerts,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Live Supabase synchronization error:', err);
+  }
+
+  return snapshot;
 }
 
 export async function postPlatformActionClient(body: Record<string, any>): Promise<{

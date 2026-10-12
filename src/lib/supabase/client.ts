@@ -24,8 +24,9 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
  * Server Service-Role Supabase Client (Used by Telegram Bot Webhook to insert pending student logs)
  */
 export function getSupabaseServiceClient(): SupabaseClient | null {
-  if (!isSupabaseConfigured() || !supabaseServiceRoleKey) return null;
-  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+  if (!isSupabaseConfigured()) return null;
+  const key = supabaseServiceRoleKey || supabaseAnonKey;
+  return createClient(supabaseUrl, key, {
     auth: { persistSession: false },
   });
 }

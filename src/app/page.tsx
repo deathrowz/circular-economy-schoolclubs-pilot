@@ -66,7 +66,18 @@ export default function PlatformDashboardPage() {
   const [selectedClubId, setSelectedClubId] = useState<string>('club-01');
 
   useEffect(() => {
+    let isMounted = true;
+
+    const refreshData = () => {
+      fetchPlatformSnapshotClient().then((data) => {
+        if (!isMounted) return;
+        setSnapshot(data);
+      });
+    };
+
+    // Initial load & authentication state recovery
     fetchPlatformSnapshotClient().then((data) => {
+      if (!isMounted) return;
       setSnapshot(data);
       if (typeof window !== 'undefined') {
         const savedUserId = localStorage.getItem('haritha_auth_user_id');
@@ -85,6 +96,19 @@ export default function PlatformDashboardPage() {
         }
       }
     });
+
+    // Real-time synchronization polling every 4 seconds (captures live Telegram bot logs)
+    const interval = setInterval(refreshData, 4000);
+
+    // Refresh on window focus (e.g., when teacher returns from Telegram app)
+    const handleFocus = () => refreshData();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const activeUser = snapshot

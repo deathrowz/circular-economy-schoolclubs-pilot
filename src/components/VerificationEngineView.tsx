@@ -15,6 +15,7 @@ import {
   Lock,
   MapPin,
   Receipt,
+  RefreshCw,
   Search,
   Settings2,
   ShieldAlert,
@@ -34,7 +35,10 @@ import {
   UserProfile,
 } from '@/types/domain';
 import { calculateMacroTransactionPoints, formatLkr } from '@/lib/gamification/engine';
-import { postPlatformActionClient } from '@/lib/client/platform-bridge';
+import {
+  fetchPlatformSnapshotClient,
+  postPlatformActionClient,
+} from '@/lib/client/platform-bridge';
 
 interface VerificationEngineViewProps {
   activeUser: UserProfile;
@@ -105,6 +109,26 @@ export function VerificationEngineView({
   } | null>(null);
   const [busyLogId, setBusyLogId] = useState<string | null>(null);
   const [copiedScoreCmd, setCopiedScoreCmd] = useState<string | null>(null);
+  const [isRefreshingLive, setIsRefreshingLive] = useState(false);
+
+  const handleManualLiveSync = async () => {
+    setIsRefreshingLive(true);
+    try {
+      const freshSnapshot = await fetchPlatformSnapshotClient();
+      onRefreshSnapshot(freshSnapshot);
+      setFeedbackBanner({
+        type: 'success',
+        message: '🔄 Live sync completed: Latest Telegram bot submissions updated from Supabase.',
+      });
+    } catch {
+      setFeedbackBanner({
+        type: 'error',
+        message: 'Unable to reach database for live sync.',
+      });
+    } finally {
+      setIsRefreshingLive(false);
+    }
+  };
 
   const [criteriaDrafts, setCriteriaDrafts] = useState<Record<string, CriteriaScores>>({});
   const [configDraft, setConfigDraft] = useState<GamificationConfig>(config);
@@ -532,11 +556,22 @@ export function VerificationEngineView({
           {teacherSubTab === 'approvals' && (
             <div className="space-y-5">
           <div className="hai-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-[#005FA3]" />
-              <span className="text-sm font-semibold text-[#111010]">
-                Pending Submissions for {activeUser.school_name} ({teacherPendingLogs.length})
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#005FA3]" />
+                <span className="text-sm font-semibold text-[#111010]">
+                  Pending Submissions for {activeUser.school_name} ({teacherPendingLogs.length})
+                </span>
+              </div>
+              <button
+                onClick={handleManualLiveSync}
+                disabled={isRefreshingLive}
+                title="Fetch latest student submissions from Telegram & Supabase"
+                className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 text-[#005FA3] border border-[#005FA3]/30 flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <RefreshCw className={`w-3 h-3 ${isRefreshingLive ? 'animate-spin text-[#005FA3]' : ''}`} />
+                <span>{isRefreshingLive ? 'Syncing...' : 'Sync Live'}</span>
+              </button>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 text-xs">

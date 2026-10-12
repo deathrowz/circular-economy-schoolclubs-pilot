@@ -194,12 +194,13 @@ export async function createStudentImpactSubmission(params: {
     resubmissionCount = 1;
   }
 
-  const campusDistance = calculateDistanceMeters(
+  const rawDistance = calculateDistanceMeters(
     params.exifLat,
     params.exifLng,
     school.campus_lat,
     school.campus_lng
   );
+  const campusDistance = Math.min(99999999, Math.round(rawDistance * 100) / 100);
   const onCampusVerified = campusDistance <= school.campus_radius_meters;
 
   const transactionType = classifyTransactionTier({

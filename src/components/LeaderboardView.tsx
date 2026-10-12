@@ -23,6 +23,7 @@ import {
 interface LeaderboardViewProps {
   leaderboard: LeaderboardSchoolScore[];
   config: GamificationConfig;
+  activeSchoolId?: string | null;
   onSelectClubProfile: (clubId: string) => void;
   onOpenTelegramWorkbench?: () => void;
   onOpenVerification?: () => void;
@@ -30,12 +31,28 @@ interface LeaderboardViewProps {
 
 export function LeaderboardView({
   leaderboard,
+  config,
+  activeSchoolId,
   onSelectClubProfile,
   onOpenTelegramWorkbench,
   onOpenVerification,
 }: LeaderboardViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSchoolId, setExpandedSchoolId] = useState<string | null>(null);
+
+  const mySchoolEntry = activeSchoolId
+    ? leaderboard.find((e) => e.school.id === activeSchoolId)
+    : null;
+
+  const aboveEntry =
+    mySchoolEntry && mySchoolEntry.rank > 1
+      ? leaderboard.find((e) => e.rank === mySchoolEntry.rank - 1)
+      : null;
+
+  const belowEntry =
+    mySchoolEntry && mySchoolEntry.rank < leaderboard.length
+      ? leaderboard.find((e) => e.rank === mySchoolEntry.rank + 1)
+      : null;
 
   const filtered = leaderboard.filter((entry) => {
     return (
@@ -185,6 +202,86 @@ export function LeaderboardView({
       </section>
 
       {/* ====================================================================
+       * Your School Live Gamified Standing Spotlight (For Logged-In School / Teacher)
+       * ==================================================================== */}
+      {mySchoolEntry && (
+        <section className="bg-white border-2 border-[#005FA3] rounded-[20px_20px_20px_4px] p-6 shadow-sm space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 rounded-full bg-[#005FA3] text-[#9CF2F2] text-xs font-bold uppercase tracking-wider">
+                  ⭐ Your School: {mySchoolEntry.school.name}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-[#E6F1FA] text-[#005FA3] text-xs font-mono font-bold border border-[#005FA3]/30">
+                  National Rank #{mySchoolEntry.rank} of 15
+                </span>
+                {renderTierBadge(mySchoolEntry.topoff_funding_tier.split(' (')[0])}
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#111010] font-[var(--font-jakarta)] tracking-tight">
+                {mySchoolEntry.club.name} • {mySchoolEntry.school.code} ({mySchoolEntry.school.city})
+              </h2>
+
+              <p className="text-sm text-[#111010]/80">
+                {aboveEntry ? (
+                  <>
+                    Rivalry Target:{' '}
+                    <strong>
+                      #{aboveEntry.rank} {aboveEntry.school.name}
+                    </strong>{' '}
+                    has {aboveEntry.composite_leaderboard_score} pts —{' '}
+                    <span className="text-[#005FA3] font-bold">
+                      {(
+                        aboveEntry.composite_leaderboard_score -
+                        mySchoolEntry.composite_leaderboard_score
+                      ).toFixed(1)}{' '}
+                      more pts needed to overtake #{aboveEntry.rank}!
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-emerald-700 font-bold">
+                    🏆 National Leader! Currently holding Rank #1 across all 15 Sri Lankan schools!
+                  </span>
+                )}
+                {belowEntry && (
+                  <span className="text-[#111010]/60 ml-2 hidden sm:inline">
+                    (Defending against #{belowEntry.rank} {belowEntry.school.name} by +{(
+                      mySchoolEntry.composite_leaderboard_score -
+                      belowEntry.composite_leaderboard_score
+                    ).toFixed(1)}{' '}
+                    pts)
+                  </span>
+                )}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <div className="bg-[#E6F1FA] border border-[#005FA3]/25 rounded-xl px-4 py-3 text-center min-w-[110px]">
+                <div className="text-[10px] uppercase font-bold text-[#005FA3]">Total Points</div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#005FA3] font-mono mt-0.5">
+                  {mySchoolEntry.composite_leaderboard_score} <span className="text-xs">pts</span>
+                </div>
+              </div>
+
+              <div className="bg-[#E6F1FA] border border-[#005FA3]/25 rounded-xl px-4 py-3 text-center min-w-[110px]">
+                <div className="text-[10px] uppercase font-bold text-[#14494F]">Waste Recycled</div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#14494F] font-mono mt-0.5">
+                  {mySchoolEntry.verified_waste_kg} <span className="text-xs">kg</span>
+                </div>
+              </div>
+
+              <div className="bg-[#E6F1FA] border border-[#005FA3]/25 rounded-xl px-4 py-3 text-center min-w-[120px]">
+                <div className="text-[10px] uppercase font-bold text-[#111010]/70">Sales (Rs.)</div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#111010] font-mono mt-0.5">
+                  {formatLkr(mySchoolEntry.verified_revenue_usd)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ====================================================================
        * Top 3 Leading Sri Lankan Schools (White Editorial Cards on Cloud Blue)
        * ==================================================================== */}
       <section className="space-y-4">
@@ -309,6 +406,7 @@ export function LeaderboardView({
             <tbody className="divide-y divide-[#111010]/12 text-sm">
               {filtered.map((entry) => {
                 const isExpanded = expandedSchoolId === entry.school.id;
+                const isMySchool = Boolean(activeSchoolId && entry.school.id === activeSchoolId);
 
                 return (
                   <React.Fragment key={entry.school.id}>
@@ -316,13 +414,19 @@ export function LeaderboardView({
                       onClick={() =>
                         setExpandedSchoolId(isExpanded ? null : entry.school.id)
                       }
-                      className="h-[68px] hover:bg-[#E6F1FA]/60 transition-colors cursor-pointer"
+                      className={`h-[68px] transition-colors cursor-pointer ${
+                        isMySchool
+                          ? 'bg-[#9CF2F2]/30 hover:bg-[#9CF2F2]/50 border-l-4 border-l-[#005FA3] font-semibold'
+                          : 'hover:bg-[#E6F1FA]/60'
+                      }`}
                     >
                       {/* 1. Rank */}
                       <td className="py-3.5 px-6 font-mono font-semibold">
                         <span
                           className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
-                            entry.rank <= 3
+                            isMySchool
+                              ? 'bg-[#005FA3] text-[#9CF2F2] ring-2 ring-[#005FA3]/30'
+                              : entry.rank <= 3
                               ? 'bg-[#005FA3] text-[#9CF2F2]'
                               : 'bg-[#F0F3F5] text-[#111010] border border-[#111010]/15'
                           }`}
@@ -340,6 +444,11 @@ export function LeaderboardView({
                           <span className="text-xs text-[#111010]/65">
                             ({entry.school.city})
                           </span>
+                          {isMySchool && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#005FA3] text-[#9CF2F2] uppercase tracking-wider">
+                              ⭐ YOUR SCHOOL
+                            </span>
+                          )}
                           {entry.penalty_points_deducted > 0 && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-rose-800 font-mono text-[11px] font-semibold">
                               <ShieldAlert className="w-3 h-3" /> -{entry.penalty_points_deducted} pts audit penalty

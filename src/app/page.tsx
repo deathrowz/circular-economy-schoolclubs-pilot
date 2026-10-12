@@ -765,6 +765,7 @@ export default function PlatformDashboardPage() {
           <LeaderboardView
             leaderboard={snapshot.leaderboard}
             config={snapshot.gamificationConfig}
+            activeSchoolId={activeUser.school_id}
             onSelectClubProfile={(clubId) => {
               setSelectedClubId(clubId);
               setActiveTab('clubs');
@@ -805,6 +806,7 @@ export default function PlatformDashboardPage() {
             schools={snapshot.schools}
             impactLogs={snapshot.impactLogs}
             config={snapshot.gamificationConfig}
+            leaderboard={snapshot.leaderboard}
             initialSubTab={
               activeUser.role === 'super_admin'
                 ? 'algorithm_config'

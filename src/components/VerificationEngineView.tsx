@@ -15,17 +15,21 @@ import {
   Lock,
   MapPin,
   Receipt,
+  Search,
   Settings2,
   ShieldAlert,
   ShieldCheck,
   Sliders,
   Sparkles,
+  Target,
+  Trophy,
   XCircle,
 } from 'lucide-react';
 import {
   CriteriaScores,
   GamificationConfig,
   ImpactLog,
+  LeaderboardSchoolScore,
   School,
   UserProfile,
 } from '@/types/domain';
@@ -38,6 +42,7 @@ interface VerificationEngineViewProps {
   schools: School[];
   impactLogs: ImpactLog[];
   config: GamificationConfig;
+  leaderboard?: LeaderboardSchoolScore[];
   initialSubTab?: 'macro_scoring' | 'random_audit' | 'algorithm_config';
   hideRoleSwitcher?: boolean;
   onSwitchUser: (userId: string) => void;
@@ -50,6 +55,7 @@ export function VerificationEngineView({
   schools,
   impactLogs,
   config,
+  leaderboard,
   initialSubTab,
   hideRoleSwitcher,
   onSwitchUser,
@@ -58,6 +64,30 @@ export function VerificationEngineView({
   const [expertSubTab, setExpertSubTab] = useState<
     'macro_scoring' | 'random_audit' | 'algorithm_config'
   >(initialSubTab || (activeUser.role === 'super_admin' ? 'algorithm_config' : 'macro_scoring'));
+
+  const [teacherSubTab, setTeacherSubTab] = useState<'approvals' | 'leaderboard'>('approvals');
+  const [teacherLeaderboardSearch, setTeacherLeaderboardSearch] = useState('');
+  const [teacherExpandedSchoolId, setTeacherExpandedSchoolId] = useState<string | null>(null);
+
+  const myTeacherSchoolEntry = leaderboard
+    ? leaderboard.find((e) => e.school.id === activeUser.school_id) || leaderboard[0]
+    : null;
+
+  const aboveTeacherEntry =
+    myTeacherSchoolEntry && leaderboard && myTeacherSchoolEntry.rank > 1
+      ? leaderboard.find((e) => e.rank === myTeacherSchoolEntry.rank - 1)
+      : null;
+
+  const filteredTeacherLeaderboard = (leaderboard || []).filter((entry) => {
+    if (!teacherLeaderboardSearch) return true;
+    const q = teacherLeaderboardSearch.toLowerCase();
+    return (
+      entry.school.name.toLowerCase().includes(q) ||
+      entry.school.city.toLowerCase().includes(q) ||
+      entry.club.name.toLowerCase().includes(q) ||
+      entry.club.circular_sector.toLowerCase().includes(q)
+    );
+  });
 
   React.useEffect(() => {
     if (initialSubTab) {
@@ -405,9 +435,102 @@ export function VerificationEngineView({
         </div>
       )}
 
-      {/* TIER 1: TEACHER APPROVAL QUEUE */}
+      {/* TIER 1: TEACHER APPROVAL & GAMIFICATION WORKBENCH */}
       {activeUser.role === 'teacher' && (
-        <div className="space-y-5">
+        <div className="space-y-6">
+          {/* Teacher's School Live Gamified Standing Banner */}
+          {myTeacherSchoolEntry && (
+            <div className="bg-white border-2 border-[#005FA3] rounded-[20px_20px_20px_4px] p-6 shadow-xs space-y-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-[#005FA3] text-[#9CF2F2] text-xs font-bold uppercase tracking-wider">
+                      ⭐ Your School: {activeUser.school_name}
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-[#E6F1FA] text-[#005FA3] text-xs font-mono font-bold border border-[#005FA3]/30">
+                      National Rank #{myTeacherSchoolEntry.rank} of 15
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#F0F3F5] text-[#111010]/80 border border-[#111010]/15">
+                      {myTeacherSchoolEntry.topoff_funding_tier.split(' (')[0]}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl sm:text-2xl font-bold text-[#111010] font-[var(--font-jakarta)] tracking-tight">
+                    {myTeacherSchoolEntry.club.name} • {myTeacherSchoolEntry.school.code} ({myTeacherSchoolEntry.school.city})
+                  </h3>
+
+                  <p className="text-xs sm:text-sm text-[#111010]/80">
+                    {aboveTeacherEntry ? (
+                      <>
+                        Rivalry Gap: <strong>#{aboveTeacherEntry.rank} {aboveTeacherEntry.school.name}</strong> has {aboveTeacherEntry.composite_leaderboard_score} pts —{' '}
+                        <strong className="text-[#005FA3]">
+                          {(aboveTeacherEntry.composite_leaderboard_score - myTeacherSchoolEntry.composite_leaderboard_score).toFixed(1)} pts needed to overtake #{aboveTeacherEntry.rank}!
+                        </strong>{' '}
+                        Approving on-campus student logs awards up to +65 pts immediately to climb the leaderboard.
+                      </>
+                    ) : (
+                      <strong className="text-emerald-700">
+                        🏆 National Leader! {activeUser.school_name} is currently holding Rank #1 across all 15 Sri Lankan schools!
+                      </strong>
+                    )}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <div className="bg-[#E6F1FA] border border-[#005FA3]/25 rounded-xl px-4 py-2.5 text-center min-w-[100px]">
+                    <div className="text-[10px] uppercase font-bold text-[#005FA3]">Total Points</div>
+                    <div className="text-2xl font-extrabold text-[#005FA3] font-mono mt-0.5">
+                      {myTeacherSchoolEntry.composite_leaderboard_score} <span className="text-xs">pts</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#E6F1FA] border border-[#005FA3]/25 rounded-xl px-4 py-2.5 text-center min-w-[100px]">
+                    <div className="text-[10px] uppercase font-bold text-[#14494F]">Recycled</div>
+                    <div className="text-2xl font-extrabold text-[#14494F] font-mono mt-0.5">
+                      {myTeacherSchoolEntry.verified_waste_kg} <span className="text-xs">kg</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#E6F1FA] border border-[#005FA3]/25 rounded-xl px-4 py-2.5 text-center min-w-[110px]">
+                    <div className="text-[10px] uppercase font-bold text-[#111010]/70">Sales (Rs.)</div>
+                    <div className="text-2xl font-extrabold text-[#111010] font-mono mt-0.5">
+                      {formatLkr(myTeacherSchoolEntry.verified_revenue_usd)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sub-Tabs: Approvals Queue vs 15-School Leaderboard */}
+          <div className="flex flex-wrap gap-2 border-b border-[#111010]/15 pb-3">
+            <button
+              onClick={() => setTeacherSubTab('approvals')}
+              className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
+                teacherSubTab === 'approvals'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#FFFFFF] text-[#111010]/80 border border-[#111010]/15'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Our School Pending Approvals ({teacherPendingLogs.length})</span>
+            </button>
+
+            <button
+              onClick={() => setTeacherSubTab('leaderboard')}
+              className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
+                teacherSubTab === 'leaderboard'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#FFFFFF] text-[#111010]/80 border border-[#111010]/15'
+              }`}
+            >
+              <Trophy className="w-4 h-4" />
+              <span>National 15-School Leaderboard &amp; Standings ({leaderboard?.length || 15})</span>
+            </button>
+          </div>
+
+          {teacherSubTab === 'approvals' && (
+            <div className="space-y-5">
           <div className="hai-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-[#005FA3]" />
@@ -622,6 +745,159 @@ export function VerificationEngineView({
                   </div>
                 );
               })}
+            </div>
+          )}
+            </div>
+          )}
+
+          {teacherSubTab === 'leaderboard' && (
+            <div className="hai-card overflow-hidden space-y-0">
+              <div className="px-6 py-4 border-b border-[#111010]/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F0F3F5]">
+                <div>
+                  <h3 className="text-base font-bold text-[#111010] font-[var(--font-jakarta)]">
+                    All 15 Sri Lankan Schools Ranked by Composite Points
+                  </h3>
+                  <p className="text-xs text-[#111010]/70">
+                    See where {activeUser.school_name} stands relative to other schools island-wide.
+                  </p>
+                </div>
+
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-[#111010]/50 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={teacherLeaderboardSearch}
+                    onChange={(e) => setTeacherLeaderboardSearch(e.target.value)}
+                    placeholder="Search school or city..."
+                    className="w-full hai-input pl-8 pr-3 py-1.5 text-xs bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="h-10 border-b border-[#111010]/15 bg-[#F0F3F5] font-semibold text-[#111010]/75">
+                      <th className="py-2.5 px-4 w-14">Rank</th>
+                      <th className="py-2.5 px-4">School &amp; Student Enterprise</th>
+                      <th className="py-2.5 px-4 text-right">Recycled (kg)</th>
+                      <th className="py-2.5 px-4 text-right">Sales (Rs.)</th>
+                      <th className="py-2.5 px-4 text-right">Grant Tier</th>
+                      <th className="py-2.5 px-5 text-right">Composite Score</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#111010]/10">
+                    {filteredTeacherLeaderboard.map((entry) => {
+                      const isMySchool = entry.school.id === activeUser.school_id;
+                      const isExpanded = teacherExpandedSchoolId === entry.school.id;
+
+                      return (
+                        <React.Fragment key={entry.school.id}>
+                          <tr
+                            onClick={() =>
+                              setTeacherExpandedSchoolId(isExpanded ? null : entry.school.id)
+                            }
+                            className={`h-14 transition cursor-pointer ${
+                              isMySchool
+                                ? 'bg-[#9CF2F2]/35 hover:bg-[#9CF2F2]/50 border-l-4 border-l-[#005FA3] font-bold'
+                                : 'hover:bg-[#E6F1FA]/60'
+                            }`}
+                          >
+                            <td className="py-2.5 px-4 font-mono">
+                              <span
+                                className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                                  isMySchool
+                                    ? 'bg-[#005FA3] text-[#9CF2F2] ring-2 ring-[#005FA3]/30'
+                                    : entry.rank <= 3
+                                    ? 'bg-[#005FA3] text-[#9CF2F2]'
+                                    : 'bg-[#F0F3F5] text-[#111010] border border-[#111010]/15'
+                                }`}
+                              >
+                                {entry.rank}
+                              </span>
+                            </td>
+
+                            <td className="py-2.5 px-4">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className={isMySchool ? 'text-[#005FA3] font-bold' : 'font-semibold text-[#111010]'}>
+                                  {entry.school.name}
+                                </span>
+                                <span className="text-[11px] text-[#111010]/60">({entry.school.city})</span>
+                                {isMySchool && (
+                                  <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-[#005FA3] text-[#9CF2F2] uppercase tracking-wider">
+                                    ⭐ YOUR SCHOOL
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-[#111010]/65 mt-0.5">
+                                {entry.club.name} • {entry.club.circular_sector}
+                              </div>
+                            </td>
+
+                            <td className="py-2.5 px-4 text-right font-mono text-[#14494F]">
+                              {entry.verified_waste_kg} kg
+                            </td>
+
+                            <td className="py-2.5 px-4 text-right font-mono text-[#111010]">
+                              {formatLkr(entry.verified_revenue_usd)}
+                            </td>
+
+                            <td className="py-2.5 px-4 text-right">
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#F0F3F5] text-[#111010]/80">
+                                {entry.topoff_funding_tier.split(' (')[0]}
+                              </span>
+                            </td>
+
+                            <td className="py-2.5 px-5 text-right font-mono font-bold text-sm text-[#005FA3]">
+                              {entry.composite_leaderboard_score} pts
+                            </td>
+                          </tr>
+
+                          {/* Expandable Evaluation Breakdown */}
+                          {isExpanded && (
+                            <tr className="bg-[#FFFFFF]/90 border-b border-[#111010]/15">
+                              <td colSpan={6} className="p-4">
+                                <div className="bg-[#E6F1FA]/60 border border-[#005FA3]/20 rounded-xl p-3.5 space-y-2 text-xs">
+                                  <div className="flex items-center justify-between font-bold text-[#005FA3]">
+                                    <span>6 National Evaluation Criteria Breakdown for {entry.school.name}:</span>
+                                    <span>Total: {entry.composite_leaderboard_score} pts</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-[11px]">
+                                    <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                      <div className="text-[10px] text-[#111010]/60">Relevance (20%)</div>
+                                      <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.relevance}/100</div>
+                                    </div>
+                                    <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                      <div className="text-[10px] text-[#111010]/60">Business (20%)</div>
+                                      <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.business}/100</div>
+                                    </div>
+                                    <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                      <div className="text-[10px] text-[#111010]/60">Feasibility (15%)</div>
+                                      <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.feasibility}/100</div>
+                                    </div>
+                                    <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                      <div className="text-[10px] text-[#111010]/60">Ownership (15%)</div>
+                                      <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.student_ownership}/100</div>
+                                    </div>
+                                    <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                      <div className="text-[10px] text-[#111010]/60">Sustain (15%)</div>
+                                      <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.sustainability}/100</div>
+                                    </div>
+                                    <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                      <div className="text-[10px] text-[#111010]/60">Commit (15%)</div>
+                                      <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.institutional_commitment}/100</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

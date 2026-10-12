@@ -14,6 +14,7 @@ import {
   MapPin,
   RefreshCw,
   Receipt,
+  Search,
   Send,
   ShieldCheck,
   Sparkles,
@@ -79,6 +80,20 @@ export function StudentGamifiedDashboardView({
 
   const school = schoolEntry.school;
   const club = schoolEntry.club;
+
+  const [leaderboardSearch, setLeaderboardSearch] = useState('');
+  const [expandedLeaderboardSchoolId, setExpandedLeaderboardSchoolId] = useState<string | null>(null);
+
+  const filteredLeaderboard = leaderboard.filter((entry) => {
+    if (!leaderboardSearch) return true;
+    const q = leaderboardSearch.toLowerCase();
+    return (
+      entry.school.name.toLowerCase().includes(q) ||
+      entry.school.city.toLowerCase().includes(q) ||
+      entry.club.name.toLowerCase().includes(q) ||
+      entry.club.circular_sector.toLowerCase().includes(q)
+    );
+  });
 
   const schoolLogs = impactLogs.filter((l) => l.school_id === school.id);
   const approvedLogs = schoolLogs.filter((l) => l.status === 'approved');
@@ -539,6 +554,203 @@ export function StudentGamifiedDashboardView({
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ====================================================================
+       * Full 15-School Island-Wide Leaderboard & Friendly Rivalry Standings
+       * ==================================================================== */}
+      <section className="hai-card overflow-hidden space-y-0">
+        <div className="bg-[#005FA3] text-white p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-[#9CF2F2] text-[#005FA3] text-xs font-bold uppercase tracking-wider">
+                🏆 Island-Wide Gamified Standings
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-white/15 text-white text-xs font-mono">
+                15 Sri Lankan Schools
+              </span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold font-[var(--font-jakarta)] tracking-tight">
+              National School Leaderboard &amp; Friendly Rivalry
+            </h3>
+            <p className="text-xs text-white/80">
+              Live composite rankings across all 15 schools based on verified waste diverted, student sales, and criteria scores.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-center">
+              <div className="text-[10px] text-[#9CF2F2] uppercase font-bold">Our School Rank</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
+                #{schoolEntry.rank} <span className="text-xs text-[#9CF2F2]">of 15</span>
+              </div>
+            </div>
+            <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-center">
+              <div className="text-[10px] text-[#9CF2F2] uppercase font-bold">Our School Points</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
+                {currentScore} <span className="text-xs text-[#9CF2F2]">pts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Rivalry Banner */}
+        <div className="bg-[#E6F1FA] border-b border-[#005FA3]/20 px-6 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-[#005FA3] shrink-0" />
+            <span>
+              {aboveEntry ? (
+                <>
+                  Chasing <strong>#{aboveEntry.rank} {aboveEntry.school.name}</strong> ({aboveEntry.composite_leaderboard_score} pts) —{' '}
+                  <strong className="text-[#005FA3]">
+                    {(aboveEntry.composite_leaderboard_score - currentScore).toFixed(1)} pts needed to overtake #{aboveEntry.rank}!
+                  </strong>
+                </>
+              ) : (
+                <strong className="text-emerald-700">
+                  🏆 Leading #1 Nationally in Sri Lanka! Continue recycling &amp; enterprise sales to stay on top!
+                </strong>
+              )}
+            </span>
+          </div>
+
+          <div className="relative w-full sm:w-64">
+            <Search className="w-3.5 h-3.5 text-[#111010]/50 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={leaderboardSearch}
+              onChange={(e) => setLeaderboardSearch(e.target.value)}
+              placeholder="Find school or district..."
+              className="w-full hai-input pl-8 pr-3 py-1.5 text-xs bg-white"
+            />
+          </div>
+        </div>
+
+        {/* 15 Schools Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="h-10 border-b border-[#111010]/15 bg-[#F0F3F5] font-semibold text-[#111010]/75">
+                <th className="py-2.5 px-4 w-14">Rank</th>
+                <th className="py-2.5 px-4">School &amp; Student Enterprise</th>
+                <th className="py-2.5 px-4 text-right">Recycled (kg)</th>
+                <th className="py-2.5 px-4 text-right">Sales (Rs.)</th>
+                <th className="py-2.5 px-4 text-right">Grant Tier</th>
+                <th className="py-2.5 px-5 text-right">Composite Score</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#111010]/10">
+              {filteredLeaderboard.map((entry) => {
+                const isOurSchool = entry.school.id === school.id;
+                const isExpanded = expandedLeaderboardSchoolId === entry.school.id;
+
+                return (
+                  <React.Fragment key={entry.school.id}>
+                    <tr
+                      onClick={() =>
+                        setExpandedLeaderboardSchoolId(isExpanded ? null : entry.school.id)
+                      }
+                      className={`h-14 transition cursor-pointer ${
+                        isOurSchool
+                          ? 'bg-[#9CF2F2]/35 hover:bg-[#9CF2F2]/50 border-l-4 border-l-[#005FA3] font-bold'
+                          : 'hover:bg-[#E6F1FA]/60'
+                      }`}
+                    >
+                      <td className="py-2.5 px-4 font-mono">
+                        <span
+                          className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                            isOurSchool
+                              ? 'bg-[#005FA3] text-[#9CF2F2] ring-2 ring-[#005FA3]/30'
+                              : entry.rank <= 3
+                              ? 'bg-[#005FA3] text-[#9CF2F2]'
+                              : 'bg-[#F0F3F5] text-[#111010] border border-[#111010]/15'
+                          }`}
+                        >
+                          {entry.rank}
+                        </span>
+                      </td>
+
+                      <td className="py-2.5 px-4">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className={isOurSchool ? 'text-[#005FA3] font-bold' : 'font-semibold text-[#111010]'}>
+                            {entry.school.name}
+                          </span>
+                          <span className="text-[11px] text-[#111010]/60">({entry.school.city})</span>
+                          {isOurSchool && (
+                            <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-[#005FA3] text-[#9CF2F2] uppercase tracking-wider">
+                              ⭐ OUR SCHOOL
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-[#111010]/65 mt-0.5">
+                          {entry.club.name} • {entry.club.circular_sector}
+                        </div>
+                      </td>
+
+                      <td className="py-2.5 px-4 text-right font-mono text-[#14494F]">
+                        {entry.verified_waste_kg} kg
+                      </td>
+
+                      <td className="py-2.5 px-4 text-right font-mono text-[#111010]">
+                        {formatLkr(entry.verified_revenue_usd)}
+                      </td>
+
+                      <td className="py-2.5 px-4 text-right">
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#F0F3F5] text-[#111010]/80">
+                          {entry.topoff_funding_tier.split(' (')[0]}
+                        </span>
+                      </td>
+
+                      <td className="py-2.5 px-5 text-right font-mono font-bold text-sm text-[#005FA3]">
+                        {entry.composite_leaderboard_score} pts
+                      </td>
+                    </tr>
+
+                    {/* Expandable Evaluation Breakdown */}
+                    {isExpanded && (
+                      <tr className="bg-[#FFFFFF]/90 border-b border-[#111010]/15">
+                        <td colSpan={6} className="p-4">
+                          <div className="bg-[#E6F1FA]/60 border border-[#005FA3]/20 rounded-xl p-3.5 space-y-2 text-xs">
+                            <div className="flex items-center justify-between font-bold text-[#005FA3]">
+                              <span>6 National Evaluation Criteria Breakdown for {entry.school.name}:</span>
+                              <span>Total: {entry.composite_leaderboard_score} pts</span>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-[11px]">
+                              <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                <div className="text-[10px] text-[#111010]/60">Relevance (20%)</div>
+                                <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.relevance}/100</div>
+                              </div>
+                              <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                <div className="text-[10px] text-[#111010]/60">Business (20%)</div>
+                                <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.business}/100</div>
+                              </div>
+                              <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                <div className="text-[10px] text-[#111010]/60">Feasibility (15%)</div>
+                                <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.feasibility}/100</div>
+                              </div>
+                              <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                <div className="text-[10px] text-[#111010]/60">Ownership (15%)</div>
+                                <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.student_ownership}/100</div>
+                              </div>
+                              <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                <div className="text-[10px] text-[#111010]/60">Sustain (15%)</div>
+                                <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.sustainability}/100</div>
+                              </div>
+                              <div className="bg-white p-2 rounded border border-[#111010]/10">
+                                <div className="text-[10px] text-[#111010]/60">Commit (15%)</div>
+                                <div className="font-bold font-mono text-[#005FA3]">{entry.criteria_scores.institutional_commitment}/100</div>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </section>
 

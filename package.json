@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "bot": "npx tsx bot/index.ts",
+    "bot:test": "npx tsx bot/index.ts --test",
     "test": "npx tsx src/lib/__tests__/validation-engine.test.ts"
   },
   "dependencies": {

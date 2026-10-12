@@ -5,6 +5,7 @@ import {
 } from '../exif/parser';
 import { handleTelegramBotUpdate } from '../telegram/bot-handler';
 import {
+  findOrFetchImpactLog,
   getFullPlatformSnapshot,
   performExpertAdjudication,
   performTeacherReview,
@@ -272,7 +273,18 @@ async function runVerificationSuite() {
     `✅ [9/9] Telegram Expert Scoring: Expert scored 6 criteria via Telegram (/score log-102), released +${scoredLog102.points_awarded} pts live to dashboard.`
   );
 
-  console.log('\n🎉 ALL 9 CORE ARCHITECTURAL & VALIDATION TESTS PASSED!');
+  // 10. Test Dynamic Log Lookup & Store Hydration
+  const notFound = await findOrFetchImpactLog('log-non-existent-99999');
+  assert.equal(notFound, undefined);
+
+  const existingLog = await findOrFetchImpactLog('log-101');
+  assert.ok(existingLog);
+  assert.equal(existingLog?.id, 'log-101');
+  console.log(
+    '✅ [10/10] Dynamic Log Lookup: findOrFetchImpactLog handles in-memory and missing records gracefully.'
+  );
+
+  console.log('\n🎉 ALL 10 CORE ARCHITECTURAL & VALIDATION TESTS PASSED!');
 }
 
 runVerificationSuite().catch((err) => {

@@ -158,25 +158,24 @@ export default function PlatformDashboardPage() {
     id: NavTab;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
-    count?: number | string;
+    count?: number;
   }> = [
-    { id: 'leaderboard', label: 'School Index', icon: Trophy, count: 15 },
+    { id: 'leaderboard', label: 'School Index', icon: Trophy },
     {
       id: 'student_gamified',
-      label: 'My School (Gamified)',
+      label: 'Student Dashboard',
       icon: Sparkles,
-      count: '15 Logins',
     },
+    { id: 'clubs', label: 'School Clubs', icon: Building2 },
     {
       id: 'verification',
       label: 'Approvals',
       icon: ShieldCheck,
       count: pendingTeacherCount + pendingExpertCount,
     },
-    { id: 'clubs', label: 'School Clubs', icon: Building2 },
     {
       id: 'health_risk',
-      label: 'GIZ Admin & Alerts',
+      label: 'GIZ Alerts',
       icon: Activity,
       count: snapshot.healthAlerts.length,
     },
@@ -196,40 +195,137 @@ export default function PlatformDashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#E6F1FA] text-[#111010]">
       {/* ====================================================================
-       * Top Horizontal SiteHeaderUI (hai.stanford.edu/ai-index + Figma #1:379744)
+       * Spacious 2-Tier Stanford HAI Style Header (Utility Role Bar + Main Nav)
        * ==================================================================== */}
       <header className="sticky top-0 z-30 bg-[#E6F1FA]/95 backdrop-blur-xs border-b border-[#111010]/15">
-        <div className="max-w-[1360px] mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-3">
-          {/* Left: Stanford HAI Style Editorial Lockup */}
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={() => setActiveTab('leaderboard')}
-              className="flex items-center gap-3 text-left group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-[12px_12px_12px_2px] bg-[#005FA3] text-[#9CF2F2] flex items-center justify-center shadow-xs group-hover:bg-[#0B3E6E] transition">
-                <Recycle className="w-5 h-5 stroke-[2.2]" />
-              </div>
-              <div className="flex items-center gap-2.5">
-                <div>
-                  <div className="text-base sm:text-lg font-bold tracking-tight text-[#111010] leading-none">
-                    Haritha Pasal
-                  </div>
-                  <div className="text-[11px] font-medium text-[#111010]/70 mt-0.5">
-                    Sri Lanka • GIZ Pilot
-                  </div>
-                </div>
-                <div className="h-7 w-px bg-[#111010]/20 hidden md:block" />
-                <div className="hidden md:block text-xs font-semibold text-[#005FA3]">
-                  School Circular Index
-                </div>
-              </div>
-            </button>
-          </div>
+        {/* Tier 1: Slim Institutional & Role Switcher Utility Bar */}
+        <div className="bg-[#FFFFFF]/85 border-b border-[#111010]/10">
+          <div className="max-w-[1360px] mx-auto px-4 sm:px-8 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+            {/* Left: Quick 4-Category Role Pills */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#111010]/60 mr-1 hidden sm:inline">
+                View As:
+              </span>
+              <button
+                onClick={() => handleSwitchUser('usr-giz-admin-01', 'health_risk')}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+                  activeUser.role === 'super_admin'
+                    ? 'bg-[#005FA3] text-[#9CF2F2]'
+                    : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+                }`}
+              >
+                1. GIZ Super Admin
+              </button>
+              <button
+                onClick={() => handleSwitchUser('usr-expert-01', 'verification')}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+                  activeUser.role === 'expert_admin'
+                    ? 'bg-[#005FA3] text-[#9CF2F2]'
+                    : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+                }`}
+              >
+                2. Expert Panel
+              </button>
+              <button
+                onClick={() => handleSwitchUser('usr-teacher-01', 'verification')}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+                  activeUser.role === 'teacher'
+                    ? 'bg-[#005FA3] text-[#9CF2F2]'
+                    : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+                }`}
+              >
+                3. Teacher (15)
+              </button>
+              <button
+                onClick={() => handleSwitchUser('usr-student-01', 'student_gamified')}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+                  activeUser.role === 'student'
+                    ? 'bg-[#005FA3] text-[#9CF2F2]'
+                    : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+                }`}
+              >
+                4. Student Club (15)
+              </button>
+            </div>
 
-          {/* Center: Horizontal Navigation Tabs */}
+            {/* Right: Active Login Selector Dropdown */}
+            <div className="flex items-center gap-2.5 ml-auto">
+              <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold text-[#005FA3] font-mono">
+                <UserCheck className="w-3.5 h-3.5" />
+                {activeUser.login_code}
+              </span>
+              <select
+                value={activeUser.id}
+                onChange={(e) => handleSwitchUser(e.target.value)}
+                aria-label="Switch User Login Category"
+                className="hai-input px-2.5 py-1 text-xs font-semibold text-[#111010] cursor-pointer max-w-[240px]"
+              >
+                <optgroup label="1. Super Admin (GIZ)">
+                  {gizUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.login_code} — {u.full_name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="2. Expert Panel (National Validator)">
+                  {expertUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.login_code} — {u.full_name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="3. Teacher Logins (15 Schools)">
+                  {teacherUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.login_code} — {u.school_name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="4. Gamified Student Logins (15 Schools)">
+                  {studentUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.login_code} — {u.school_name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Industry Mentor (Read-Only)">
+                  {mentorUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.login_code} — {u.full_name}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Tier 2: Spacious Main Brand & Primary Navigation Bar */}
+        <div className="max-w-[1360px] mx-auto px-4 sm:px-8 h-16 sm:h-[68px] flex items-center justify-between gap-6">
+          {/* Left: Clean Brand Lockup */}
+          <button
+            onClick={() => setActiveTab('leaderboard')}
+            className="flex items-center gap-3 text-left group cursor-pointer shrink-0"
+          >
+            <div className="w-9 h-9 rounded-[10px_10px_10px_2px] bg-[#005FA3] text-[#9CF2F2] flex items-center justify-center shadow-xs group-hover:bg-[#0B3E6E] transition">
+              <Recycle className="w-5 h-5 stroke-[2.2]" />
+            </div>
+            <div className="flex items-center gap-3">
+              <div>
+                <div className="text-base sm:text-lg font-bold tracking-tight text-[#111010] leading-none">
+                  Haritha Pasal
+                </div>
+                <div className="text-[11px] font-medium text-[#111010]/65 mt-0.5">
+                  Sri Lanka • 15-School Index
+                </div>
+              </div>
+            </div>
+          </button>
+
+          {/* Right: Spacious Horizontal Navigation Tabs */}
           <nav
             aria-label="Primary Navigation"
-            className="hidden xl:flex items-center gap-1"
+            className="hidden lg:flex items-center gap-2"
           >
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -238,13 +334,13 @@ export default function PlatformDashboardPage() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`px-3.5 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                  className={`px-4 py-2 rounded-full text-xs sm:text-[13px] font-semibold flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
                     isActive
                       ? 'bg-[#005FA3] text-[#9CF2F2]'
                       : 'text-[#111010]/80 hover:bg-[#9CF2F2]/60 hover:text-[#005FA3]'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
                   <span>{item.label}</span>
                   {item.count !== undefined && (
                     <span
@@ -261,62 +357,10 @@ export default function PlatformDashboardPage() {
               );
             })}
           </nav>
-
-          {/* Right: 4-Category Role Switcher */}
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="hidden sm:flex flex-col items-end">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#005FA3] flex items-center gap-1">
-                <UserCheck className="w-3 h-3" />
-                {activeUser.login_code || activeUser.role.replace('_', ' ')}
-              </span>
-            </div>
-            <select
-              value={activeUser.id}
-              onChange={(e) => handleSwitchUser(e.target.value)}
-              aria-label="Switch User Login Category"
-              className="hai-input px-2.5 py-2 text-xs font-semibold text-[#111010] cursor-pointer max-w-[235px]"
-            >
-              <optgroup label="1. Super Admin (GIZ)">
-                {gizUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.login_code} — {u.full_name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="2. Expert Panel (National Validator)">
-                {expertUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.login_code} — {u.full_name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="3. Teacher Logins (15 Schools)">
-                {teacherUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.login_code} — {u.school_name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="4. Gamified Student Logins (15 Schools)">
-                {studentUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.login_code} — {u.school_name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Industry Mentor (Read-Only)">
-                {mentorUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.login_code} — {u.full_name}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-          </div>
         </div>
 
         {/* Mobile / Tablet Navigation Strip */}
-        <div className="xl:hidden border-t border-[#111010]/10 px-4 py-2.5 flex items-center gap-1.5 overflow-x-auto">
+        <div className="lg:hidden border-t border-[#111010]/10 px-4 py-2 flex items-center gap-2 overflow-x-auto">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -340,63 +384,7 @@ export default function PlatformDashboardPage() {
       {/* ====================================================================
        * Main Editorial Page Container (hai.stanford.edu/ai-index Grid)
        * ==================================================================== */}
-      <main className="flex-1 max-w-[1360px] w-full mx-auto px-4 sm:px-8 pt-6 sm:pt-10 pb-16 space-y-8">
-        {/* Quick 4-Category Role Switcher Strip */}
-        <div className="hai-card px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-bold text-[#005FA3] uppercase tracking-wider">
-              Quick Role Switch:
-            </span>
-            <button
-              onClick={() => handleSwitchUser('usr-giz-admin-01', 'health_risk')}
-              className={`px-3 py-1 rounded-full font-semibold transition cursor-pointer ${
-                activeUser.role === 'super_admin'
-                  ? 'bg-[#005FA3] text-[#9CF2F2]'
-                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-              }`}
-            >
-              1. Super Admin (GIZ)
-            </button>
-            <button
-              onClick={() => handleSwitchUser('usr-expert-01', 'verification')}
-              className={`px-3 py-1 rounded-full font-semibold transition cursor-pointer ${
-                activeUser.role === 'expert_admin'
-                  ? 'bg-[#005FA3] text-[#9CF2F2]'
-                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-              }`}
-            >
-              2. Expert Panel
-            </button>
-            <button
-              onClick={() => handleSwitchUser('usr-teacher-01', 'verification')}
-              className={`px-3 py-1 rounded-full font-semibold transition cursor-pointer ${
-                activeUser.role === 'teacher'
-                  ? 'bg-[#005FA3] text-[#9CF2F2]'
-                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-              }`}
-            >
-              3. School Teacher (15)
-            </button>
-            <button
-              onClick={() => handleSwitchUser('usr-student-01', 'student_gamified')}
-              className={`px-3 py-1 rounded-full font-semibold transition cursor-pointer ${
-                activeUser.role === 'student'
-                  ? 'bg-[#005FA3] text-[#9CF2F2]'
-                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-              }`}
-            >
-              4. Student Club Gamified Login (15 Schools)
-            </button>
-          </div>
-
-          <button
-            onClick={() => setActiveTab('login_portal')}
-            className="text-xs font-bold text-[#005FA3] hover:underline flex items-center gap-1 cursor-pointer"
-          >
-            <KeyRound className="w-3.5 h-3.5" />
-            <span>View All 15 School Login IDs →</span>
-          </button>
-        </div>
+      <main className="flex-1 max-w-[1360px] w-full mx-auto px-4 sm:px-8 pt-8 sm:pt-10 pb-16 space-y-8">
 
         {/* Stanford HAI AI Index Editorial PageHeader */}
         <section className="pb-8 border-b border-[#111010]/15">

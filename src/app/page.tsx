@@ -6,6 +6,8 @@ import {
   Bot,
   Building2,
   KeyRound,
+  Lock,
+  LogOut,
   Recycle,
   ShieldCheck,
   Sparkles,
@@ -19,6 +21,7 @@ import { TelegramBotWorkbench } from '@/components/TelegramBotWorkbench';
 import { HealthRiskDashboardView } from '@/components/HealthRiskDashboardView';
 import { StudentGamifiedDashboardView } from '@/components/StudentGamifiedDashboardView';
 import { RoleLoginPortalView } from '@/components/RoleLoginPortalView';
+import { AuthLoginPromptModal } from '@/components/AuthLoginPromptModal';
 import { fetchPlatformSnapshotClient } from '@/lib/client/platform-bridge';
 import {
   AuditLogEntry,
@@ -56,11 +59,31 @@ interface SnapshotData {
 export default function PlatformDashboardPage() {
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
   const [activeTab, setActiveTab] = useState<NavTab>('leaderboard');
-  const [activeUserId, setActiveUserId] = useState<string>('usr-giz-admin-01');
+  const [activeUserId, setActiveUserId] = useState<string>('usr-super-admin');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [loginPromptReason, setLoginPromptReason] = useState<string | null>(null);
   const [selectedClubId, setSelectedClubId] = useState<string>('club-01');
 
   useEffect(() => {
-    fetchPlatformSnapshotClient().then((data) => setSnapshot(data));
+    fetchPlatformSnapshotClient().then((data) => {
+      setSnapshot(data);
+      if (typeof window !== 'undefined') {
+        const savedUserId = localStorage.getItem('haritha_auth_user_id');
+        if (savedUserId && data.users.some((u: UserProfile) => u.id === savedUserId)) {
+          setActiveUserId(savedUserId);
+          setIsAuthenticated(true);
+        } else if (savedUserId === '__GUEST__') {
+          setIsAuthenticated(false);
+        } else {
+          // First-time visit: open login prompt with friendly greeting
+          setIsLoginModalOpen(true);
+          setLoginPromptReason(
+            'Welcome to the Haritha Pasal Pilot! Choose a dummy profile (GIZ, Expert, Teacher, or Student) to sign in.'
+          );
+        }
+      }
+    });
   }, []);
 
   if (!snapshot) {
@@ -79,6 +102,10 @@ export default function PlatformDashboardPage() {
 
   const handleSwitchUser = (newUserId: string, targetTab?: NavTab) => {
     setActiveUserId(newUserId);
+    setIsAuthenticated(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('haritha_auth_user_id', newUserId);
+    }
     const found = snapshot.users.find((u) => u.id === newUserId);
     if (found?.club_id) {
       setSelectedClubId(found.club_id);
@@ -90,6 +117,37 @@ export default function PlatformDashboardPage() {
     } else if (found?.role === 'teacher' || found?.role === 'expert_admin') {
       setActiveTab('verification');
     }
+  };
+
+  const handleModalSelectUser = (user: UserProfile) => {
+    handleSwitchUser(user.id);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('haritha_auth_user_id', '__GUEST__');
+    }
+    setActiveTab('leaderboard');
+    setLoginPromptReason(
+      'You have signed out. Select another dummy profile or enter your login code to sign in again.'
+    );
+    setIsLoginModalOpen(true);
+  };
+
+  const handleTabClick = (tabId: NavTab) => {
+    if (!isAuthenticated && (tabId === 'verification' || tabId === 'student_gamified' || tabId === 'health_risk')) {
+      const reason =
+        tabId === 'verification'
+          ? 'Approvals are restricted to School Teachers & the National Expert Panel. Please sign in.'
+          : tabId === 'student_gamified'
+          ? 'The Student Dashboard requires logging in with one of the 15 school student club accounts.'
+          : 'GIZ Alerts & Audit Ledger require signing in as GIZ Super Admin.';
+      setLoginPromptReason(reason);
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setActiveTab(tabId);
   };
 
   const pendingTeacherCount = snapshot.impactLogs.filter(
@@ -199,103 +257,109 @@ export default function PlatformDashboardPage() {
        * ==================================================================== */}
       <header className="sticky top-0 z-30 bg-[#E6F1FA]/95 backdrop-blur-xs border-b border-[#111010]/15">
         {/* Tier 1: Slim Institutional & Role Switcher Utility Bar */}
-        <div className="bg-[#FFFFFF]/85 border-b border-[#111010]/10">
+        <div className="bg-[#FFFFFF]/90 border-b border-[#111010]/10">
           <div className="max-w-[1360px] mx-auto px-4 sm:px-8 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
-            {/* Left: Quick 4-Category Role Pills */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#111010]/60 mr-1 hidden sm:inline">
-                View As:
-              </span>
-              <button
-                onClick={() => handleSwitchUser('usr-giz-admin-01', 'health_risk')}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
-                  activeUser.role === 'super_admin'
-                    ? 'bg-[#005FA3] text-[#9CF2F2]'
-                    : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-                }`}
-              >
-                1. GIZ Super Admin
-              </button>
-              <button
-                onClick={() => handleSwitchUser('usr-expert-01', 'verification')}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
-                  activeUser.role === 'expert_admin'
-                    ? 'bg-[#005FA3] text-[#9CF2F2]'
-                    : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-                }`}
-              >
-                2. Expert Panel
-              </button>
-              <button
-                onClick={() => handleSwitchUser('usr-teacher-01', 'verification')}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
-                  activeUser.role === 'teacher'
-                    ? 'bg-[#005FA3] text-[#9CF2F2]'
-                    : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-                }`}
-              >
-                3. Teacher (15)
-              </button>
-              <button
-                onClick={() => handleSwitchUser('usr-student-01', 'student_gamified')}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
-                  activeUser.role === 'student'
-                    ? 'bg-[#005FA3] text-[#9CF2F2]'
-                    : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-                }`}
-              >
-                4. Student Club (15)
-              </button>
-            </div>
+            {/* Left: Quick 4-Category Role Pills or Guest Notice */}
+            {isAuthenticated ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#111010]/60 mr-1 hidden sm:inline">
+                  Quick Switch:
+                </span>
+                <button
+                  onClick={() => handleSwitchUser('usr-super-admin', 'health_risk')}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+                    activeUser.role === 'super_admin'
+                      ? 'bg-[#005FA3] text-[#9CF2F2]'
+                      : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+                  }`}
+                >
+                  1. GIZ Super Admin
+                </button>
+                <button
+                  onClick={() => handleSwitchUser('usr-expert-01', 'verification')}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+                    activeUser.role === 'expert_admin'
+                      ? 'bg-[#005FA3] text-[#9CF2F2]'
+                      : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+                  }`}
+                >
+                  2. Expert Panel
+                </button>
+                <button
+                  onClick={() => handleSwitchUser('usr-teacher-01', 'verification')}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+                    activeUser.role === 'teacher'
+                      ? 'bg-[#005FA3] text-[#9CF2F2]'
+                      : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+                  }`}
+                >
+                  3. Teacher (15)
+                </button>
+                <button
+                  onClick={() => handleSwitchUser('usr-student-01', 'student_gamified')}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+                    activeUser.role === 'student'
+                      ? 'bg-[#005FA3] text-[#9CF2F2]'
+                      : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+                  }`}
+                >
+                  4. Student Club (15)
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-[#111010]/75">
+                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                <span>
+                  Browsing as <strong>Guest</strong> (Public Index &amp; Clubs). Sign in to validate, score, or log activities.
+                </span>
+              </div>
+            )}
 
-            {/* Right: Active Login Selector Dropdown */}
-            <div className="flex items-center gap-2.5 ml-auto">
-              <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold text-[#005FA3] font-mono">
-                <UserCheck className="w-3.5 h-3.5" />
-                {activeUser.login_code}
-              </span>
-              <select
-                value={activeUser.id}
-                onChange={(e) => handleSwitchUser(e.target.value)}
-                aria-label="Switch User Login Category"
-                className="hai-input px-2.5 py-1 text-xs font-semibold text-[#111010] cursor-pointer max-w-[240px]"
-              >
-                <optgroup label="1. Super Admin (GIZ)">
-                  {gizUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.login_code} — {u.full_name}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="2. Expert Panel (National Validator)">
-                  {expertUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.login_code} — {u.full_name}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="3. Teacher Logins (15 Schools)">
-                  {teacherUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.login_code} — {u.school_name}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="4. Gamified Student Logins (15 Schools)">
-                  {studentUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.login_code} — {u.school_name}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Industry Mentor (Read-Only)">
-                  {mentorUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.login_code} — {u.full_name}
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
+            {/* Right: Active Login Info & Actions */}
+            <div className="flex items-center gap-2 ml-auto">
+              {isAuthenticated ? (
+                <>
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E6F1FA] border border-[#005FA3]/25 text-[11px] font-bold text-[#005FA3]">
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span className="font-mono">{activeUser.login_code}</span>
+                    <span className="hidden md:inline text-[#111010]/70 font-normal">
+                      • {activeUser.full_name.split(' (')[0]}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setLoginPromptReason('Select another profile to switch roles instantly.');
+                      setIsLoginModalOpen(true);
+                    }}
+                    className="hai-btn-secondary px-3 py-1 text-[11px] font-semibold cursor-pointer flex items-center gap-1"
+                    title="Switch Account"
+                  >
+                    <KeyRound className="w-3 h-3 text-[#005FA3]" />
+                    <span>Switch</span>
+                  </button>
+
+                  <button
+                    onClick={handleLogout}
+                    className="px-3 py-1 rounded-full text-[11px] font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer flex items-center gap-1 transition"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-3 h-3 text-rose-600" />
+                    <span>Logout</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                    setLoginPromptReason('Select a dummy profile or enter your login code to authenticate.');
+                    setIsLoginModalOpen(true);
+                  }}
+                  className="hai-btn-primary px-4 py-1 text-xs font-bold cursor-pointer flex items-center gap-1.5"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Sign In / Select Profile</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -333,7 +397,7 @@ export default function PlatformDashboardPage() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleTabClick(item.id)}
                   className={`px-4 py-2 rounded-full text-xs sm:text-[13px] font-semibold flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
                     isActive
                       ? 'bg-[#005FA3] text-[#9CF2F2]'
@@ -366,7 +430,7 @@ export default function PlatformDashboardPage() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleTabClick(item.id)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                   isActive
                     ? 'bg-[#005FA3] text-[#9CF2F2]'
@@ -556,6 +620,16 @@ export default function PlatformDashboardPage() {
           </div>
         </footer>
       </main>
+
+      {/* Authentication & Dummy Profile Login Prompt Modal */}
+      <AuthLoginPromptModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        users={snapshot.users}
+        activeUser={isAuthenticated ? activeUser : null}
+        onSelectUser={handleModalSelectUser}
+        promptReason={loginPromptReason}
+      />
     </div>
   );
 }

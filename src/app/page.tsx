@@ -112,10 +112,14 @@ export default function PlatformDashboardPage() {
     }
     if (targetTab) {
       setActiveTab(targetTab);
+    } else if (found?.role === 'super_admin') {
+      setActiveTab('health_risk');
+    } else if (found?.role === 'expert_admin') {
+      setActiveTab('verification');
+    } else if (found?.role === 'teacher') {
+      setActiveTab('verification');
     } else if (found?.role === 'student') {
       setActiveTab('student_gamified');
-    } else if (found?.role === 'teacher' || found?.role === 'expert_admin') {
-      setActiveTab('verification');
     }
   };
 
@@ -151,104 +155,308 @@ export default function PlatformDashboardPage() {
   };
 
   const pendingTeacherCount = snapshot.impactLogs.filter(
-    (l) => l.status === 'pending'
+    (l) => (l.status === 'pending' || l.status === 'flagged') && l.school_id === activeUser.school_id
   ).length;
+
   const pendingExpertCount = snapshot.impactLogs.filter(
     (l) =>
       l.status === 'pending_expert_review' ||
       (l.random_audit_selected && l.audit_status === 'pending_audit')
   ).length;
 
-  const navMeta: Record<
-    NavTab,
-    { eyebrow: string; title: string; subtitle: string; badge?: string | number }
-  > = {
-    leaderboard: {
-      eyebrow: 'Haritha Pasal • 2026 National Pilot Report',
-      title: 'Sri Lanka School Circular Index',
-      subtitle:
-        'Tracking verified school waste recycled (kg), student enterprise sales (Rs.), and top-off seed funding across 15 participating Sri Lankan schools.',
-      badge: '15 Schools',
-    },
-    student_gamified: {
-      eyebrow: 'Category 4 • 15 Single-User School Student Logins',
-      title: 'Gamified School Student Dashboard',
-      subtitle:
-        'Each of the 15 schools has 1 dedicated student club login featuring live XP tier progress, 6 school quests & badges, friendly rivalry gap, and Telegram activity logging.',
-      badge: activeUser.school_code || '15 Schools',
-    },
-    verification: {
-      eyebrow: 'Categories 2 & 3 • School Teacher & Expert Panel Validation',
-      title: 'Teacher & National Panel Approvals',
-      subtitle:
-        'School Teachers validate campus activities (≤ Rs. 15,000). The Expert Panel & GIZ Admin score larger sales (> Rs. 15,000) and audit a 10% sample.',
-      badge: pendingTeacherCount + pendingExpertCount,
-    },
-    clubs: {
-      eyebrow: 'Participating Schools & Student Enterprises',
-      title: 'School Clubs & Projects',
-      subtitle:
-        'Explore each school’s circular-economy enterprise, student office bearers, teacher-in-charge, and verified recycling & sales ledger.',
-    },
-    telegram_bot: {
-      eyebrow: 'Student Data Entry (@HarithaPasalBot)',
-      title: 'Telegram Activity Submission',
-      subtitle:
-        'Students submit uncompressed activity photos as Documents/Files via Telegram (/log_impact) to verify school GPS coordinates, waste (kg), and sales (Rs.).',
-    },
-    health_risk: {
-      eyebrow: 'Category 1 • Super Admin (GIZ) Governance & Integrity',
-      title: 'School Activity Alerts & Audit Log',
-      subtitle:
-        'GIZ Super Admin monitoring for inactive school clubs (>14 days), off-campus photo GPS coordinates, and high sales reported with zero recycled waste.',
-      badge: snapshot.healthAlerts.length,
-    },
-    login_portal: {
-      eyebrow: '4 User Categories • Role-Based Access Control (RBAC)',
-      title: 'User Logins & 15-School Credentials',
-      subtitle:
-        'Dedicated logins for 1) Super Admin (GIZ), 2) Expert Panel Validators, 3) 15 School Teachers, and 4) 15 Single-User Gamified School Student Logins.',
-      badge: `${snapshot.users.length} Logins`,
-    },
-  };
-
+  // Role-customized navigation items (Shows ONLY tabs relevant to active user profile)
   const navItems: Array<{
     id: NavTab;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     count?: number;
-  }> = [
-    { id: 'leaderboard', label: 'School Index', icon: Trophy },
-    {
-      id: 'student_gamified',
-      label: 'Student Dashboard',
-      icon: Sparkles,
-    },
-    { id: 'clubs', label: 'School Clubs', icon: Building2 },
-    {
-      id: 'verification',
-      label: 'Approvals',
-      icon: ShieldCheck,
-      count: pendingTeacherCount + pendingExpertCount,
-    },
-    {
-      id: 'health_risk',
-      label: 'GIZ Alerts',
-      icon: Activity,
-      count: snapshot.healthAlerts.length,
-    },
-    {
-      id: 'login_portal',
-      label: 'Role Logins',
-      icon: KeyRound,
-    },
-  ];
+  }> = (() => {
+    if (!isAuthenticated) {
+      return [
+        { id: 'leaderboard' as NavTab, label: '15-School Public Index', icon: Trophy },
+        { id: 'clubs' as NavTab, label: 'School Clubs & Models', icon: Building2 },
+        { id: 'login_portal' as NavTab, label: '🔑 Sign In to Your Role', icon: KeyRound },
+      ];
+    }
 
+    // Category 1: GIZ Super Admin Dashboard
+    if (activeUser.role === 'super_admin') {
+      return [
+        {
+          id: 'health_risk' as NavTab,
+          label: 'GIZ Risk Alerts & Health',
+          icon: Activity,
+          count: snapshot.healthAlerts.length,
+        },
+        {
+          id: 'verification' as NavTab,
+          label: 'Algorithm & Policy Weights',
+          icon: ShieldCheck,
+        },
+        {
+          id: 'leaderboard' as NavTab,
+          label: '15-School National Index',
+          icon: Trophy,
+        },
+        {
+          id: 'clubs' as NavTab,
+          label: 'All 15 School Enterprises',
+          icon: Building2,
+        },
+      ];
+    }
+
+    // Category 2: National Expert Panel Evaluator Dashboard
+    if (activeUser.role === 'expert_admin') {
+      return [
+        {
+          id: 'verification' as NavTab,
+          label: 'Expert Scoring & Audit Queue',
+          icon: ShieldCheck,
+          count: pendingExpertCount,
+        },
+        {
+          id: 'telegram_bot' as NavTab,
+          label: 'Teacher Invoices & Dossiers',
+          icon: Bot,
+        },
+        {
+          id: 'leaderboard' as NavTab,
+          label: 'National School Leaderboard',
+          icon: Trophy,
+        },
+        {
+          id: 'clubs' as NavTab,
+          label: 'School Enterprise Dossiers',
+          icon: Building2,
+        },
+      ];
+    }
+
+    // Category 3: School Supervising Teacher Dashboard (Per School)
+    if (activeUser.role === 'teacher') {
+      return [
+        {
+          id: 'verification' as NavTab,
+          label: `${activeUser.school_code || 'School'} Pending Approvals`,
+          icon: ShieldCheck,
+          count: pendingTeacherCount,
+        },
+        {
+          id: 'telegram_bot' as NavTab,
+          label: 'Upload Verified Invoices',
+          icon: Bot,
+        },
+        {
+          id: 'clubs' as NavTab,
+          label: `${activeUser.school_code || 'Our School'} Enterprise`,
+          icon: Building2,
+        },
+        {
+          id: 'leaderboard' as NavTab,
+          label: 'National School Index',
+          icon: Trophy,
+        },
+      ];
+    }
+
+    // Category 4: School Student Club Dashboard (15 Single-User School Logins)
+    return [
+      {
+        id: 'student_gamified' as NavTab,
+        label: `${activeUser.school_code || 'Our School'} Gamified Club`,
+        icon: Sparkles,
+      },
+      {
+        id: 'telegram_bot' as NavTab,
+        label: '📸 Touch Activity Logger',
+        icon: Bot,
+      },
+      {
+        id: 'leaderboard' as NavTab,
+        label: 'National School Leaderboard',
+        icon: Trophy,
+      },
+    ];
+  })();
+
+  // Synchronize activeTab if it doesn't belong to current role's navigation
+  useEffect(() => {
+    if (navItems.length > 0 && !navItems.some((item) => item.id === activeTab)) {
+      setActiveTab(navItems[0].id);
+    }
+  }, [navItems, activeTab]);
+
+  // Role-customized Page Editorial Headers
+  const getPageHeaderMeta = () => {
+    if (!isAuthenticated) {
+      if (activeTab === 'clubs') {
+        return {
+          eyebrow: 'Haritha Pasal • Participating Schools & Enterprises',
+          title: 'School Clubs & Upcycling Models',
+          subtitle:
+            'Explore each school’s circular-economy enterprise, student office bearers, teacher-in-charge, and verified impact ledger.',
+          badge: '15 Schools',
+        };
+      }
+      if (activeTab === 'login_portal') {
+        return {
+          eyebrow: '4 User Categories • Role-Based Access Control',
+          title: 'Sign In to Your Customized Dashboard',
+          subtitle:
+            'Choose your role: 1) GIZ Super Admin, 2) Expert Panel Evaluator, 3) School Supervising Teacher, or 4) School Student Club.',
+          badge: '4 Portals',
+        };
+      }
+      return {
+        eyebrow: 'Haritha Pasal • 2026 National Pilot Report',
+        title: 'Sri Lanka School Circular Index',
+        subtitle:
+          'Tracking verified school waste recycled (kg), student enterprise sales (Rs.), and top-off seed funding across 15 participating Sri Lankan schools.',
+        badge: '15 Schools Public',
+      };
+    }
+
+    if (activeUser.role === 'super_admin') {
+      if (activeTab === 'verification') {
+        return {
+          eyebrow: 'Category 1 • GIZ Sri Lanka National Office (Super Admin)',
+          title: 'Scoring Algorithm & Policy Weights',
+          subtitle:
+            'Configure the environmental-to-financial normalization ratio, macro revenue threshold (> Rs. 15,000), and 6 criteria weights for national grants.',
+          badge: 'GIZ Governance',
+        };
+      }
+      if (activeTab === 'leaderboard') {
+        return {
+          eyebrow: 'Category 1 • GIZ Sri Lanka National Oversight',
+          title: 'National School Circular Index (GIZ View)',
+          subtitle:
+            'Program-wide ranking of all 15 schools with verified waste diverted, enterprise sales generated, and seed grant allocations.',
+          badge: '15 Schools',
+        };
+      }
+      if (activeTab === 'clubs') {
+        return {
+          eyebrow: 'Category 1 • GIZ Sri Lanka National Directory',
+          title: 'All 15 School Enterprise Clubs',
+          subtitle:
+            'Review club business canvases, teachers-in-charge, and verified activity histories across Western, Central, Southern & Northern provinces.',
+          badge: '15 Enterprises',
+        };
+      }
+      return {
+        eyebrow: 'Category 1 • GIZ Sri Lanka National Program Office (Super Admin)',
+        title: 'GIZ Program Governance & Integrity Engine',
+        subtitle:
+          'National monitoring of 15 participating Sri Lankan school enterprises, inactive club alerts (>14 days), GPS campus perimeter violations, and fraud audit ledger.',
+        badge: `${snapshot.healthAlerts.length} Active Alerts`,
+      };
+    }
+
+    if (activeUser.role === 'expert_admin') {
+      if (activeTab === 'telegram_bot') {
+        return {
+          eyebrow: 'Category 2 • National Expert Evaluation Panel',
+          title: 'Teacher Invoices & Scoring Dossiers',
+          subtitle:
+            'Review official sales invoices, bookshop receipts, and weighbridge scale tickets uploaded by supervising teachers, and score via Telegram or web.',
+          badge: 'Dossier Review',
+        };
+      }
+      if (activeTab === 'leaderboard') {
+        return {
+          eyebrow: 'Category 2 • National Expert Evaluation Panel',
+          title: 'National School Composite Leaderboard',
+          subtitle:
+            'Live composite rankings calculated using the 6 core criteria weights (Relevance, Business, Feasibility, Leadership, Sustainability, Commitment).',
+          badge: 'Live Rankings',
+        };
+      }
+      if (activeTab === 'clubs') {
+        return {
+          eyebrow: 'Category 2 • National Expert Evaluation Panel',
+          title: 'Participating School Enterprise Dossiers',
+          subtitle:
+            'Inspect baseline criteria, business model canvases, and student enterprise records across all 15 schools.',
+          badge: '15 Schools',
+        };
+      }
+      return {
+        eyebrow: 'Category 2 • National Expert Evaluation Panel',
+        title: 'Expert Adjudication & Criteria Scoring Queue',
+        subtitle:
+          'Score high-impact enterprise sales (> Rs. 15,000) across 6 selection criteria, and adjudicate the 10% random micro transaction integrity sample.',
+        badge: `${pendingExpertCount} In Queue`,
+      };
+    }
+
+    if (activeUser.role === 'teacher') {
+      if (activeTab === 'telegram_bot') {
+        return {
+          eyebrow: `Category 3 • Supervising Teacher • ${activeUser.school_name} (${activeUser.school_code})`,
+          title: 'Teacher Invoice & Receipt Upload Gateway',
+          subtitle:
+            'Attach verified sales invoices, pola receipts, or waste weighbridge scale tickets for transactions > Rs. 15,000 to forward to GIZ & Expert Panel.',
+          badge: `${activeUser.school_code} Teacher Gateway`,
+        };
+      }
+      if (activeTab === 'clubs') {
+        return {
+          eyebrow: `Category 3 • Supervising Teacher • ${activeUser.school_name} (${activeUser.school_code})`,
+          title: `${activeUser.school_name} Eco Club Enterprise`,
+          subtitle: `Our school’s student office bearers, circular feedstocks, active committee, and verified sales ledger.`,
+          badge: `${activeUser.school_code} Club`,
+        };
+      }
+      if (activeTab === 'leaderboard') {
+        return {
+          eyebrow: `Category 3 • Supervising Teacher • ${activeUser.school_name} (${activeUser.school_code})`,
+          title: 'National 15-School Rankings & Top-Off Grants',
+          subtitle: `Track ${activeUser.school_name}'s national rank, composite score, and progress toward Gold/Platinum seed funding grants.`,
+          badge: `${activeUser.school_code} Rank`,
+        };
+      }
+      return {
+        eyebrow: `Category 3 • Supervising Teacher • ${activeUser.school_name} (${activeUser.school_code})`,
+        title: `${activeUser.school_name} Teacher Approvals Queue`,
+        subtitle: `Validate on-campus micro transactions (≤ Rs. 15,000) submitted by our students to award live points and verify school impact.`,
+        badge: `${pendingTeacherCount} Pending Approval`,
+      };
+    }
+
+    // Category 4: Student Role
+    if (activeTab === 'telegram_bot') {
+      return {
+        eyebrow: `Category 4 • Student Enterprise • ${activeUser.school_name} (${activeUser.school_code})`,
+        title: 'Touch Activity Logger (@HarithaPasalBot)',
+        subtitle:
+          'Child-friendly touch buttons: tap to submit uncompressed activity photos, select enterprise categories, and log recycled kg & sales.',
+        badge: 'No Typing Required',
+      };
+    }
+    if (activeTab === 'leaderboard') {
+      return {
+        eyebrow: `Category 4 • Student Enterprise • ${activeUser.school_name} (${activeUser.school_code})`,
+        title: 'National School Leaderboard',
+        subtitle: `See ${activeUser.school_name}'s current national rank, points gap to the school above, and unlocked seed funding tier.`,
+        badge: `${activeUser.school_code} Standing`,
+      };
+    }
+    return {
+      eyebrow: `Category 4 • Student Enterprise • ${activeUser.school_name} (${activeUser.school_code})`,
+      title: `${activeUser.school_name} Gamified Eco-Enterprise`,
+      subtitle:
+        'Live XP level progress, 6 milestone quests & badges, friendly rivalry gap, and touch-button activity logging.',
+      badge: `${activeUser.school_code} Student Club`,
+    };
+  };
+
+  const currentMeta = getPageHeaderMeta();
   const gizUsers = snapshot.users.filter((u) => u.role === 'super_admin');
   const expertUsers = snapshot.users.filter((u) => u.role === 'expert_admin');
   const teacherUsers = snapshot.users.filter((u) => u.role === 'teacher');
   const studentUsers = snapshot.users.filter((u) => u.role === 'student');
-  const mentorUsers = snapshot.users.filter((u) => u.role === 'mentor');
 
   return (
     <div className="min-h-screen flex flex-col bg-[#E6F1FA] text-[#111010]">
@@ -305,6 +513,44 @@ export default function PlatformDashboardPage() {
                 >
                   4. Student Club (15)
                 </button>
+
+                {/* Sub-selector for 15 Teachers */}
+                {activeUser.role === 'teacher' && teacherUsers.length > 0 && (
+                  <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-[#111010]/15">
+                    <span className="text-[10px] uppercase font-bold text-[#005FA3]">School:</span>
+                    <select
+                      value={activeUser.id}
+                      onChange={(e) => handleSwitchUser(e.target.value, 'verification')}
+                      className="bg-[#E6F1FA] border border-[#005FA3]/30 rounded text-[11px] font-semibold text-[#005FA3] px-2 py-0.5 cursor-pointer outline-none max-w-[170px] truncate"
+                      title="Switch to another School Teacher"
+                    >
+                      {teacherUsers.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.school_code} — {t.school_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Sub-selector for 15 Student Clubs */}
+                {activeUser.role === 'student' && studentUsers.length > 0 && (
+                  <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-[#111010]/15">
+                    <span className="text-[10px] uppercase font-bold text-[#005FA3]">Club:</span>
+                    <select
+                      value={activeUser.id}
+                      onChange={(e) => handleSwitchUser(e.target.value, 'student_gamified')}
+                      className="bg-[#E6F1FA] border border-[#005FA3]/30 rounded text-[11px] font-semibold text-[#005FA3] px-2 py-0.5 cursor-pointer outline-none max-w-[170px] truncate"
+                      title="Switch to another School Student Club"
+                    >
+                      {studentUsers.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.school_code} — {s.school_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2 text-xs text-[#111010]/75">
@@ -368,7 +614,13 @@ export default function PlatformDashboardPage() {
         <div className="max-w-[1360px] mx-auto px-4 sm:px-8 h-16 sm:h-[68px] flex items-center justify-between gap-6">
           {/* Left: Clean Brand Lockup */}
           <button
-            onClick={() => setActiveTab('leaderboard')}
+            onClick={() => {
+              if (activeUser.role === 'super_admin') setActiveTab('health_risk');
+              else if (activeUser.role === 'expert_admin') setActiveTab('verification');
+              else if (activeUser.role === 'teacher') setActiveTab('verification');
+              else if (activeUser.role === 'student') setActiveTab('student_gamified');
+              else setActiveTab('leaderboard');
+            }}
             className="flex items-center gap-3 text-left group cursor-pointer shrink-0"
           >
             <div className="w-9 h-9 rounded-[10px_10px_10px_2px] bg-[#005FA3] text-[#9CF2F2] flex items-center justify-center shadow-xs group-hover:bg-[#0B3E6E] transition">
@@ -377,10 +629,26 @@ export default function PlatformDashboardPage() {
             <div className="flex items-center gap-3">
               <div>
                 <div className="text-base sm:text-lg font-bold tracking-tight text-[#111010] leading-none">
-                  Haritha Pasal
+                  {isAuthenticated
+                    ? activeUser.role === 'super_admin'
+                      ? 'Haritha Pasal • GIZ Governance'
+                      : activeUser.role === 'expert_admin'
+                      ? 'Haritha Pasal • Expert Panel'
+                      : activeUser.role === 'teacher'
+                      ? `Haritha Pasal • ${activeUser.school_code || 'School'}`
+                      : `Haritha Pasal • ${activeUser.school_code || 'Eco Club'}`
+                    : 'Haritha Pasal'}
                 </div>
                 <div className="text-[11px] font-medium text-[#111010]/65 mt-0.5">
-                  Sri Lanka • 15-School Index
+                  {isAuthenticated
+                    ? activeUser.role === 'super_admin'
+                      ? 'Super Admin • National Project Office'
+                      : activeUser.role === 'expert_admin'
+                      ? 'Adjudication & Criteria Evaluation'
+                      : activeUser.role === 'teacher'
+                      ? `Supervising Teacher • ${activeUser.school_name || 'Campus'}`
+                      : `Gamified Eco Club • ${activeUser.school_name || '15 Schools'}`
+                    : 'Sri Lanka • 15-School Index'}
                 </div>
               </div>
             </div>
@@ -454,11 +722,11 @@ export default function PlatformDashboardPage() {
         <section className="pb-8 border-b border-[#111010]/15">
           <div className="flex flex-wrap items-center gap-2.5 mb-3">
             <span className="text-xs font-bold uppercase tracking-[0.06em] text-[#005FA3]">
-              {navMeta[activeTab].eyebrow}
+              {currentMeta.eyebrow}
             </span>
-            {navMeta[activeTab].badge !== undefined && (
+            {currentMeta.badge !== undefined && (
               <span className="hai-cyan-pill text-xs font-bold">
-                {navMeta[activeTab].badge}
+                {currentMeta.badge}
               </span>
             )}
           </div>
@@ -466,12 +734,12 @@ export default function PlatformDashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
             <div className="lg:col-span-7">
               <h1 className="text-3xl sm:text-5xl font-semibold tracking-[-0.035em] leading-[1.04] text-[#111010] font-[var(--font-jakarta)]">
-                {navMeta[activeTab].title}
+                {currentMeta.title}
               </h1>
             </div>
             <div className="lg:col-span-5">
               <p className="text-sm sm:text-base text-[#111010]/75 leading-relaxed">
-                {navMeta[activeTab].subtitle}
+                {currentMeta.subtitle}
               </p>
             </div>
           </div>
@@ -510,7 +778,7 @@ export default function PlatformDashboardPage() {
             clubs={snapshot.clubs}
             impactLogs={snapshot.impactLogs}
             activeUser={activeUser}
-            selectedClubId={selectedClubId}
+            selectedClubId={activeUser.club_id || selectedClubId}
             onSelectClub={setSelectedClubId}
           />
         )}
@@ -522,6 +790,12 @@ export default function PlatformDashboardPage() {
             schools={snapshot.schools}
             impactLogs={snapshot.impactLogs}
             config={snapshot.gamificationConfig}
+            initialSubTab={
+              activeUser.role === 'super_admin'
+                ? 'algorithm_config'
+                : 'macro_scoring'
+            }
+            hideRoleSwitcher={true}
             onSwitchUser={setActiveUserId}
             onRefreshSnapshot={setSnapshot}
           />
@@ -534,6 +808,14 @@ export default function PlatformDashboardPage() {
             users={snapshot.users}
             impactLogs={snapshot.impactLogs}
             telegramMessages={snapshot.telegramMessages}
+            initialRole={
+              activeUser.role === 'expert_admin'
+                ? 'expert'
+                : activeUser.role === 'teacher'
+                ? 'teacher'
+                : 'student'
+            }
+            initialClubId={activeUser.club_id || selectedClubId}
             onRefreshSnapshot={setSnapshot}
             onNavigateToVerification={() => setActiveTab('verification')}
           />

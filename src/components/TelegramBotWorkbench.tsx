@@ -34,6 +34,8 @@ interface TelegramBotWorkbenchProps {
   users: UserProfile[];
   impactLogs: ImpactLog[];
   telegramMessages: TelegramBotOutboundMessage[];
+  initialRole?: 'student' | 'teacher' | 'expert';
+  initialClubId?: string;
   onRefreshSnapshot: (snapshot: any) => void;
   onNavigateToVerification: () => void;
 }
@@ -53,11 +55,28 @@ export function TelegramBotWorkbench({
   users,
   impactLogs,
   telegramMessages,
+  initialRole,
+  initialClubId,
   onRefreshSnapshot,
   onNavigateToVerification,
 }: TelegramBotWorkbenchProps) {
-  const [selectedClubId, setSelectedClubId] = useState<string>('club-01');
-  const [activeBotRole, setActiveBotRole] = useState<'student' | 'teacher' | 'expert'>('teacher');
+  const [selectedClubId, setSelectedClubId] = useState<string>(initialClubId || 'club-01');
+  const [activeBotRole, setActiveBotRole] = useState<'student' | 'teacher' | 'expert'>(
+    initialRole || 'teacher'
+  );
+
+  React.useEffect(() => {
+    if (initialRole) {
+      setActiveBotRole(initialRole);
+    }
+  }, [initialRole]);
+
+  React.useEffect(() => {
+    if (initialClubId) {
+      setSelectedClubId(initialClubId);
+    }
+  }, [initialClubId]);
+
   const [botStage, setBotStage] = useState<string>('IDLE');
   const [chatInput, setChatInput] = useState<string>('');
   const [isSending, setIsSending] = useState<boolean>(false);

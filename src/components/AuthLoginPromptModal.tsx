@@ -37,7 +37,7 @@ export function AuthLoginPromptModal({
   onSelectUser,
   promptReason,
 }: AuthLoginPromptModalProps) {
-  const [activeTab, setActiveTab] = useState<'dummy_quick' | 'code_login'>('dummy_quick');
+  const [activeTab, setActiveTab] = useState<'code_login' | 'dummy_quick'>('code_login');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<
     'all' | 'super_admin' | 'expert_admin' | 'teacher' | 'student'
   >('all');
@@ -80,12 +80,13 @@ export function AuthLoginPromptModal({
         u.email.toLowerCase() === clean ||
         u.login_code?.toLowerCase() === clean ||
         u.id.toLowerCase() === clean ||
-        (u.school_code && u.school_code.toLowerCase() === clean)
+        (u.school_code && u.school_code.toLowerCase() === clean) ||
+        (clean.endsWith('-club') && u.login_code?.toLowerCase() === `${clean.replace('-club', '')}-student`)
     );
 
     if (!match) {
       setErrorMessage(
-        `No account found matching "${loginInput}". Try: GIZ-SUPER-ADMIN, EXPERT-PANEL-01, TEACHER-SCH-01, or STUDENT-SCH-01.`
+        `No account found matching "${loginInput}". Try: GIZ-SUPER-ADMIN, EXPERT-PANEL-01, SCH-01-TEACHER, or SCH-01-STUDENT.`
       );
       return;
     }
@@ -111,7 +112,7 @@ export function AuthLoginPromptModal({
               <span>Haritha Pasal • Authentication Gateway</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-1">
-              Select or Sign In to a Pilot Account
+              Sign In to Your Role Dashboard
             </h2>
             <p className="text-xs sm:text-sm text-[#E6F1FA]/85 mt-1 max-w-xl">
               {promptReason ||
@@ -131,18 +132,6 @@ export function AuthLoginPromptModal({
         {/* Tab Navigation */}
         <div className="flex border-b border-[#111010]/12 bg-[#F0F3F5] px-6 pt-3 gap-2">
           <button
-            onClick={() => setActiveTab('dummy_quick')}
-            className={`px-4 py-2.5 text-xs font-bold rounded-t-lg transition flex items-center gap-2 cursor-pointer ${
-              activeTab === 'dummy_quick'
-                ? 'bg-[#FFFFFF] text-[#005FA3] border-t-2 border-t-[#005FA3] shadow-xs'
-                : 'text-[#111010]/70 hover:text-[#111010]'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>1-Click Dummy Profiles ({users.length})</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('code_login')}
             className={`px-4 py-2.5 text-xs font-bold rounded-t-lg transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'code_login'
@@ -151,7 +140,19 @@ export function AuthLoginPromptModal({
             }`}
           >
             <KeyRound className="w-4 h-4" />
-            <span>Login Code / Email &amp; Password</span>
+            <span>Sign In with Credentials</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('dummy_quick')}
+            className={`px-4 py-2.5 text-xs font-bold rounded-t-lg transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'dummy_quick'
+                ? 'bg-[#FFFFFF] text-[#005FA3] border-t-2 border-t-[#005FA3] shadow-xs'
+                : 'text-[#111010]/70 hover:text-[#111010]'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Role Accounts Directory ({users.length})</span>
           </button>
         </div>
 

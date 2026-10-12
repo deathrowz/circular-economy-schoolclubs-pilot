@@ -314,9 +314,9 @@ export function StudentGamifiedDashboardView({
   return (
     <div className="space-y-8">
       {/* ====================================================================
-       * 15-School Single-User Student Login Selector Bar
+       * Generic School Club Login Status Banner (Role-Locked)
        * ==================================================================== */}
-      <div className="hai-card p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="hai-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[12px_12px_12px_2px] bg-[#005FA3] text-[#9CF2F2] flex items-center justify-center font-mono font-bold text-xs shrink-0">
             {school.code}
@@ -324,37 +324,21 @@ export function StudentGamifiedDashboardView({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[#005FA3]">
-                Single-User School Student Login (1 of 15 Schools)
+                Generic School Club Login • {school.name}
               </span>
               <span className="hai-cyan-pill font-mono text-[11px] font-bold">
                 ID: {currentStudentUser.login_code}
               </span>
             </div>
             <p className="text-xs text-[#111010]/70 mt-0.5">
-              Each of the 15 schools has 1 dedicated student club login with live gamification, quests, and activity logging.
+              Logged in to the official student eco club enterprise portal for {school.name} ({school.city}).
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <label
-            htmlFor="student-school-login-select"
-            className="text-xs font-semibold text-[#111010]/70"
-          >
-            Switch School Student Login (15):
-          </label>
-          <select
-            id="student-school-login-select"
-            value={currentStudentUser.id}
-            onChange={(e) => onSwitchUser(e.target.value)}
-            className="hai-input px-3.5 py-2 text-xs font-semibold text-[#111010] cursor-pointer"
-          >
-            {studentUsers.map((su) => (
-              <option key={su.id} value={su.id}>
-                {su.login_code} • {su.school_name} ({su.club_name})
-              </option>
-            ))}
-          </select>
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#111010]/70">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+          <span>Active Authenticated Session</span>
         </div>
       </div>
 

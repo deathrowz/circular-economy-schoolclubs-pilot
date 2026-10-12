@@ -683,7 +683,7 @@ export const PILOT_CLUBS: Club[] = CLUB_DEFINITIONS.map((def) => {
   };
 });
 
-// 15 Single-User School Student Logins (1 shared gamified student login per school across all 15 schools)
+// 15 Generic School Logins (1 shared gamified student login per school across all 15 schools)
 export const SCHOOL_STUDENT_LOGINS: UserProfile[] = CLUB_DEFINITIONS.map((def, idx) => {
   const school = PILOT_SCHOOLS[def.schoolIdx];
   const num = String(idx + 1).padStart(2, '0');
@@ -692,7 +692,7 @@ export const SCHOOL_STUDENT_LOGINS: UserProfile[] = CLUB_DEFINITIONS.map((def, i
     email: `${school.code.toLowerCase()}.club@harithapasal.lk`,
     login_code: `${school.code}-STUDENT`,
     organization: school.name,
-    full_name: `${ def.studentLead } (${school.name} — Student Club Login)`,
+    full_name: `${school.name} Eco Club (Student Portal)`,
     role: 'student',
     school_id: school.id,
     school_name: school.name,

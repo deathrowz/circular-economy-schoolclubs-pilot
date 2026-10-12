@@ -49,7 +49,8 @@ export function RoleLoginPortalView({
     'all' | 'super_admin' | 'expert_admin' | 'teacher' | 'student'
   >('all');
   const [schoolSearch, setSchoolSearch] = useState('');
-  const [quickLoginCode, setQuickLoginCode] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [passwordInput, setPasswordInput] = useState('Pilot2026!');
   const [loginFeedback, setLoginFeedback] = useState<string | null>(null);
 
   const gizAdmins = users.filter((u) => u.role === 'super_admin');
@@ -57,21 +58,32 @@ export function RoleLoginPortalView({
   const teacherUsers = users.filter((u) => u.role === 'teacher');
   const studentUsers = users.filter((u) => u.role === 'student');
 
-  const handleQuickCodeSignIn = (e: React.FormEvent) => {
+  const handleCredentialsSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = quickLoginCode.trim().toUpperCase();
-    if (!cleaned) return;
+    const cleanId = loginIdentifier.trim().toLowerCase();
+    if (!cleanId) {
+      setLoginFeedback('Please enter your Login ID, School Code, or Email.');
+      return;
+    }
 
-    const matched = users.find(
-      (u) =>
-        u.login_code?.toUpperCase() === cleaned ||
-        u.email.toUpperCase() === cleaned ||
-        u.school_code?.toUpperCase() === cleaned
-    );
+    const matched = users.find((u) => {
+      const email = u.email.toLowerCase();
+      const code = u.login_code?.toLowerCase() || '';
+      const sc = u.school_code?.toLowerCase() || '';
+      const sname = u.school_name?.toLowerCase() || '';
+      return (
+        email === cleanId ||
+        code === cleanId ||
+        sc === cleanId ||
+        (code.startsWith(sc) && cleanId.includes(sc)) ||
+        (cleanId.endsWith('-club') && code === `${cleanId.replace('-club', '')}-student`) ||
+        sname.includes(cleanId)
+      );
+    });
 
     if (!matched) {
       setLoginFeedback(
-        `No account found for "${quickLoginCode}". Try GIZ-SUPER-ADMIN, EXPERT-PANEL-01, SCH-01-TEACHER, or SCH-01-STUDENT.`
+        `No account found matching "${loginIdentifier}". Try GIZ-SUPER-ADMIN, EXPERT-PANEL-01, SCH-01-TEACHER, or SCH-01-STUDENT.`
       );
       return;
     }
@@ -97,42 +109,47 @@ export function RoleLoginPortalView({
   return (
     <div className="space-y-8">
       {/* ====================================================================
-       * 4 User Categories Overview & Quick Access Code Login Bar
+       * 4 User Categories Overview & Real Credentials Sign In Bar
        * ==================================================================== */}
       <section className="hai-zeal-banner p-6 sm:p-8 space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/20">
           <div className="space-y-1.5 max-w-2xl">
             <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.06em] text-[#9CF2F2]">
               <KeyRound className="w-4 h-4" />
-              <span>Role-Based Access Control (RBAC) • 4 User Categories</span>
+              <span>Role-Based Authentication Gateway • 4 User Categories</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-semibold text-white font-[var(--font-jakarta)]">
               Sign In to Your Role Dashboard
             </h2>
             <p className="text-xs sm:text-sm text-white/85">
-              Currently signed in as{' '}
-              <strong className="text-[#9CF2F2]">{activeUser.full_name}</strong> (
-              <span className="font-mono">{activeUser.login_code}</span>). Select any of the 4 user categories below or enter a school login code.
+              Enter your official role credentials below or choose from the 4 categories to access your wired dashboard.
             </p>
           </div>
 
-          {/* Quick Login by Access Code */}
+          {/* Real Credentials Sign In Form */}
           <form
-            onSubmit={handleQuickCodeSignIn}
+            onSubmit={handleCredentialsSignIn}
             className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0"
           >
             <input
               type="text"
-              value={quickLoginCode}
-              onChange={(e) => setQuickLoginCode(e.target.value)}
-              placeholder="Enter Login ID (e.g. SCH-01-STUDENT)..."
-              className="px-4 py-2.5 rounded-[8px_8px_8px_0px] bg-white text-[#111010] text-xs font-mono font-semibold w-full sm:w-64 focus:outline-none"
+              value={loginIdentifier}
+              onChange={(e) => setLoginIdentifier(e.target.value)}
+              placeholder="Login ID or Email (e.g. SCH-01-STUDENT)..."
+              className="px-4 py-2.5 rounded-[8px_8px_8px_0px] bg-white text-[#111010] text-xs font-mono font-semibold w-full sm:w-64 focus:outline-none placeholder:text-gray-400"
+            />
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="Password"
+              className="px-3.5 py-2.5 rounded-[8px_8px_8px_0px] bg-white text-[#111010] text-xs font-mono font-semibold w-full sm:w-32 focus:outline-none"
             />
             <button
               type="submit"
-              className="hai-btn-on-zeal px-5 py-2.5 text-xs font-bold cursor-pointer"
+              className="hai-btn-on-zeal px-5 py-2.5 text-xs font-bold cursor-pointer whitespace-nowrap"
             >
-              Sign In with Code →
+              Sign In →
             </button>
           </form>
         </div>
@@ -217,18 +234,18 @@ export function RoleLoginPortalView({
             </button>
           </div>
 
-          {/* 4. 15 Single-User School Student Logins */}
+          {/* 4. 15 Generic School Logins */}
           <div className="bg-white/10 border border-white/25 rounded-[18px_18px_18px_4px] p-5 flex flex-col justify-between gap-4">
             <div>
               <div className="flex items-center justify-between text-xs font-bold text-[#9CF2F2]">
-                <span>4. Student Club Login</span>
+                <span>4. Generic School Club Login</span>
                 <Sparkles className="w-4 h-4" />
               </div>
               <div className="mt-2 text-lg font-bold text-white">
-                15 Gamified School Logins
+                15 Generic School Logins
               </div>
               <p className="text-xs text-white/80 mt-1">
-                1 single-user login per school with XP progress bar, 6 badges, rivalry tracker &amp; Telegram bot.
+                1 shared eco club login per school with XP progress, quests, badges, rivalry tracker &amp; touch bot.
               </p>
             </div>
             <button
@@ -237,7 +254,7 @@ export function RoleLoginPortalView({
               }
               className="hai-btn-on-zeal w-full py-2 text-xs font-bold cursor-pointer"
             >
-              Open Gamified Student View →
+              Sign In as School Club →
             </button>
           </div>
         </div>
@@ -351,10 +368,10 @@ export function RoleLoginPortalView({
               Categories 3 &amp; 4 • 15 Participating Sri Lankan Schools
             </span>
             <h3 className="text-xl font-semibold text-[#111010] font-[var(--font-jakarta)] mt-0.5">
-              15 Single-User School Student Logins &amp; 15 School Teacher Validators
+              15 Generic School Logins &amp; 15 School Teacher Validators
             </h3>
             <p className="text-xs text-[#111010]/70 mt-0.5">
-              Each school has 1 shared gamified student club login (`SCH-XX-STUDENT`) and 1 supervising teacher validator login (`SCH-XX-TEACHER`).
+              Each school has 1 shared generic student club login (`SCH-XX-STUDENT` / `SCH-XX-CLUB`) and 1 supervising teacher validator login (`SCH-XX-TEACHER`).
             </p>
           </div>
 
@@ -377,7 +394,7 @@ export function RoleLoginPortalView({
                 <th className="py-3 px-6">School &amp; Club</th>
                 <th className="py-3 px-4">Rank &amp; Grant Tier</th>
                 <th className="py-3 px-4">
-                  Single-User Student Login (Gamified Dashboard)
+                  Generic School Club Login (Student Portal)
                 </th>
                 <th className="py-3 px-6">
                   School Teacher Login (School-Level Validator)
@@ -426,7 +443,7 @@ export function RoleLoginPortalView({
                       </div>
                     </td>
 
-                    {/* 3. Single-User Student Login (1 per school) */}
+                    {/* 3. Generic School Club Login (1 per school) */}
                     <td className="py-4 px-4">
                       {studentAccount && (
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 hai-chrome-box p-3">
@@ -452,8 +469,8 @@ export function RoleLoginPortalView({
                             }`}
                           >
                             {isCurrentStudent
-                              ? '✓ Active Student'
-                              : 'Student Login →'}
+                              ? '✓ Active School'
+                              : 'Sign In as School Club →'}
                           </button>
                         </div>
                       )}
@@ -486,7 +503,7 @@ export function RoleLoginPortalView({
                           >
                             {isCurrentTeacher
                               ? '✓ Active Teacher'
-                              : 'Teacher Login →'}
+                              : 'Sign In as Teacher →'}
                           </button>
                         </div>
                       )}

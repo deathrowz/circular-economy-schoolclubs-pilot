@@ -242,46 +242,21 @@ export function TelegramBotWorkbench({
           </div>
         </div>
 
-        {/* 3 Pipeline Role Simulation Tabs */}
+        {/* Pipeline Role Mode Indicator */}
         <div className="pt-2 border-t border-[#111010]/12 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
             <span className="font-bold text-[#005FA3] uppercase tracking-wider">
-              Simulate Telegram Role:
+              {activeBotRole === 'student'
+                ? 'Student Touch Gateway • Photo & Waste Logger'
+                : activeBotRole === 'teacher'
+                ? 'Teacher Gateway • Invoice & Scale Ticket Upload'
+                : 'Expert Gateway • Scoring Dossier Review'}
             </span>
-            <button
-              onClick={() => setActiveBotRole('student')}
-              className={`px-3 py-1.5 rounded-full font-semibold transition cursor-pointer ${
-                activeBotRole === 'student'
-                  ? 'bg-[#005FA3] text-[#9CF2F2]'
-                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-              }`}
-            >
-              1. Student Mode (/log_impact)
-            </button>
-            <button
-              onClick={() => setActiveBotRole('teacher')}
-              className={`px-3 py-1.5 rounded-full font-semibold transition cursor-pointer ${
-                activeBotRole === 'teacher'
-                  ? 'bg-[#005FA3] text-[#9CF2F2]'
-                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-              }`}
-            >
-              2. Teacher Mode (Upload Invoice)
-            </button>
-            <button
-              onClick={() => setActiveBotRole('expert')}
-              className={`px-3 py-1.5 rounded-full font-semibold transition cursor-pointer ${
-                activeBotRole === 'expert'
-                  ? 'bg-[#005FA3] text-[#9CF2F2]'
-                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
-              }`}
-            >
-              3. Expert Mode (/score via Telegram)
-            </button>
           </div>
 
           <div className="text-xs text-[#111010]/70 font-mono">
-            Sender: <strong className="text-[#005FA3]">{currentActor.full_name.split(' (')[0]}</strong> ({currentActor.role})
+            Sender: <strong className="text-[#005FA3]">{currentActor.full_name}</strong> ({currentActor.role})
           </div>
         </div>
       </div>

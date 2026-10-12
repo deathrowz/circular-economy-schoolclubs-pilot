@@ -308,11 +308,11 @@ export default function PlatformDashboardPage() {
       }
       if (activeTab === 'login_portal') {
         return {
-          eyebrow: '4 User Categories • Role-Based Access Control',
-          title: 'Sign In to Your Customized Dashboard',
+          eyebrow: 'Universal Authentication Gateway • Role-Based Access Control',
+          title: 'Sign In to Your Dashboard',
           subtitle:
-            'Choose your role: 1) GIZ Super Admin, 2) Expert Panel Evaluator, 3) School Supervising Teacher, or 4) School Student Club.',
-          badge: '4 Portals',
+            'Enter your Login ID or Email address and password. The platform automatically verifies your credentials and dispatches you to your customized role dashboard.',
+          badge: 'Universal Sign-In',
         };
       }
       return {

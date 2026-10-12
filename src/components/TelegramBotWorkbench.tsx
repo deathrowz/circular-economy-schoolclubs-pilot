@@ -62,6 +62,12 @@ export function TelegramBotWorkbench({
   const [chatInput, setChatInput] = useState<string>('');
   const [isSending, setIsSending] = useState<boolean>(false);
   const [selectedInvoiceLogId, setSelectedInvoiceLogId] = useState<string>('log-102');
+  const [botQuickActions, setBotQuickActions] = useState<Array<{ label: string; value: string; variant?: string }>>([
+    { label: '📸 Log Activity', value: '/log_impact', variant: 'primary' },
+    { label: '📊 Club Status', value: '/status', variant: 'secondary' },
+    { label: '🏆 Leaderboard', value: '/leaderboard', variant: 'accent' },
+    { label: '❓ Photo Guide', value: '/photo_guide', variant: 'secondary' },
+  ]);
 
   const selectedClub = clubs.find((c) => c.id === selectedClubId) || clubs[0];
   const selectedSchool =
@@ -92,7 +98,7 @@ export function TelegramBotWorkbench({
       text:
         `Ayubowan / Vanakkam! Welcome to the Haritha Pasal Circular Enterprise Telegram Gateway (${selectedClub.name} • ${selectedSchool.name}).\n\n` +
         `📋 COMPLETE VERIFICATION PIPELINE ACTIVE:\n` +
-        `1. Students: Log activities & photos via /log_impact\n` +
+        `1. Students: Touch buttons for /log_impact & choices without typing\n` +
         `2. Teachers: Upload verified invoices & receipts via /upload_invoice <log_id>\n` +
         `3. GIZ & Experts: Review invoices & submit selection criteria scores via /score <log_id> ...\n\n` +
         `Switch the role tab above to simulate any step of the pipeline!`,
@@ -139,6 +145,7 @@ export function TelegramBotWorkbench({
       });
 
       if (data.stage) setBotStage(data.stage);
+      if (data.quickActions) setBotQuickActions(data.quickActions);
       if (data.snapshot) onRefreshSnapshot(data.snapshot);
 
       appendBubble({
@@ -532,61 +539,144 @@ export function TelegramBotWorkbench({
 
             {/* 3. STUDENT ACTIVITY SUBMISSION ACTION PAD */}
             {activeBotRole === 'student' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  disabled={isSending}
-                  onClick={() =>
-                    sendWebhookUpdate(
-                      {
-                        actorRole: 'student',
-                        document: {
-                          fileName: `${selectedSchool.code}_ACTIVITY.JPG`,
-                          mimeType: 'image/jpeg',
-                          simulatedExif: {
-                            timestamp: new Date().toISOString(),
-                            lat: Number((selectedSchool.campus_lat + 0.0001).toFixed(6)),
-                            lng: Number((selectedSchool.campus_lng - 0.0001).toFixed(6)),
-                            deviceMake: 'Samsung',
-                            deviceModel: 'Galaxy A54 (Uncompressed)',
+              <div className="space-y-3">
+                {/* Contextual Quick-Action Buttons / Choice Chips */}
+                {botQuickActions.length > 0 && (
+                  <div className="space-y-1.5 pb-1">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-[#005FA3]">
+                      <span>✨ Tap to Select (No typing required):</span>
+                      {botStage !== 'IDLE' && (
+                        <button
+                          onClick={() => sendWebhookUpdate({ text: '/cancel' }, '❌ Cancel', 'Cancel Flow', 'student')}
+                          className="text-rose-700 hover:underline cursor-pointer text-[10px]"
+                        >
+                          ❌ Cancel Current Flow
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {botQuickActions.map((qa) => (
+                        <button
+                          key={qa.label}
+                          disabled={isSending}
+                          onClick={() => sendWebhookUpdate({ text: qa.value }, qa.label, 'Quick Tap', 'student')}
+                          className={`px-3 py-1.5 rounded-[8px_8px_8px_2px] text-xs font-semibold transition cursor-pointer flex items-center gap-1 shadow-2xs ${
+                            qa.variant === 'danger'
+                              ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200'
+                              : qa.variant === 'accent'
+                              ? 'bg-[#14494F] hover:bg-[#005FA3] text-white border border-[#14494F]'
+                              : qa.variant === 'secondary'
+                              ? 'bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] border border-[#111010]/15'
+                              : 'bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 text-[#005FA3] border border-[#005FA3]/30'
+                          }`}
+                        >
+                          <span>{qa.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Photo Simulation Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    disabled={isSending}
+                    onClick={() =>
+                      sendWebhookUpdate(
+                        {
+                          actorRole: 'student',
+                          document: {
+                            fileName: `${selectedSchool.code}_ACTIVITY.JPG`,
+                            mimeType: 'image/jpeg',
+                            simulatedExif: {
+                              timestamp: new Date().toISOString(),
+                              lat: Number((selectedSchool.campus_lat + 0.0001).toFixed(6)),
+                              lng: Number((selectedSchool.campus_lng - 0.0001).toFixed(6)),
+                              deviceMake: 'Samsung',
+                              deviceModel: 'Galaxy A54 (Uncompressed)',
+                            },
                           },
                         },
-                      },
-                      `📎 [Student Sent Valid EXIF File: ${selectedSchool.code}_ACTIVITY.JPG]`,
-                      'Valid EXIF File',
-                      'student'
-                    )
-                  }
-                  className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 border border-[#005FA3]/30 text-left transition cursor-pointer"
-                >
-                  <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
-                    <CloudUpload className="w-3.5 h-3.5 shrink-0" />
-                    <span>Send School Activity File</span>
-                  </div>
-                  <div className="text-[10px] text-[#111010]/70 mt-0.5">
-                    Starts 4-step activity logging
-                  </div>
-                </button>
+                        `📎 [Student Sent Valid EXIF File: ${selectedSchool.code}_ACTIVITY.JPG]`,
+                        'Valid EXIF File',
+                        'student'
+                      )
+                    }
+                    className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 border border-[#005FA3]/30 text-left transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
+                      <CloudUpload className="w-3.5 h-3.5 shrink-0" />
+                      <span>Send School Activity File</span>
+                    </div>
+                    <div className="text-[10px] text-[#111010]/70 mt-0.5">
+                      Starts 4-step activity logging
+                    </div>
+                  </button>
 
-                <button
-                  disabled={isSending}
-                  onClick={() =>
-                    sendWebhookUpdate(
-                      { sentAsCompressedPhoto: true },
-                      '📷 [Sent Normal Compressed Photo]',
-                      'Compressed Photo',
-                      'student'
-                    )
-                  }
-                  className="p-2.5 rounded-[10px_10px_10px_2px] bg-rose-50 hover:bg-rose-100 border border-rose-300 text-left transition cursor-pointer"
-                >
-                  <div className="flex items-center gap-1.5 text-rose-800 font-bold text-xs">
-                    <CameraOff className="w-3.5 h-3.5 shrink-0" />
-                    <span>Test Compressed Photo</span>
+                  <button
+                    disabled={isSending}
+                    onClick={() =>
+                      sendWebhookUpdate(
+                        { sentAsCompressedPhoto: true },
+                        '📷 [Sent Normal Compressed Photo]',
+                        'Compressed Photo',
+                        'student'
+                      )
+                    }
+                    className="p-2.5 rounded-[10px_10px_10px_2px] bg-rose-50 hover:bg-rose-100 border border-rose-300 text-left transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5 text-rose-800 font-bold text-xs">
+                      <CameraOff className="w-3.5 h-3.5 shrink-0" />
+                      <span>Test Compressed Photo</span>
+                    </div>
+                    <div className="text-[10px] text-rose-700/80 mt-0.5">
+                      Bot rejects (EXIF stripped)
+                    </div>
+                  </button>
+                </div>
+
+                {/* Persistent Student Touch Keyboard (when IDLE) */}
+                {botStage === 'IDLE' && (
+                  <div className="pt-1 border-t border-[#111010]/10">
+                    <div className="text-[10px] font-bold text-[#005FA3] uppercase tracking-wider mb-1.5">
+                      Telegram Touch Keyboard:
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        disabled={isSending}
+                        onClick={() => sendWebhookUpdate({ text: '/log_impact' }, '📸 Log New Activity', 'Touch Keyboard', 'student')}
+                        className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#005FA3] text-[#9CF2F2] font-bold text-xs hover:bg-[#0B3E6E] transition cursor-pointer text-left flex items-center justify-between"
+                      >
+                        <span>📸 Log New Activity</span>
+                        <span className="text-[10px] text-white/80">Tap here</span>
+                      </button>
+                      <button
+                        disabled={isSending}
+                        onClick={() => sendWebhookUpdate({ text: '/status' }, '📊 Our Club Status', 'Touch Keyboard', 'student')}
+                        className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] font-bold text-xs border border-[#111010]/15 transition cursor-pointer text-left flex items-center justify-between"
+                      >
+                        <span>📊 Our Club Status</span>
+                        <span className="text-[10px] text-[#005FA3]">Summary</span>
+                      </button>
+                      <button
+                        disabled={isSending}
+                        onClick={() => sendWebhookUpdate({ text: '/leaderboard' }, '🏆 View Leaderboard', 'Touch Keyboard', 'student')}
+                        className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#E9F5F4] hover:bg-[#9CF2F2]/60 text-[#14494F] font-bold text-xs border border-[#14494F]/30 transition cursor-pointer text-left flex items-center justify-between"
+                      >
+                        <span>🏆 View Leaderboard</span>
+                        <span className="text-[10px] text-[#14494F]">Rankings</span>
+                      </button>
+                      <button
+                        disabled={isSending}
+                        onClick={() => sendWebhookUpdate({ text: '/photo_guide' }, '❓ How to Send Photo', 'Touch Keyboard', 'student')}
+                        className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] font-bold text-xs border border-[#111010]/15 transition cursor-pointer text-left flex items-center justify-between"
+                      >
+                        <span>❓ How to Send Photo</span>
+                        <span className="text-[10px] text-[#111010]/60">Guide</span>
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-[10px] text-rose-700/80 mt-0.5">
-                    Bot rejects (EXIF stripped)
-                  </div>
-                </button>
+                )}
               </div>
             )}
 

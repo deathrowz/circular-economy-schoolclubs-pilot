@@ -4,25 +4,39 @@
  * Also integrated directly with Next.js Webhook at `/api/telegram/webhook`.
  */
 
-import { handleTelegramBotUpdate } from '../src/lib/telegram/bot-handler';
+import {
+  handleTelegramBotUpdate,
+  TelegramReplyMarkup,
+} from '../src/lib/telegram/bot-handler';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const TELEGRAM_FILE_API = `https://api.telegram.org/file/bot${BOT_TOKEN}`;
 
-async function sendTelegramMessage(chatId: number | string, text: string) {
+async function sendTelegramMessage(
+  chatId: number | string,
+  text: string,
+  replyMarkup?: TelegramReplyMarkup
+) {
   if (!BOT_TOKEN || BOT_TOKEN.includes('your-telegram-bot-token')) {
     console.log(`[Bot Reply -> Chat ${chatId}]:\n${text}\n`);
+    if (replyMarkup) {
+      console.log(`[Buttons / Keyboards]:`, JSON.stringify(replyMarkup, null, 2));
+    }
     return;
+  }
+  const payload: Record<string, any> = {
+    chat_id: chatId,
+    text,
+    parse_mode: 'Markdown',
+  };
+  if (replyMarkup) {
+    payload.reply_markup = replyMarkup;
   }
   await fetch(`${TELEGRAM_API}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: 'Markdown',
-    }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -38,6 +52,29 @@ async function downloadTelegramDocumentBuffer(fileId: string): Promise<Buffer> {
 }
 
 export async function processRawTelegramWebhookPayload(payload: Record<string, any>) {
+  // 1. Handle Inline Button Clicks (callback_query)
+  if (payload.callback_query) {
+    const cq = payload.callback_query;
+    const chatId = cq.message?.chat?.id || 800101;
+    const text: string = cq.data || '';
+
+    // Acknowledge Telegram callback query so loading spinner dismisses
+    if (BOT_TOKEN && !BOT_TOKEN.includes('your-telegram-bot-token') && cq.id) {
+      await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ callback_query_id: cq.id }),
+      }).catch(() => {});
+    }
+
+    const result = await handleTelegramBotUpdate({
+      chatId,
+      text,
+    });
+    await sendTelegramMessage(chatId, result.botReply, result.replyMarkup);
+    return result;
+  }
+
   const message = payload.message || payload.edited_message;
   if (!message) return { ok: true, ignored: true };
 
@@ -51,7 +88,7 @@ export async function processRawTelegramWebhookPayload(payload: Record<string, a
       chatId,
       sentAsCompressedPhoto: true,
     });
-    await sendTelegramMessage(chatId, result.botReply);
+    await sendTelegramMessage(chatId, result.botReply, result.replyMarkup);
     return result;
   }
 
@@ -74,7 +111,7 @@ export async function processRawTelegramWebhookPayload(payload: Record<string, a
         simulatedExif: doc.simulatedExif,
       },
     });
-    await sendTelegramMessage(chatId, result.botReply);
+    await sendTelegramMessage(chatId, result.botReply, result.replyMarkup);
     return result;
   }
 
@@ -82,7 +119,7 @@ export async function processRawTelegramWebhookPayload(payload: Record<string, a
     chatId,
     text,
   });
-  await sendTelegramMessage(chatId, result.botReply);
+  await sendTelegramMessage(chatId, result.botReply, result.replyMarkup);
   return result;
 }
 

@@ -3,6 +3,7 @@ import {
   CriteriaScores,
   DocumentCategory,
   ExifMetadata,
+  LeaderboardSchoolScore,
   UserRole,
 } from '@/types/domain';
 import { createSampleExifDocumentBuffer, extractAndValidateExif } from '@/lib/exif/parser';
@@ -14,7 +15,7 @@ import {
   getPlatformStore,
   submitExpertScoresViaTelegram,
 } from '@/lib/store/platform-store';
-import { formatLkr } from '@/lib/gamification/engine';
+import { computeSchoolLeaderboard, formatLkr } from '@/lib/gamification/engine';
 
 export type BotConversationStage =
   | 'IDLE'
@@ -93,10 +94,60 @@ export interface IncomingTelegramUpdate {
   };
 }
 
+export interface TelegramKeyboardButton {
+  text: string;
+  callback_data?: string;
+  url?: string;
+}
+
+export interface TelegramReplyMarkup {
+  keyboard?: TelegramKeyboardButton[][];
+  inline_keyboard?: TelegramKeyboardButton[][];
+  resize_keyboard?: boolean;
+  is_persistent?: boolean;
+  one_time_keyboard?: boolean;
+}
+
+export interface BotQuickAction {
+  label: string;
+  value: string;
+  icon?: string;
+  variant?: 'primary' | 'secondary' | 'accent' | 'danger';
+}
+
+export const STUDENT_TOUCH_KEYBOARD: TelegramReplyMarkup = {
+  keyboard: [
+    [{ text: '📸 Log New Activity' }, { text: '📊 Our Club Status' }],
+    [{ text: '🏆 View Leaderboard' }, { text: '❓ How to Send Photo' }],
+  ],
+  resize_keyboard: true,
+  is_persistent: true,
+};
+
+export const TEACHER_TOUCH_KEYBOARD: TelegramReplyMarkup = {
+  keyboard: [
+    [{ text: '📎 Upload Invoice / Receipt' }, { text: '📋 View Pending Queue' }],
+    [{ text: '📊 Our Club Status' }, { text: '🏆 View Leaderboard' }],
+  ],
+  resize_keyboard: true,
+  is_persistent: true,
+};
+
+export const EXPERT_TOUCH_KEYBOARD: TelegramReplyMarkup = {
+  keyboard: [
+    [{ text: '🔍 Review Invoices' }, { text: '⚖️ Expert Scoring Queue' }],
+    [{ text: '🏆 View Leaderboard' }, { text: '❓ Help' }],
+  ],
+  resize_keyboard: true,
+  is_persistent: true,
+};
+
 export interface BotHandlerResponse {
   ok: boolean;
   stage: BotConversationStage;
   botReply: string;
+  replyMarkup?: TelegramReplyMarkup;
+  quickActions?: BotQuickAction[];
   exifExtracted?: ExifMetadata;
   s3Uploaded?: { s3Url: string; s3Key: string; mode: string };
   createdLogId?: string;
@@ -147,7 +198,68 @@ export async function handleTelegramBotUpdate(
   if (update.studentId) session.studentId = update.studentId;
   if (update.clubId) session.clubId = update.clubId;
 
-  const text = (update.text || '').trim();
+  const rawText = (update.text || '').trim();
+  const lowerText = rawText.toLowerCase();
+
+  // Normalize friendly button clicks and emojis to commands:
+  let text = rawText;
+  if (
+    lowerText === '📸 log new activity' ||
+    lowerText === 'log new activity' ||
+    lowerText === 'log activity' ||
+    lowerText === '📸 log activity' ||
+    lowerText === 'log impact'
+  ) {
+    text = '/log_impact';
+  } else if (
+    lowerText === '📊 our club status' ||
+    lowerText === 'our club status' ||
+    lowerText === 'club status' ||
+    lowerText === '📊 club status'
+  ) {
+    text = '/status';
+  } else if (
+    lowerText === '🏆 view leaderboard' ||
+    lowerText === 'view leaderboard' ||
+    lowerText === 'leaderboard' ||
+    lowerText === '🏆 leaderboard'
+  ) {
+    text = '/leaderboard';
+  } else if (
+    lowerText === '❓ how to send photo' ||
+    lowerText === 'how to send photo' ||
+    lowerText === 'photo guide' ||
+    lowerText === '❓ photo guide'
+  ) {
+    text = '/photo_guide';
+  } else if (
+    lowerText === '❌ cancel' ||
+    lowerText === 'cancel'
+  ) {
+    text = '/cancel';
+  } else if (
+    lowerText === '📎 upload invoice / receipt' ||
+    lowerText === 'upload invoice' ||
+    lowerText === 'upload receipt'
+  ) {
+    text = '/upload_invoice';
+  } else if (
+    lowerText === '📋 view pending queue' ||
+    lowerText === 'view pending queue' ||
+    lowerText === 'pending queue'
+  ) {
+    text = '/invoices';
+  } else if (
+    lowerText === '🔍 review invoices' ||
+    lowerText === 'review invoices'
+  ) {
+    text = '/expert_queue';
+  } else if (
+    lowerText === '⚖️ expert scoring queue' ||
+    lowerText === 'expert scoring queue'
+  ) {
+    text = '/expert_queue';
+  }
 
   // 1. Handle Help / Start Command
   if (text.startsWith('/start') || text.startsWith('/help')) {
@@ -156,21 +268,72 @@ export async function handleTelegramBotUpdate(
     return {
       ok: true,
       stage: 'IDLE',
+      replyMarkup: STUDENT_TOUCH_KEYBOARD,
+      quickActions: [
+        { label: '📸 Log Activity', value: '/log_impact', variant: 'primary' },
+        { label: '📊 Club Status', value: '/status', variant: 'secondary' },
+        { label: '🏆 Leaderboard', value: '/leaderboard', variant: 'accent' },
+        { label: '❓ Photo Guide', value: '/photo_guide', variant: 'secondary' },
+      ],
       botReply:
-        `👋 Welcome to the Haritha Pasal Circular Enterprise Telegram Gateway (${club.name} • ${club.school_code})!\n\n` +
-        `📌 PIPELINE COMMANDS ACROSS ROLES:\n\n` +
-        `🌱 STUDENTS:\n` +
-        `• /log_impact — Submit new activity photo as uncompressed File\n` +
-        `• /resubmit <log_id> — 1x resubmission attempt for rejected entry\n` +
-        `• /status — View club activity ledger\n\n` +
-        `👩‍🏫 TEACHERS (School Level):\n` +
-        `• /upload_invoice <log_id> — Upload verified sales receipt / invoice file for GIZ review\n` +
-        `• /invoices — Check pending invoices requiring teacher upload\n\n` +
-        `⚖️ EXPERTS & GIZ SUPER ADMIN:\n` +
-        `• /review <log_id> — Inspect teacher-verified invoice & environmental metrics\n` +
-        `• /score <log_id> <r> <b> <f> <o> <s> <i> — Submit criteria scores via Telegram to the Dashboard\n` +
-        `  Example: \`/score log-102 92 88 86 94 95 90\`\n` +
-        `• /expert_queue — View macro sales awaiting expert scoring`,
+        `👋 Welcome to the **Haritha Pasal Bot** (${club.name} • ${club.school_code})!\n\n` +
+        `📱 **No typing required! Tap any button below to get started:**\n\n` +
+        `• 📸 **Log New Activity** — Tap to submit your uncompressed photo\n` +
+        `• 📊 **Our Club Status** — View your latest verified recycling & sales\n` +
+        `• 🏆 **View Leaderboard** — See your school's current national rank\n` +
+        `• ❓ **How to Send Photo** — Visual guide on preserving GPS coordinates`,
+    };
+  }
+
+  // 1b. Friendly Photo Guide for Children
+  if (text.startsWith('/photo_guide')) {
+    return {
+      ok: true,
+      stage: session.stage,
+      replyMarkup: STUDENT_TOUCH_KEYBOARD,
+      quickActions: [
+        { label: '📸 Log Activity Now', value: '/log_impact', variant: 'primary' },
+        { label: '📊 Club Status', value: '/status', variant: 'secondary' },
+      ],
+      botReply:
+        `📸 **HOW TO SEND PHOTOS (Easy Student Guide):**\n\n` +
+        `1️⃣ Tap the **Paperclip 📎 icon** at the bottom of Telegram.\n` +
+        `2️⃣ Choose **File / Document** (⚠️ Do NOT tap "Gallery / Photo"!).\n` +
+        `3️⃣ Select the photo taken during your school recycling activity.\n\n` +
+        `✨ **Why send as a File?**\n` +
+        `Telegram automatically removes GPS coordinates from regular gallery photos. Sending as a **File / Document** keeps the school GPS coordinates intact so our system can verify that the activity happened on campus and award your school points!\n\n` +
+        `👉 Ready? Tap **📸 Log New Activity** below to try!`,
+    };
+  }
+
+  // 1c. Friendly Leaderboard Check
+  if (text.startsWith('/leaderboard')) {
+    const leaderboard = computeSchoolLeaderboard({
+      schools: store.schools,
+      clubs: store.clubs,
+      impactLogs: store.impactLogs,
+      config: store.gamificationConfig,
+    });
+    const topSchools = leaderboard.slice(0, 5);
+    const ranks = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+    const lines = topSchools.map(
+      (entry: LeaderboardSchoolScore, idx: number) =>
+        `${ranks[idx] || '•'} **${entry.school.name}** (${entry.school.code})\n` +
+        `   Score: **${entry.composite_leaderboard_score} pts** | Waste: **${entry.verified_waste_kg} kg** | Sales: **${formatLkr(entry.verified_revenue_usd)}**`
+    );
+
+    return {
+      ok: true,
+      stage: session.stage,
+      replyMarkup: STUDENT_TOUCH_KEYBOARD,
+      quickActions: [
+        { label: '📸 Log Activity', value: '/log_impact', variant: 'primary' },
+        { label: '📊 Our Club Status', value: '/status', variant: 'secondary' },
+      ],
+      botReply:
+        `🏆 **CURRENT TOP 5 SRI LANKAN SCHOOLS:**\n\n` +
+        lines.join('\n\n') +
+        `\n\n🌐 View the full 15-school interactive index on the dashboard!`,
     };
   }
 
@@ -189,7 +352,13 @@ export async function handleTelegramBotUpdate(
     return {
       ok: true,
       stage: 'IDLE',
-      botReply: '🔄 Active operation cancelled. Bot ready for new commands.',
+      replyMarkup: STUDENT_TOUCH_KEYBOARD,
+      quickActions: [
+        { label: '📸 Log Activity', value: '/log_impact', variant: 'primary' },
+        { label: '📊 Club Status', value: '/status', variant: 'secondary' },
+        { label: '🏆 Leaderboard', value: '/leaderboard', variant: 'accent' },
+      ],
+      botReply: '🔄 Active operation cancelled. Tap any button below to continue!',
     };
   }
 
@@ -207,9 +376,16 @@ export async function handleTelegramBotUpdate(
     return {
       ok: true,
       stage: session.stage,
+      replyMarkup: STUDENT_TOUCH_KEYBOARD,
+      quickActions: [
+        { label: '📸 Log Activity', value: '/log_impact', variant: 'primary' },
+        { label: '🏆 Leaderboard', value: '/leaderboard', variant: 'accent' },
+        { label: '❓ Photo Guide', value: '/photo_guide', variant: 'secondary' },
+      ],
       botReply:
-        `📊 Latest Submissions for ${club.name} (${club.school_code}):\n` +
-        (summaryLines.length ? summaryLines.join('\n') : 'No submissions yet.'),
+        `📊 **Latest Submissions for ${club.name} (${club.school_code}):**\n\n` +
+        (summaryLines.length ? summaryLines.join('\n') : 'No submissions yet.') +
+        `\n\n👉 Tap **📸 Log Activity** below to add a new submission!`,
     };
   }
 
@@ -489,11 +665,23 @@ export async function handleTelegramBotUpdate(
     return {
       ok: true,
       stage: 'AWAITING_DOCUMENT',
+      replyMarkup: {
+        keyboard: [
+          [{ text: '❓ How to Send Photo' }, { text: '❌ Cancel' }],
+        ],
+        resize_keyboard: true,
+        is_persistent: true,
+      },
+      quickActions: [
+        { label: '❓ How to Send Photo', value: '/photo_guide', variant: 'secondary' },
+        { label: '❌ Cancel', value: '/cancel', variant: 'danger' },
+      ],
       botReply:
         `🌱 **New School Impact Submission (${club.name})**\n\n` +
-        `📎 **Step 1 of 4 (Uncompressed Photo):**\n` +
-        `Please send your activity photo as an **Uncompressed Document / File** (Paperclip 📎 → Document/File).\n` +
-        `⚠️ *Do NOT send as a standard compressed photo — Telegram strips EXIF GPS & Timestamp data from standard photos, which will cause automatic rejection.*`,
+        `📎 **Step 1 of 4 (Activity Photo):**\n` +
+        `Tap the **Paperclip 📎 → Document/File** and choose your activity photo.\n\n` +
+        `💡 *Why Document/File? Telegram removes GPS coordinates from regular photos. Sending as a Document/File keeps school GPS data intact!*\n\n` +
+        `Tap **❓ How to Send Photo** below if you need a quick guide, or **❌ Cancel** at any time.`,
     };
   }
 
@@ -677,12 +865,30 @@ export async function handleTelegramBotUpdate(
       stage: 'AWAITING_ACTIVITY_TITLE',
       exifExtracted: exifResult.metadata,
       s3Uploaded: s3Upload,
+      replyMarkup: {
+        keyboard: [
+          [{ text: '🍾 PET Bottle Sorting' }, { text: '🌱 Bio-Compost Harvest' }],
+          [{ text: '📦 Recycled Paper Craft' }, { text: '🔌 Solar & E-Waste Lab' }],
+          [{ text: '🥗 Organic Garden Harvest' }, { text: '❌ Cancel' }],
+        ],
+        resize_keyboard: true,
+        is_persistent: true,
+      },
+      quickActions: [
+        { label: '🍾 PET Bottle Sorting', value: 'Canteen PET Bottle Sorting', variant: 'primary' },
+        { label: '🌱 Bio-Compost Harvest', value: 'School Bio-Compost Harvest', variant: 'primary' },
+        { label: '📦 Recycled Paper Craft', value: 'Recycled Paper Crafts Sale', variant: 'primary' },
+        { label: '🔌 Solar & E-Waste Lab', value: 'Solar & E-Waste Repair Lab', variant: 'primary' },
+        { label: '🥗 Organic Garden Harvest', value: 'Organic Garden Harvest Pola', variant: 'primary' },
+        { label: '❌ Cancel', value: '/cancel', variant: 'danger' },
+      ],
       botReply:
         `✅ **EXIF Verified & Document Uploaded!**\n` +
         `• File: \`${doc.fileName}\` (Uncompressed Document)\n` +
         `• EXIF Timestamp: \`${exifResult.metadata.timestamp}\`\n` +
-        `• EXIF GPS: \`${exifResult.metadata.lat.toFixed(5)}, ${exifResult.metadata.lng.toFixed(5)}\`\n\n` +
-        `📝 **Step 2 of 4:** What is the **Activity Name**? (e.g., *"Canteen PET Bottle Sorting"* or *"Haritha Pola Compost Sale"*)`,
+        `• EXIF GPS: \`${exifResult.metadata.lat.toFixed(5)}, ${exifResult.metadata.lng.toFixed(5)}\` (${club.school_code})\n\n` +
+        `📝 **Step 2 of 4: What is the Activity Name?**\n` +
+        `👉 **Tap one of the buttons below** (or type a custom name):`,
     };
   }
 
@@ -706,12 +912,27 @@ export async function handleTelegramBotUpdate(
     return {
       ok: true,
       stage: 'AWAITING_WASTE_KG',
+      replyMarkup: {
+        keyboard: [
+          [{ text: '5 kg' }, { text: '10 kg' }, { text: '20 kg' }],
+          [{ text: '35 kg' }, { text: '50 kg' }, { text: '❌ Cancel' }],
+        ],
+        resize_keyboard: true,
+        is_persistent: true,
+      },
+      quickActions: [
+        { label: '5 kg', value: '5 kg', variant: 'primary' },
+        { label: '10 kg', value: '10 kg', variant: 'primary' },
+        { label: '20 kg', value: '20 kg', variant: 'primary' },
+        { label: '35 kg', value: '35 kg', variant: 'primary' },
+        { label: '50 kg', value: '50 kg', variant: 'primary' },
+        { label: '❌ Cancel', value: '/cancel', variant: 'danger' },
+      ],
       botReply:
-        `♻️ **Step 3 of 4 (Waste Recycled in kg):**\n` +
-        `How many **kilograms (kg)** of school waste were collected or recycled during *"${session.activityTitle}"*?\n` +
-        `*(Enter a number, e.g. ` +
-        '`18.5`' +
-        `)*`,
+        `♻️ **Step 3 of 4: Waste Recycled (kg)**\n` +
+        `Activity: *"${session.activityTitle}"*\n\n` +
+        `How many kilograms of waste were collected or upcycled?\n` +
+        `👉 **Tap a weight below** (or type your exact weight):`,
     };
   }
 
@@ -734,14 +955,29 @@ export async function handleTelegramBotUpdate(
     return {
       ok: true,
       stage: 'AWAITING_REVENUE_USD',
+      replyMarkup: {
+        keyboard: [
+          [{ text: 'Rs. 0 (Free Recycle)' }, { text: 'Rs. 3,500' }],
+          [{ text: 'Rs. 7,500' }, { text: 'Rs. 15,000' }],
+          [{ text: 'Rs. 25,000' }, { text: '❌ Cancel' }],
+        ],
+        resize_keyboard: true,
+        is_persistent: true,
+      },
+      quickActions: [
+        { label: 'Rs. 0 (Free Recycle)', value: 'Rs. 0', variant: 'secondary' },
+        { label: 'Rs. 3,500', value: 'Rs. 3,500', variant: 'primary' },
+        { label: 'Rs. 7,500', value: 'Rs. 7,500', variant: 'primary' },
+        { label: 'Rs. 15,000', value: 'Rs. 15,000', variant: 'primary' },
+        { label: 'Rs. 25,000', value: 'Rs. 25,000', variant: 'accent' },
+        { label: '❌ Cancel', value: '/cancel', variant: 'danger' },
+      ],
       botReply:
-        `💵 **Step 4 of 4 (Sales Revenue in Rs.):**\n` +
-        `How much **sales revenue (Rs.)** was earned from this activity?\n` +
-        `*(Note: Sales **> Rs. 15,000** require Teacher Invoice verification + National Panel scoring. Enter an amount in Rs., e.g. ` +
-        '`9000`' +
-        ` or ` +
-        '`24000`' +
-        `)*`,
+        `💵 **Step 4 of 4: Sales Revenue (Rs.)**\n` +
+        `Recorded: *${session.wasteKg} kg*\n\n` +
+        `How much money did your club earn from this activity?\n` +
+        `👉 **Tap an amount below** (or type in Rs.):\n` +
+        `*(Amounts > Rs. 15,000 require Teacher Invoice verification)*`,
     };
   }
 
@@ -806,8 +1042,15 @@ export async function handleTelegramBotUpdate(
       ok: true,
       stage: 'IDLE',
       createdLogId: createdLog.id,
+      replyMarkup: STUDENT_TOUCH_KEYBOARD,
+      quickActions: [
+        { label: '📸 Log Another Activity', value: '/log_impact', variant: 'primary' },
+        { label: '📊 Our Club Status', value: '/status', variant: 'secondary' },
+        { label: '🏆 View Leaderboard', value: '/leaderboard', variant: 'accent' },
+      ],
       botReply:
-        `🎉 **Submission Recorded (\`status: pending\`)!**\n` +
+        `🎉 **Activity Logged Successfully!**\n\n` +
+        `• **Activity:** "${createdLog.activity_title}"\n` +
         `• **Log ID:** \`${createdLog.id}\`${
           createdLog.resubmission_count > 0 ? ' *(Resubmission Attempt 1/1)*' : ''
         }\n` +
@@ -820,7 +1063,7 @@ export async function handleTelegramBotUpdate(
           createdLog.revenue_usd
         )}\` sales\n` +
         `• **School GPS Check:** \`${createdLog.campus_distance_meters}m\` from ${createdLog.school_code} (${
-          createdLog.on_campus_verified ? '✅ On School Premises' : '⚠️ Off-Campus Distance Flag'
+          createdLog.on_campus_verified ? '✅ Verified on Campus' : '⚠️ Distance Flag'
         })\n\n` +
         `📌 **NEXT STEP FOR TEACHERS:** Once verified on campus, Supervising Teacher uploads invoice with: \`/upload_invoice ${createdLog.id}\``,
     };

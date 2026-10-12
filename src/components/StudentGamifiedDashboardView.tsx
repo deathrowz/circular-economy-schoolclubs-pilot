@@ -215,14 +215,23 @@ export function StudentGamifiedDashboardView({
   const [botStage, setBotStage] = useState<string>('IDLE');
   const [chatInput, setChatInput] = useState<string>('');
   const [isSending, setIsSending] = useState<boolean>(false);
+  const [botQuickActions, setBotQuickActions] = useState<Array<{ label: string; value: string; variant?: string }>>([
+    { label: '📸 Log Activity', value: '/log_impact', variant: 'primary' },
+    { label: '📊 Club Status', value: '/status', variant: 'secondary' },
+    { label: '🏆 Leaderboard', value: '/leaderboard', variant: 'accent' },
+    { label: '❓ Photo Guide', value: '/photo_guide', variant: 'secondary' },
+  ]);
   const [chatHistory, setChatHistory] = useState<ChatBubble[]>([
     {
       id: 'init-student-bot',
       sender: 'bot',
       text:
         `Ayubowan / Vanakkam! Logged in as ${currentStudentUser.login_code} (${school.name}).\n\n` +
-        `📸 Send your activity photo as a "Document / File" to preserve EXIF timestamp & school GPS (${school.campus_lat.toFixed(4)}, ${school.campus_lng.toFixed(4)}).\n` +
-        `Click /log_impact below to earn points for ${school.name}!`,
+        `📱 No typing required! Tap any button below to get started:\n` +
+        `• 📸 Log New Activity — submit your uncompressed photo\n` +
+        `• 📊 Our Club Status — view verified recycling & sales\n` +
+        `• 🏆 View Leaderboard — see your school's national rank\n` +
+        `• ❓ How to Send Photo — easy guide on preserving GPS`,
       timestamp: '09:30 AM',
       badge: `${currentStudentUser.login_code} Connected`,
     },
@@ -263,6 +272,7 @@ export function StudentGamifiedDashboardView({
       });
 
       if (data.stage) setBotStage(data.stage);
+      if (data.quickActions) setBotQuickActions(data.quickActions);
       if (data.snapshot) onRefreshSnapshot(data.snapshot);
 
       appendBubble({
@@ -589,105 +599,192 @@ export function StudentGamifiedDashboardView({
             ))}
           </div>
 
-          {/* Quick Photo Submission Controls */}
+          {/* Quick Photo & Touch Controls */}
           <div className="bg-white border-t border-[#111010]/12 p-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <button
-                disabled={isSending}
-                onClick={() =>
-                  sendSchoolBotUpdate(
-                    { sentAsCompressedPhoto: true },
-                    '📷 [Sent Compressed Photo]',
-                    'Compressed Photo (Rejected)'
-                  )
-                }
-                className="p-2.5 rounded-[10px_10px_10px_2px] bg-rose-50 hover:bg-rose-100 border border-rose-300 text-left transition cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 text-rose-800 font-bold text-xs">
-                  <CameraOff className="w-3.5 h-3.5 shrink-0" />
-                  <span>1. Normal Photo</span>
+            {/* Contextual Quick-Action Buttons / Choice Chips */}
+            {botQuickActions.length > 0 && (
+              <div className="space-y-1.5 pb-1">
+                <div className="flex items-center justify-between text-[11px] font-bold text-[#005FA3]">
+                  <span>✨ Tap to Select (No typing required):</span>
+                  {botStage !== 'IDLE' && (
+                    <button
+                      onClick={() => sendSchoolBotUpdate({ text: '/cancel' }, '❌ Cancel')}
+                      className="text-rose-700 hover:underline cursor-pointer text-[10px]"
+                    >
+                      ❌ Cancel Current Flow
+                    </button>
+                  )}
                 </div>
-                <div className="text-[10px] text-rose-700/80 mt-0.5">
-                  Rejected (EXIF stripped)
+                <div className="flex flex-wrap gap-1.5">
+                  {botQuickActions.map((qa) => (
+                    <button
+                      key={qa.label}
+                      disabled={isSending}
+                      onClick={() => sendSchoolBotUpdate({ text: qa.value }, qa.label)}
+                      className={`px-3 py-1.5 rounded-[8px_8px_8px_2px] text-xs font-semibold transition cursor-pointer flex items-center gap-1 shadow-2xs ${
+                        qa.variant === 'danger'
+                          ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200'
+                          : qa.variant === 'accent'
+                          ? 'bg-[#14494F] hover:bg-[#005FA3] text-white border border-[#14494F]'
+                          : qa.variant === 'secondary'
+                          ? 'bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] border border-[#111010]/15'
+                          : 'bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 text-[#005FA3] border border-[#005FA3]/30'
+                      }`}
+                    >
+                      <span>{qa.label}</span>
+                    </button>
+                  ))}
                 </div>
-              </button>
+              </div>
+            )}
 
-              <button
-                disabled={isSending}
-                onClick={() =>
-                  sendSchoolBotUpdate(
-                    {
-                      document: {
-                        fileName: 'NO_GPS_PHOTO.JPG',
-                        mimeType: 'image/jpeg',
-                        simulatedExif: {
-                          timestamp: new Date().toISOString(),
-                          lat: null,
-                          lng: null,
+            {/* Evidence Photo Testing Shortcuts */}
+            <div className="space-y-1">
+              <div className="text-[10px] font-bold text-[#111010]/60 uppercase tracking-wider">
+                Photo Upload Simulation:
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  disabled={isSending}
+                  onClick={() =>
+                    sendSchoolBotUpdate(
+                      { sentAsCompressedPhoto: true },
+                      '📷 [Sent Compressed Photo]',
+                      'Compressed Photo (Rejected)'
+                    )
+                  }
+                  className="p-2.5 rounded-[10px_10px_10px_2px] bg-rose-50 hover:bg-rose-100 border border-rose-300 text-left transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-1.5 text-rose-800 font-bold text-xs">
+                    <CameraOff className="w-3.5 h-3.5 shrink-0" />
+                    <span>1. Normal Photo</span>
+                  </div>
+                  <div className="text-[10px] text-rose-700/80 mt-0.5">
+                    Rejected (EXIF stripped)
+                  </div>
+                </button>
+
+                <button
+                  disabled={isSending}
+                  onClick={() =>
+                    sendSchoolBotUpdate(
+                      {
+                        document: {
+                          fileName: 'NO_GPS_PHOTO.JPG',
+                          mimeType: 'image/jpeg',
+                          simulatedExif: {
+                            timestamp: new Date().toISOString(),
+                            lat: null,
+                            lng: null,
+                          },
                         },
                       },
-                    },
-                    '📎 [Sent File without GPS]',
-                    'Missing GPS (Rejected)'
-                  )
-                }
-                className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] border border-[#111010]/20 text-left transition cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 text-[#111010] font-bold text-xs">
-                  <AlertOctagon className="w-3.5 h-3.5 shrink-0 text-[#005FA3]" />
-                  <span>2. Missing GPS</span>
-                </div>
-                <div className="text-[10px] text-[#111010]/65 mt-0.5">
-                  Rejected (No coordinates)
-                </div>
-              </button>
+                      '📎 [Sent File without GPS]',
+                      'Missing GPS (Rejected)'
+                    )
+                  }
+                  className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] border border-[#111010]/20 text-left transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-1.5 text-[#111010] font-bold text-xs">
+                    <AlertOctagon className="w-3.5 h-3.5 shrink-0 text-[#005FA3]" />
+                    <span>2. Missing GPS</span>
+                  </div>
+                  <div className="text-[10px] text-[#111010]/65 mt-0.5">
+                    Rejected (No coordinates)
+                  </div>
+                </button>
 
-              <button
-                disabled={isSending}
-                onClick={() =>
-                  sendSchoolBotUpdate(
-                    {
-                      document: {
-                        fileName: `${school.code}_ACTIVITY_FILE.JPG`,
-                        mimeType: 'image/jpeg',
-                        simulatedExif: {
-                          timestamp: new Date().toISOString(),
-                          lat: Number((school.campus_lat + 0.0001).toFixed(6)),
-                          lng: Number((school.campus_lng - 0.0001).toFixed(6)),
-                          deviceMake: 'Samsung',
-                          deviceModel: 'Galaxy A54 (Uncompressed File)',
+                <button
+                  disabled={isSending}
+                  onClick={() =>
+                    sendSchoolBotUpdate(
+                      {
+                        document: {
+                          fileName: `${school.code}_ACTIVITY_FILE.JPG`,
+                          mimeType: 'image/jpeg',
+                          simulatedExif: {
+                            timestamp: new Date().toISOString(),
+                            lat: Number((school.campus_lat + 0.0001).toFixed(6)),
+                            lng: Number((school.campus_lng - 0.0001).toFixed(6)),
+                            deviceMake: 'Samsung',
+                            deviceModel: 'Galaxy A54 (Uncompressed File)',
+                          },
                         },
                       },
-                    },
-                    `📎 [Sent Valid File: ${school.code}_ACTIVITY_FILE.JPG]`,
-                    'Valid On-Campus EXIF'
-                  )
-                }
-                className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 border border-[#005FA3]/30 text-left transition cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
-                  <CloudUpload className="w-3.5 h-3.5 shrink-0" />
-                  <span>3. Valid School File</span>
-                </div>
-                <div className="text-[10px] text-[#111010]/70 mt-0.5">
-                  Verifies GPS &amp; logs data
-                </div>
-              </button>
+                      `📎 [Sent Valid File: ${school.code}_ACTIVITY_FILE.JPG]`,
+                      'Valid On-Campus EXIF'
+                    )
+                  }
+                  className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 border border-[#005FA3]/30 text-left transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
+                    <CloudUpload className="w-3.5 h-3.5 shrink-0" />
+                    <span>3. Valid School File</span>
+                  </div>
+                  <div className="text-[10px] text-[#111010]/70 mt-0.5">
+                    Verifies GPS &amp; logs data
+                  </div>
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSendText} className="flex items-center gap-2">
+            {/* Persistent Child-Friendly Touch Pad (Always available in IDLE) */}
+            {botStage === 'IDLE' && (
+              <div className="pt-1 border-t border-[#111010]/10">
+                <div className="text-[10px] font-bold text-[#005FA3] uppercase tracking-wider mb-1.5">
+                  Telegram Touch Keyboard (Student Mode):
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    disabled={isSending}
+                    onClick={() => sendSchoolBotUpdate({ text: '/log_impact' }, '📸 Log New Activity')}
+                    className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#005FA3] text-[#9CF2F2] font-bold text-xs hover:bg-[#0B3E6E] transition cursor-pointer text-left flex items-center justify-between"
+                  >
+                    <span>📸 Log New Activity</span>
+                    <span className="text-[10px] text-white/80">Tap here</span>
+                  </button>
+                  <button
+                    disabled={isSending}
+                    onClick={() => sendSchoolBotUpdate({ text: '/status' }, '📊 Our Club Status')}
+                    className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] font-bold text-xs border border-[#111010]/15 transition cursor-pointer text-left flex items-center justify-between"
+                  >
+                    <span>📊 Our Club Status</span>
+                    <span className="text-[10px] text-[#005FA3]">Summary</span>
+                  </button>
+                  <button
+                    disabled={isSending}
+                    onClick={() => sendSchoolBotUpdate({ text: '/leaderboard' }, '🏆 View Leaderboard')}
+                    className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#E9F5F4] hover:bg-[#9CF2F2]/60 text-[#14494F] font-bold text-xs border border-[#14494F]/30 transition cursor-pointer text-left flex items-center justify-between"
+                  >
+                    <span>🏆 View Leaderboard</span>
+                    <span className="text-[10px] text-[#14494F]">Rankings</span>
+                  </button>
+                  <button
+                    disabled={isSending}
+                    onClick={() => sendSchoolBotUpdate({ text: '/photo_guide' }, '❓ How to Send Photo')}
+                    className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] font-bold text-xs border border-[#111010]/15 transition cursor-pointer text-left flex items-center justify-between"
+                  >
+                    <span>❓ How to Send Photo</span>
+                    <span className="text-[10px] text-[#111010]/60">Guide</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Text Input Fallback */}
+            <form onSubmit={handleSendText} className="flex items-center gap-2 pt-1 border-t border-[#111010]/10">
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder={
                   botStage === 'AWAITING_ACTIVITY_TITLE'
-                    ? 'Enter activity title...'
+                    ? 'Tap a button above or type custom activity title...'
                     : botStage === 'AWAITING_WASTE_KG'
-                    ? 'Enter waste recycled in kg (e.g. "22")...'
+                    ? 'Tap a button above or type weight in kg (e.g. 22)...'
                     : botStage === 'AWAITING_REVENUE_USD'
-                    ? 'Enter sales in Rs. (e.g. "12000")...'
-                    : 'Click /log_impact or reply here...'
+                    ? 'Tap a button above or type sales in Rs. (e.g. 12000)...'
+                    : 'Tap a button above or type here...'
                 }
                 className="flex-1 hai-input px-3.5 py-2 text-xs"
               />

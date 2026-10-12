@@ -12,7 +12,13 @@ export async function POST(req: NextRequest) {
     // Support both raw Telegram Bot Webhook JSON (`body.message`) and Simulator JSON (`body.chatId`)
     let normalizedUpdate: IncomingTelegramUpdate;
 
-    if (body.message || body.edited_message) {
+    if (body.callback_query) {
+      const cq = body.callback_query;
+      normalizedUpdate = {
+        chatId: cq.message?.chat?.id || 800101,
+        text: cq.data || '',
+      };
+    } else if (body.message || body.edited_message) {
       const msg = body.message || body.edited_message;
       const isCompressedPhoto = Array.isArray(msg.photo) && msg.photo.length > 0 && !msg.document;
 

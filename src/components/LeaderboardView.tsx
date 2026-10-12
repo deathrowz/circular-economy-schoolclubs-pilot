@@ -30,7 +30,6 @@ interface LeaderboardViewProps {
 
 export function LeaderboardView({
   leaderboard,
-  config,
   onSelectClubProfile,
   onOpenTelegramWorkbench,
   onOpenVerification,
@@ -60,7 +59,7 @@ export function LeaderboardView({
   const renderTierBadge = (tierLabel: string) => {
     if (tierLabel.startsWith('Platinum')) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border border-[#FDB022] text-[#FDB022] bg-[#1C2126]">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#005FA3] text-[#9CF2F2]">
           <FigmaTierPlatinumIcon className="w-3.5 h-3.5 shrink-0" />
           <span>{tierLabel}</span>
         </span>
@@ -68,7 +67,7 @@ export function LeaderboardView({
     }
     if (tierLabel.startsWith('Gold')) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border border-[#F670C7] text-[#F670C7] bg-[#1C2126]">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#9CF2F2] text-[#005FA3] border border-[#005FA3]/25">
           <FigmaTierGoldIcon className="w-3.5 h-3.5 shrink-0" />
           <span>{tierLabel}</span>
         </span>
@@ -76,14 +75,14 @@ export function LeaderboardView({
     }
     if (tierLabel.startsWith('Silver')) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border border-[#14C7C3] text-[#14C7C3] bg-[#1C2126]">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E6F1FA] text-[#005FA3] border border-[#005FA3]/30">
           <FigmaTierSilverIcon className="w-3.5 h-3.5 shrink-0" />
           <span>{tierLabel}</span>
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border border-[#8997A9] text-[#B8F4F3] bg-[#1C2126]">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#F0F3F5] text-[#111010]/80 border border-[#111010]/15">
         <FigmaTierBronzeIcon className="w-3.5 h-3.5 shrink-0" />
         <span>{tierLabel}</span>
       </span>
@@ -91,175 +90,207 @@ export function LeaderboardView({
   };
 
   return (
-    <div className="space-y-6">
-      {/* 3 Simple Sri Lankan Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Card 1: Waste Recycled */}
-        <div className="p-5 rounded-xl bg-[#1C2126] border border-[#095856] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#B8F4F3] flex items-center gap-1.5">
-              <Leaf className="w-4 h-4 text-[#14C7C3]" />
-              School Waste Recycled
-            </span>
-            <span className="figma-emerald-pill px-2 py-0.5 text-[11px] font-medium">
-              15 Schools
-            </span>
-          </div>
-          <div className="my-3">
-            <div className="text-3xl font-bold text-[#E0FFF9] font-[var(--font-jakarta)]">
-              {totalWasteKg.toLocaleString(undefined, { maximumFractionDigits: 1 })} kg
+    <div className="space-y-8">
+      {/* ====================================================================
+       * Stanford HAI AI Index HeroicCallout Band (color-theme-zeal: #005FA3)
+       * ==================================================================== */}
+      <section className="hai-zeal-banner p-6 sm:p-8 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/20">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.06em] text-[#9CF2F2]">
+              <span>2026 National Snapshot • 15 Schools</span>
             </div>
-            <p className="text-xs text-[#B8F4F3] mt-1">
-              PET plastic, canteen food compost, coconut coir, paper &amp; e-waste
-            </p>
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white font-[var(--font-jakarta)]">
+              Verified Environmental &amp; Student Enterprise Impact
+            </h2>
           </div>
-        </div>
 
-        {/* Card 2: Student Sales in LKR */}
-        <div className="p-5 rounded-xl bg-[#1C2126] border border-[#095856] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#B8F4F3] flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-[#14C7C3]" />
-              Verified Student Sales
-            </span>
-            <span className="figma-code-chip px-2 py-0.5 text-[11px] font-mono text-[#14C7C3]">
-              Sri Lankan Rupees
-            </span>
-          </div>
-          <div className="my-3">
-            <div className="text-3xl font-bold text-[#E0FFF9] font-[var(--font-jakarta)]">
-              {formatLkr(totalRevenue)}
-            </div>
-            <p className="text-xs text-[#B8F4F3] mt-1">
-              From school bookshops, Haritha Pola stalls &amp; community orders
-            </p>
-          </div>
-        </div>
-
-        {/* Card 3: Seed Grants & Quick Actions */}
-        <div className="p-5 rounded-xl bg-[#1C2126] border border-[#095856] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#B8F4F3] flex items-center gap-1.5">
-              <Coins className="w-4 h-4 text-[#FDB022]" />
-              Top-Off Seed Grants
-            </span>
-            <span className="text-xs text-[#FDB022] font-medium">
-              + Rs. 450,000 Base/School
-            </span>
-          </div>
-          <div className="my-2">
-            <div className="text-3xl font-bold text-[#E0FFF9] font-[var(--font-jakarta)]">
-              {formatLkr(totalTopOffFunding)}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             {onOpenTelegramWorkbench && (
               <button
                 onClick={onOpenTelegramWorkbench}
-                className="figma-skeuomorphic-btn px-3.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                className="hai-btn-on-zeal px-5 py-2.5 text-xs sm:text-sm inline-flex items-center gap-1.5 cursor-pointer"
               >
-                <span>Submit via Telegram</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
+                <span>Submit via Telegram Bot</span>
+                <ArrowUpRight className="w-4 h-4" />
               </button>
             )}
             {onOpenVerification && (
               <button
                 onClick={onOpenVerification}
-                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#181C21] hover:bg-[#095856]/40 text-[#E0FFF9] border border-[#095856] transition cursor-pointer"
+                className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold border border-[#9CF2F2] text-white hover:bg-[#9CF2F2] hover:text-[#005FA3] transition cursor-pointer"
               >
-                Teacher Review
+                Teacher &amp; Panel Review
               </button>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Top 3 Leading Sri Lankan Schools */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {topThree.map((entry, idx) => {
-          const borderAccent = [
-            'border-[#FDB022]/70',
-            'border-[#F670C7]/60',
-            'border-[#14C7C3]/70',
-          ][idx];
+        {/* 3 Simple Sri Lankan Summary Metrics Inside the Zeal Band */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+          <div className="bg-white/10 border border-white/20 rounded-[18px_18px_18px_4px] p-5">
+            <div className="flex items-center justify-between text-xs font-semibold text-[#9CF2F2]">
+              <span className="flex items-center gap-1.5">
+                <Leaf className="w-4 h-4" />
+                School Waste Recycled
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-white/15 text-white text-[11px]">
+                15 Schools
+              </span>
+            </div>
+            <div className="mt-3 text-3xl sm:text-4xl font-bold text-white font-[var(--font-jakarta)]">
+              {totalWasteKg.toLocaleString(undefined, { maximumFractionDigits: 1 })} kg
+            </div>
+            <p className="text-xs text-white/80 mt-1.5">
+              PET plastic, canteen compost, coconut coir, paper &amp; e-waste
+            </p>
+          </div>
 
-          return (
+          <div className="bg-white/10 border border-white/20 rounded-[18px_18px_18px_4px] p-5">
+            <div className="flex items-center justify-between text-xs font-semibold text-[#9CF2F2]">
+              <span className="flex items-center gap-1.5">
+                <TrendingUp className="w-4 h-4" />
+                Verified Student Sales
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-white/15 text-white text-[11px] font-mono">
+                LKR (Rs.)
+              </span>
+            </div>
+            <div className="mt-3 text-3xl sm:text-4xl font-bold text-white font-[var(--font-jakarta)]">
+              {formatLkr(totalRevenue)}
+            </div>
+            <p className="text-xs text-white/80 mt-1.5">
+              From school bookshops, Haritha Pola stalls &amp; local orders
+            </p>
+          </div>
+
+          <div className="bg-white/10 border border-white/20 rounded-[18px_18px_18px_4px] p-5">
+            <div className="flex items-center justify-between text-xs font-semibold text-[#9CF2F2]">
+              <span className="flex items-center gap-1.5">
+                <Coins className="w-4 h-4" />
+                Top-Off Seed Grants
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-white/15 text-white text-[11px]">
+                + Rs. 450,000 Base/School
+              </span>
+            </div>
+            <div className="mt-3 text-3xl sm:text-4xl font-bold text-white font-[var(--font-jakarta)]">
+              {formatLkr(totalTopOffFunding)}
+            </div>
+            <p className="text-xs text-white/80 mt-1.5">
+              Awarded based on verified circular-economy performance
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+       * Top 3 Leading Sri Lankan Schools (White Editorial Cards on Cloud Blue)
+       * ==================================================================== */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#111010] font-[var(--font-jakarta)]">
+            Top Performing Schools
+          </h2>
+          <span className="text-xs font-medium text-[#111010]/70">
+            Ranked by composite circular &amp; enterprise score
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {topThree.map((entry) => (
             <div
               key={entry.school.id}
-              className={`bg-[#1C2126] border ${borderAccent} rounded-xl p-5 flex flex-col justify-between`}
+              className="hai-card p-6 flex flex-col justify-between hover:border-[#005FA3]/50 transition"
             >
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="figma-code-chip px-2.5 py-0.5 text-xs font-mono font-semibold text-[#E0FFF9]">
-                    #{entry.rank} • {entry.school.city}
+                  <span className="hai-tag text-xs font-mono font-bold">
+                    Rank #{entry.rank} • {entry.school.city}
                   </span>
                   {renderTierBadge(entry.topoff_funding_tier.split(' (')[0])}
                 </div>
 
-                <h3 className="mt-3 text-base font-semibold text-[#E0FFF9] font-[var(--font-jakarta)]">
+                <h3 className="mt-4 text-xl font-semibold text-[#111010] font-[var(--font-jakarta)]">
                   {entry.school.name}
                 </h3>
-                <p className="text-xs text-[#14C7C3] font-medium mt-0.5">
+                <p className="text-sm text-[#005FA3] font-semibold mt-0.5">
                   {entry.club.name}
+                </p>
+                <p className="text-xs text-[#111010]/65 mt-1">
+                  {entry.club.circular_sector}
                 </p>
               </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-2 bg-[#181C21] rounded-lg p-3 border border-[#095856]/70 text-center">
+              <div className="mt-5 grid grid-cols-3 gap-2 hai-chrome-box p-3.5 text-center">
                 <div>
-                  <div className="text-[11px] text-[#B8F4F3]">Waste Recycled</div>
-                  <div className="text-sm font-semibold text-[#75E0A7] font-mono">
+                  <div className="text-[11px] font-medium text-[#111010]/65">
+                    Waste Recycled
+                  </div>
+                  <div className="text-sm font-bold text-[#14494F] font-mono mt-0.5">
                     {entry.verified_waste_kg} kg
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-[#B8F4F3]">Sales (Rs.)</div>
-                  <div className="text-sm font-semibold text-[#E0FFF9] font-mono">
+                  <div className="text-[11px] font-medium text-[#111010]/65">
+                    Sales (Rs.)
+                  </div>
+                  <div className="text-sm font-bold text-[#111010] font-mono mt-0.5">
                     {formatLkr(entry.verified_revenue_usd)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-[#B8F4F3]">Total Score</div>
-                  <div className="text-sm font-bold text-[#FDB022] font-mono">
+                  <div className="text-[11px] font-medium text-[#111010]/65">
+                    Index Score
+                  </div>
+                  <div className="text-sm font-bold text-[#005FA3] font-mono mt-0.5">
                     {entry.composite_leaderboard_score} pts
                   </div>
                 </div>
               </div>
 
-              <div className="mt-3.5 flex items-center justify-between text-xs text-[#B8F4F3]">
-                <span>Top-Off Grant: <strong className="text-[#E0FFF9]">{formatLkr(entry.topoff_funding_amount_usd)}</strong></span>
+              <div className="mt-4 pt-3 border-t border-[#111010]/10 flex items-center justify-between text-xs text-[#111010]/75">
+                <span>
+                  Top-Off Grant:{' '}
+                  <strong className="text-[#111010]">
+                    {formatLkr(entry.topoff_funding_amount_usd)}
+                  </strong>
+                </span>
                 <button
                   onClick={() => onSelectClubProfile(entry.club.id)}
-                  className="text-[#14C7C3] hover:text-[#E0FFF9] font-semibold inline-flex items-center gap-1 cursor-pointer"
+                  className="text-[#005FA3] hover:underline font-semibold inline-flex items-center gap-1 cursor-pointer"
                 >
-                  <span>View School Club</span>
+                  <span>Explore Club</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      </section>
 
-      {/* Simplified 5-Column School Leaderboard Table */}
-      <div className="bg-[#1C2126] border border-[#095856] rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#095856] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* ====================================================================
+       * Simplified 5-Column School Leaderboard Table (Stanford HAI Style)
+       * ==================================================================== */}
+      <section className="hai-card overflow-hidden">
+        <div className="px-6 py-5 border-b border-[#111010]/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold text-[#E0FFF9] font-[var(--font-jakarta)]">
+            <h2 className="text-lg sm:text-xl font-semibold text-[#111010] font-[var(--font-jakarta)]">
               All 15 Participating Sri Lankan Schools
             </h2>
-            <p className="text-xs text-[#B8F4F3] mt-0.5">
-              Click any school row to view its 6 evaluation scores and seed grant details
+            <p className="text-xs text-[#111010]/70 mt-0.5">
+              Click any school row to view its 6 evaluation scores and seed grant breakdown
             </p>
           </div>
 
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-[#B8F4F3] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 text-[#111010]/50 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search school, town, or project..."
-              className="w-full bg-[#181C21] border border-[#095856] rounded-lg pl-9 pr-3.5 py-2 text-xs text-[#E0FFF9] placeholder-[#B8F4F3]/60 focus:outline-none focus:border-[#14C7C3]"
+              className="w-full hai-input pl-9 pr-3.5 py-2 text-xs"
             />
           </div>
         </div>
@@ -267,7 +298,7 @@ export function LeaderboardView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="h-[44px] border-b border-[#095856] bg-[#1C2126] text-xs font-medium text-[#B8F4F3]">
+              <tr className="h-[46px] border-b border-[#111010]/15 bg-[#F0F3F5] text-xs font-semibold text-[#111010]/75">
                 <th className="py-3 px-6 w-16">Rank</th>
                 <th className="py-3 px-4">School &amp; Student Club</th>
                 <th className="py-3 px-4 text-right">Waste Recycled</th>
@@ -275,7 +306,7 @@ export function LeaderboardView({
                 <th className="py-3 px-6 text-right">Seed Grant &amp; Score</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#095856] text-sm">
+            <tbody className="divide-y divide-[#111010]/12 text-sm">
               {filtered.map((entry) => {
                 const isExpanded = expandedSchoolId === entry.school.id;
 
@@ -285,19 +316,15 @@ export function LeaderboardView({
                       onClick={() =>
                         setExpandedSchoolId(isExpanded ? null : entry.school.id)
                       }
-                      className="h-[68px] hover:bg-[#181C21]/90 transition-colors cursor-pointer"
+                      className="h-[68px] hover:bg-[#E6F1FA]/60 transition-colors cursor-pointer"
                     >
                       {/* 1. Rank */}
-                      <td className="py-3.5 px-6 font-mono font-semibold text-[#E0FFF9]">
+                      <td className="py-3.5 px-6 font-mono font-semibold">
                         <span
-                          className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs ${
-                            entry.rank === 1
-                              ? 'bg-[#FDB022] text-[#0C111D] font-bold'
-                              : entry.rank === 2
-                              ? 'bg-[#F670C7] text-[#0C111D] font-bold'
-                              : entry.rank === 3
-                              ? 'bg-[#14C7C3] text-[#0C111D] font-bold'
-                              : 'bg-[#181C21] text-[#B8F4F3] border border-[#095856]'
+                          className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
+                            entry.rank <= 3
+                              ? 'bg-[#005FA3] text-[#9CF2F2]'
+                              : 'bg-[#F0F3F5] text-[#111010] border border-[#111010]/15'
                           }`}
                         >
                           {entry.rank}
@@ -307,20 +334,20 @@ export function LeaderboardView({
                       {/* 2. School & Student Club */}
                       <td className="py-3.5 px-4">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-semibold text-[#E0FFF9]">
+                          <span className="font-semibold text-[#111010]">
                             {entry.school.name}
                           </span>
-                          <span className="text-xs text-[#B8F4F3]">
+                          <span className="text-xs text-[#111010]/65">
                             ({entry.school.city})
                           </span>
                           {entry.penalty_points_deducted > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-950/80 border border-rose-500/50 text-rose-300 font-mono text-[11px]">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-rose-800 font-mono text-[11px] font-semibold">
                               <ShieldAlert className="w-3 h-3" /> -{entry.penalty_points_deducted} pts audit penalty
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-[#B8F4F3] mt-0.5">
-                          <span className="text-[#14C7C3] font-medium">
+                        <div className="text-xs text-[#111010]/70 mt-0.5">
+                          <span className="text-[#005FA3] font-semibold">
                             {entry.club.name}
                           </span>{' '}
                           • {entry.club.circular_sector}
@@ -329,14 +356,14 @@ export function LeaderboardView({
 
                       {/* 3. Waste Recycled */}
                       <td className="py-3.5 px-4 text-right font-mono whitespace-nowrap">
-                        <span className="text-[#75E0A7] font-semibold">
+                        <span className="text-[#14494F] font-bold">
                           {entry.verified_waste_kg} kg
                         </span>
                       </td>
 
                       {/* 4. Student Sales (Rs.) */}
                       <td className="py-3.5 px-4 text-right font-mono whitespace-nowrap">
-                        <span className="text-[#E0FFF9] font-medium">
+                        <span className="text-[#111010] font-semibold">
                           {formatLkr(entry.verified_revenue_usd)}
                         </span>
                       </td>
@@ -345,13 +372,13 @@ export function LeaderboardView({
                       <td className="py-3.5 px-6 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-3">
                           {renderTierBadge(entry.topoff_funding_tier)}
-                          <span className="text-base font-bold font-mono text-[#E0FFF9] min-w-[64px]">
+                          <span className="text-base font-bold font-mono text-[#005FA3] min-w-[64px]">
                             {entry.composite_leaderboard_score}
                           </span>
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-[#14C7C3]" />
+                            <ChevronUp className="w-4 h-4 text-[#005FA3]" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-[#B8F4F3]" />
+                            <ChevronDown className="w-4 h-4 text-[#111010]/60" />
                           )}
                         </div>
                       </td>
@@ -359,7 +386,7 @@ export function LeaderboardView({
 
                     {/* Simple Expandable School Summary */}
                     {isExpanded && (
-                      <tr className="bg-[#181C21] border-b border-[#095856]">
+                      <tr className="bg-[#F0F3F5] border-b border-[#111010]/15">
                         <td colSpan={5} className="p-5">
                           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 flex-1">
@@ -373,20 +400,22 @@ export function LeaderboardView({
                               ].map((c) => (
                                 <div
                                   key={c.label}
-                                  className="bg-[#1C2126] border border-[#095856] rounded-lg p-2.5 text-center"
+                                  className="bg-white border border-[#111010]/12 rounded-[10px_10px_10px_2px] p-2.5 text-center"
                                 >
-                                  <div className="text-[11px] text-[#B8F4F3]">{c.label}</div>
-                                  <div className="text-sm font-bold text-[#E0FFF9] font-mono mt-0.5">
+                                  <div className="text-[11px] font-medium text-[#111010]/65">
+                                    {c.label}
+                                  </div>
+                                  <div className="text-sm font-bold text-[#005FA3] font-mono mt-0.5">
                                     {c.score}/100
                                   </div>
                                 </div>
                               ))}
                             </div>
 
-                            <div className="flex items-center justify-between lg:justify-end gap-4 shrink-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-[#095856]">
-                              <div className="text-xs text-[#B8F4F3]">
+                            <div className="flex items-center justify-between lg:justify-end gap-4 shrink-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-[#111010]/15">
+                              <div className="text-xs text-[#111010]/80">
                                 Total Grant:{' '}
-                                <strong className="text-[#75E0A7] font-mono">
+                                <strong className="text-[#005FA3] font-mono">
                                   {formatLkr(
                                     entry.school.seed_funding_base_usd +
                                       entry.topoff_funding_amount_usd
@@ -398,7 +427,7 @@ export function LeaderboardView({
                                   e.stopPropagation();
                                   onSelectClubProfile(entry.club.id);
                                 }}
-                                className="figma-skeuomorphic-btn px-3.5 py-1.5 text-xs font-semibold cursor-pointer"
+                                className="hai-btn-primary px-4 py-2 text-xs cursor-pointer"
                               >
                                 View School Club →
                               </button>
@@ -413,7 +442,7 @@ export function LeaderboardView({
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

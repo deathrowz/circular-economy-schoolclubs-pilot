@@ -16,9 +16,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Circular-Economy Student Enterprise Platform | 15-School Pilot',
+  title: 'Haritha Pasal | Sri Lanka School Circular Index (15-School Pilot)',
   description:
-    'Gamified validation engine, Telegram EXIF student submission bot, RBAC adjudication dashboard, and circular-economy leaderboard across 15 pilot schools.',
+    'Tracking verified school waste recycled (kg), student enterprise sales (Rs.), and top-off seed funding across 15 participating Sri Lankan schools.',
 };
 
 export default function RootLayout({
@@ -27,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${plusJakarta.variable}`}>
-      <body className="min-h-screen bg-[#181C21] text-[#E0FFF9] antialiased selection:bg-[#14C7C3] selection:text-[#074140]">
+    <html lang="en" className={`${inter.variable} ${plusJakarta.variable}`}>
+      <body className="min-h-screen bg-[#E6F1FA] text-[#111010] antialiased selection:bg-[#9CF2F2] selection:text-[#005FA3]">
         {children}
       </body>
     </html>

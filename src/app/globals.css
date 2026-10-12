@@ -1,84 +1,146 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Figma MCP Design System Tokens (Extracted from T0J4d7sapn2no8t7ixmNY3 & UL6MdGaqnCWJiejfZj9CUG) */
-  --figma-bg-shell: #0C111D;       /* fill_b859dd92 */
-  --figma-bg-canvas: #181C21;      /* fill_81c1360f */
-  --figma-bg-card: #1C2126;        /* fill_6f4ce7c1 */
-  --figma-bg-panel: #161B26;       /* fill_6f3fc44e */
-  --figma-bg-elevated: #272D35;    /* fill_4463cf84 */
+  /* ============================================================================
+   * Stanford HAI AI Index (https://hai.stanford.edu/ai-index) Exact Color System
+   * Routed via Figma MCP Informational Page Layout (#1:379248 / #1:379744)
+   * ============================================================================ */
 
-  --figma-border-teal: #095856;    /* fill_e99b69c4 */
-  --figma-border-cyan: #0C7471;    /* fill_f0eb36ba */
-  --figma-border-subtle: #1F242F;  /* fill_8d3a492a */
+  /* color-theme-cloud (Primary Page Canvas) */
+  --color-background: #e6f1fa;
+  --color-card-background: #ffffff;
+  --color-accent: #005fa3;
+  --color-hover: #9cf2f2;
+  --color-text: #111010;
+  --color-text-secondary: rgba(17, 16, 16, 0.73);
+  --color-text-tertiary: rgba(17, 16, 16, 0.6);
+  --color-divider: rgba(17, 16, 16, 0.15);
 
-  --figma-brand-400: #14C7C3;      /* fill_654d539c */
-  --figma-brand-500: #12B0AD;      /* Brand/500 */
-  --figma-brand-300: #66E1DE;      /* fill_70d5513b */
+  /* color-theme-zeal (Heroic Callout Cobalt Band) */
+  --color-zeal-bg: #005fa3;
+  --color-zeal-accent: #9cf2f2;
+  --color-zeal-hover: #00467a;
+  --color-zeal-text: #ffffff;
+  --color-zeal-text-secondary: rgba(255, 255, 255, 0.82);
 
-  --figma-text-display: #E0FFF9;   /* fill_56929e36 */
-  --figma-text-accent: #C8FFF5;    /* fill_1ef60ed2 */
-  --figma-text-secondary: #B8F4F3; /* fill_fb098d05 */
-  --figma-text-muted: #77889C;     /* fill_7394f9b0 */
-
-  --figma-emerald-bg: #053321;     /* fill_4935045d */
-  --figma-emerald-border: #085D3A; /* fill_861a1fdc */
-  --figma-emerald-text: #75E0A7;   /* fill_df4da133 */
+  /* color-theme-chrome & color-theme-gin (Secondary Editorial Surfaces) */
+  --color-chrome-bg: #f0f3f5;
+  --color-chrome-accent: #0b3e6e;
+  --color-gin-bg: #e9f5f4;
+  --color-gin-accent: #14494f;
 }
 
 body {
-  background-color: var(--figma-bg-canvas);
-  color: var(--figma-text-display);
+  background-color: var(--color-background);
+  color: var(--color-text);
   font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 .font-display {
   font-family: var(--font-plus-jakarta), var(--font-inter), sans-serif;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
-/* Figma Card Component (#1512:12655 / #1353:10971) */
-.figma-card {
-  background-color: #1C2126;
-  border: 1px solid #095856;
-  border-radius: 12px;
-  box-shadow: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+/* Signature Stanford HAI AI Index Asymmetric Card (border-radius: 2.4rem 2.4rem 2.4rem 0.6rem) */
+.hai-card {
+  background-color: var(--color-card-background);
+  border: 1px solid var(--color-divider);
+  border-radius: 24px 24px 24px 6px;
 }
 
-/* Figma Skeuomorphic Pill Button (#1353:2650) */
+/* Signature Stanford HAI AI Index Heroic Callout Band (color-theme-zeal) */
+.hai-zeal-banner {
+  background-color: var(--color-zeal-bg);
+  color: var(--color-zeal-text);
+  border-radius: 24px 24px 24px 6px;
+}
+
+/* Signature Nested Editorial Box (color-theme-chrome) */
+.hai-chrome-box {
+  background-color: var(--color-chrome-bg);
+  border: 1px solid rgba(17, 16, 16, 0.1);
+  border-radius: 14px 14px 14px 4px;
+}
+
+/* Signature Stanford HAI AI Index Input/Select (border-radius: 0.8rem 0.8rem 0.8rem 0) */
+.hai-input {
+  background-color: #ffffff;
+  border: 1px solid rgba(17, 16, 16, 0.24);
+  color: var(--color-text);
+  border-radius: 8px 8px 8px 0px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hai-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(0, 95, 163, 0.15);
+}
+
+/* Signature Stanford HAI AI Index Primary Pill Button (#005fa3 bg + #9cf2f2 text -> #9cf2f2 bg + #005fa3 text) */
+.hai-btn-primary,
 .figma-skeuomorphic-btn {
-  background-color: #E0FFF9;
-  color: #074140;
+  background-color: var(--color-accent);
+  color: var(--color-hover);
   border-radius: 9999px;
   font-weight: 600;
-  box-shadow:
-    0px 1px 2px 0px rgba(255, 255, 255, 0),
-    inset 0px -2px 0px 0px rgba(12, 17, 29, 0.08),
-    inset 0px 0px 0px 1px rgba(12, 17, 29, 0.18);
-  transition: all 0.15s ease;
+  transition: background-color 0.25s ease, color 0.25s ease, transform 0.15s ease;
 }
 
+.hai-btn-primary:hover,
 .figma-skeuomorphic-btn:hover {
-  background-color: #C8FFF5;
-  transform: translateY(-1px);
+  background-color: var(--color-hover);
+  color: var(--color-accent);
 }
 
-/* Figma Hash/Code Chip (#1353:2924) */
-.figma-code-chip {
-  background-color: #181C21;
-  border: 1px solid #0C7471;
-  color: #C8FFF5;
-  border-radius: 6px;
+/* Signature Button on Cobalt Zeal Background (#9cf2f2 bg + #005fa3 text -> #ffffff bg + #005fa3 text) */
+.hai-btn-on-zeal {
+  background-color: var(--color-hover);
+  color: var(--color-accent);
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.hai-btn-on-zeal:hover {
+  background-color: #ffffff;
+  color: #0b3e6e;
+}
+
+/* Signature Secondary Outline Pill Button */
+.hai-btn-secondary {
+  background-color: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.hai-btn-secondary:hover {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+/* Editorial Code / Tag Chip */
+.figma-code-chip,
+.hai-tag {
+  background-color: var(--color-background);
+  border: 1px solid rgba(0, 95, 163, 0.25);
+  color: var(--color-accent);
+  border-radius: 6px 6px 6px 0px;
   padding: 2px 8px;
 }
 
-/* Figma Emerald Verified Pill (#1353:116) */
-.figma-emerald-pill {
-  background-color: #053321;
-  border: 1px solid #085D3A;
-  color: #75E0A7;
+/* Editorial Cyan/Mint Highlight Pill */
+.figma-emerald-pill,
+.hai-cyan-pill {
+  background-color: var(--color-hover);
+  border: 1px solid rgba(0, 95, 163, 0.2);
+  color: #00467a;
   border-radius: 9999px;
-  padding: 2px 10px 2px 8px;
+  padding: 2px 10px;
 }

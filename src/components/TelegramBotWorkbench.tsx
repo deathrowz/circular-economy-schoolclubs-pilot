@@ -134,27 +134,27 @@ export function TelegramBotWorkbench({
   return (
     <div className="space-y-6">
       {/* School Club Selector Header */}
-      <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="hai-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-[#181C21] border border-[#095856] text-[#14C7C3]">
+          <div className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#005FA3] text-[#9CF2F2]">
             <Bot className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-[#E0FFF9] font-[var(--font-jakarta)]">
+            <h2 className="text-base font-bold text-[#111010] font-[var(--font-jakarta)]">
               Student Telegram Submission Simulator
             </h2>
-            <p className="text-xs text-[#B8F4F3]">
+            <p className="text-xs text-[#111010]/70">
               Students send uncompressed File photos to log waste recycled (kg) and sales (Rs.)
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <select
             value={selectedClubId}
             onChange={(e) => setSelectedClubId(e.target.value)}
             aria-label="Select School Club"
-            className="bg-[#181C21] border border-[#095856] rounded-lg px-3 py-2 text-xs text-[#E0FFF9] font-semibold focus:outline-none focus:border-[#14C7C3]"
+            className="hai-input px-3.5 py-2 text-xs text-[#111010] font-semibold"
           >
             {clubs.map((c) => (
               <option key={c.id} value={c.id}>
@@ -165,7 +165,7 @@ export function TelegramBotWorkbench({
 
           <button
             onClick={onNavigateToVerification}
-            className="figma-skeuomorphic-btn px-3.5 py-2 text-xs font-semibold cursor-pointer"
+            className="hai-btn-primary px-4 py-2 text-xs cursor-pointer"
           >
             Teacher Approvals →
           </button>
@@ -174,27 +174,27 @@ export function TelegramBotWorkbench({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Chat Window (7 cols) */}
-        <div className="lg:col-span-7 bg-[#1C2126] border border-[#095856] rounded-xl flex flex-col overflow-hidden">
-          <div className="bg-[#0C111D] border-b border-[#095856] px-4 py-3 flex items-center justify-between">
+        <div className="lg:col-span-7 hai-card flex flex-col overflow-hidden">
+          <div className="bg-[#005FA3] text-white px-5 py-3.5 flex items-center justify-between">
             <div>
-              <div className="text-xs font-semibold text-[#E0FFF9]">
+              <div className="text-xs font-bold text-white">
                 @HarithaPasalBot • {selectedSchool.name} ({selectedSchool.city})
               </div>
-              <div className="text-[11px] text-[#B8F4F3]">
+              <div className="text-[11px] text-[#9CF2F2]">
                 School GPS: {selectedSchool.campus_lat.toFixed(4)}, {selectedSchool.campus_lng.toFixed(4)}
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => sendWebhookUpdate({ text: '/log_impact' }, '/log_impact')}
-                className="figma-emerald-pill px-2.5 py-1 text-xs font-mono font-semibold cursor-pointer"
+                className="hai-btn-on-zeal px-3 py-1 text-xs font-mono cursor-pointer"
               >
                 /log_impact
               </button>
               <button
                 onClick={() => sendWebhookUpdate({ text: '/status' }, '/status')}
-                className="px-2.5 py-1 rounded-full bg-[#181C21] border border-[#095856] text-[#E0FFF9] text-xs font-mono cursor-pointer"
+                className="px-3 py-1 rounded-full bg-white/15 border border-white/30 text-white text-xs font-mono cursor-pointer hover:bg-white/25"
               >
                 /status
               </button>
@@ -202,7 +202,7 @@ export function TelegramBotWorkbench({
           </div>
 
           {/* Chat Bubbles */}
-          <div className="p-4 space-y-3 h-[360px] overflow-y-auto bg-[#181C21]">
+          <div className="p-5 space-y-3.5 h-[360px] overflow-y-auto bg-[#F0F3F5]">
             {chatHistory.map((item) => (
               <div
                 key={item.id}
@@ -211,12 +211,12 @@ export function TelegramBotWorkbench({
                 }`}
               >
                 <div
-                  className={`max-w-[85%] rounded-xl px-4 py-2.5 text-xs whitespace-pre-wrap leading-relaxed ${
+                  className={`max-w-[85%] rounded-[16px_16px_16px_4px] px-4 py-3 text-xs whitespace-pre-wrap leading-relaxed shadow-2xs ${
                     item.sender === 'student'
-                      ? 'bg-[#14C7C3] text-[#074140] font-medium rounded-br-none'
+                      ? 'bg-[#005FA3] text-white font-medium'
                       : item.isError
-                      ? 'bg-rose-950/90 border border-rose-500/50 text-rose-200 rounded-bl-none'
-                      : 'bg-[#1C2126] border border-[#095856] text-[#E0FFF9] rounded-bl-none'
+                      ? 'bg-rose-50 border border-rose-300 text-rose-900'
+                      : 'bg-[#FFFFFF] border border-[#111010]/12 text-[#111010]'
                   }`}
                 >
                   {item.badge && (
@@ -226,14 +226,14 @@ export function TelegramBotWorkbench({
                   )}
                   {item.text}
                 </div>
-                <span className="text-[10px] text-[#B8F4F3]/70 mt-1 px-1">{item.timestamp}</span>
+                <span className="text-[10px] text-[#111010]/60 mt-1 px-1">{item.timestamp}</span>
               </div>
             ))}
           </div>
 
           {/* Test Photo Attachment Buttons */}
-          <div className="bg-[#1C2126] border-t border-[#095856] p-3.5 space-y-2.5">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="bg-[#FFFFFF] border-t border-[#111010]/12 p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <button
                 disabled={isSending}
                 onClick={() =>
@@ -243,13 +243,13 @@ export function TelegramBotWorkbench({
                     'Compressed Photo (Rejected)'
                   )
                 }
-                className="p-2.5 rounded-lg bg-[#181C21] hover:bg-rose-950/40 border border-rose-500/40 text-left transition cursor-pointer"
+                className="p-3 rounded-[12px_12px_12px_2px] bg-rose-50/70 hover:bg-rose-100/70 border border-rose-300 text-left transition cursor-pointer"
               >
-                <div className="flex items-center gap-1.5 text-rose-300 font-semibold text-xs">
+                <div className="flex items-center gap-1.5 text-rose-800 font-bold text-xs">
                   <CameraOff className="w-3.5 h-3.5 shrink-0" />
                   <span>1. Normal Photo</span>
                 </div>
-                <div className="text-[10px] text-[#B8F4F3] mt-0.5">
+                <div className="text-[10px] text-rose-700/80 mt-0.5">
                   Bot rejects (EXIF stripped)
                 </div>
               </button>
@@ -273,13 +273,13 @@ export function TelegramBotWorkbench({
                     'Missing GPS (Rejected)'
                   )
                 }
-                className="p-2.5 rounded-lg bg-[#181C21] hover:border-[#FDB022] border border-[#FDB022]/40 text-left transition cursor-pointer"
+                className="p-3 rounded-[12px_12px_12px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] border border-[#111010]/20 text-left transition cursor-pointer"
               >
-                <div className="flex items-center gap-1.5 text-[#FDB022] font-semibold text-xs">
-                  <AlertOctagon className="w-3.5 h-3.5 shrink-0" />
+                <div className="flex items-center gap-1.5 text-[#111010] font-bold text-xs">
+                  <AlertOctagon className="w-3.5 h-3.5 shrink-0 text-[#005FA3]" />
                   <span>2. File Missing GPS</span>
                 </div>
-                <div className="text-[10px] text-[#B8F4F3] mt-0.5">
+                <div className="text-[10px] text-[#111010]/65 mt-0.5">
                   Bot rejects missing location
                 </div>
               </button>
@@ -305,13 +305,13 @@ export function TelegramBotWorkbench({
                     'Valid EXIF File'
                   )
                 }
-                className="p-2.5 rounded-lg bg-[#181C21] hover:border-[#14C7C3] border border-[#095856] text-left transition cursor-pointer"
+                className="p-3 rounded-[12px_12px_12px_2px] bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 border border-[#005FA3]/30 text-left transition cursor-pointer"
               >
-                <div className="flex items-center gap-1.5 text-[#75E0A7] font-semibold text-xs">
+                <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
                   <CloudUpload className="w-3.5 h-3.5 shrink-0" />
                   <span>3. Valid School File</span>
                 </div>
-                <div className="text-[10px] text-[#B8F4F3] mt-0.5">
+                <div className="text-[10px] text-[#111010]/70 mt-0.5">
                   Verifies GPS &amp; asks questions
                 </div>
               </button>
@@ -331,12 +331,12 @@ export function TelegramBotWorkbench({
                     ? 'Enter sales in Rs. (e.g. "9000" or "24000")...'
                     : 'Type /log_impact or reply here...'
                 }
-                className="flex-1 bg-[#181C21] border border-[#095856] rounded-lg px-3.5 py-2 text-xs text-[#E0FFF9] placeholder-[#B8F4F3]/50 focus:outline-none focus:border-[#14C7C3]"
+                className="flex-1 hai-input px-3.5 py-2 text-xs"
               />
               <button
                 type="submit"
                 disabled={isSending}
-                className="figma-skeuomorphic-btn px-4 py-2 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                className="hai-btn-primary px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 Send
@@ -347,29 +347,29 @@ export function TelegramBotWorkbench({
 
         {/* Right Column: Resubmission & Recent Bot Messages (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-5 space-y-3">
+          <div className="hai-card p-6 space-y-3.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[#FDB022] font-semibold text-xs uppercase">
+              <div className="flex items-center gap-2 text-[#005FA3] font-bold text-xs uppercase">
                 <RefreshCw className="w-4 h-4" />
                 <span>Rejected Submissions (1x Resubmission Allowed)</span>
               </div>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {rejectedLogs.map((rLog) => (
                 <div
                   key={rLog.id}
-                  className="bg-[#181C21] border border-[#095856] rounded-lg p-3.5 text-xs space-y-2"
+                  className="hai-chrome-box p-4 text-xs space-y-2"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-[#E0FFF9]">
+                    <span className="font-bold text-[#111010]">
                       {rLog.activity_title} ({rLog.school_name})
                     </span>
-                    <span className="figma-code-chip px-2 py-0.5 font-mono text-[10px] text-[#E0FFF9]">
+                    <span className="hai-tag font-mono text-[10px] font-bold">
                       {rLog.resubmission_count}/1 used
                     </span>
                   </div>
-                  <div className="text-rose-300 text-[11px]">
+                  <div className="text-rose-700 font-medium text-[11px]">
                     Reason: &ldquo;{rLog.rejection_reason}&rdquo;
                   </div>
                   <button
@@ -380,7 +380,7 @@ export function TelegramBotWorkbench({
                         'Resubmit Entry'
                       )
                     }
-                    className="w-full py-1.5 rounded-lg bg-[#1C2126] hover:bg-[#095856]/40 border border-[#095856] text-[#14C7C3] font-semibold text-xs transition cursor-pointer"
+                    className="w-full py-2 hai-btn-secondary text-xs cursor-pointer"
                   >
                     Resubmit {rLog.id} in Bot →
                   </button>
@@ -389,22 +389,19 @@ export function TelegramBotWorkbench({
             </div>
           </div>
 
-          <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-5 space-y-3">
-            <div className="flex items-center gap-2 text-[#14C7C3] font-semibold text-xs uppercase">
+          <div className="hai-card p-6 space-y-3.5">
+            <div className="flex items-center gap-2 text-[#005FA3] font-bold text-xs uppercase">
               <MessageSquareWarning className="w-4 h-4" />
               <span>Recent Telegram Notifications Sent to Students</span>
             </div>
 
             <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
               {telegramMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className="bg-[#181C21] border border-[#095856] rounded-lg p-3 text-xs space-y-1"
-                >
-                  <div className="font-semibold text-[#E0FFF9]">
+                <div key={msg.id} className="hai-chrome-box p-3.5 text-xs space-y-1">
+                  <div className="font-bold text-[#111010]">
                     To: {msg.student_name} ({msg.telegram_username})
                   </div>
-                  <p className="text-[#B8F4F3] whitespace-pre-wrap text-[11px] leading-relaxed">
+                  <p className="text-[#111010]/75 whitespace-pre-wrap text-[11px] leading-relaxed">
                     {msg.text}
                   </p>
                 </div>

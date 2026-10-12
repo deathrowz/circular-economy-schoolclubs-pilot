@@ -245,23 +245,23 @@ export function VerificationEngineView({
   return (
     <div className="space-y-6">
       {/* Simple Role Switcher Bar */}
-      <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-5">
+      <div className="hai-card p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="figma-emerald-pill px-2.5 py-0.5 text-xs font-semibold uppercase">
+              <span className="hai-cyan-pill text-xs font-bold uppercase">
                 Role: {activeUser.role.replace('_', ' ')}
               </span>
               {activeUser.school_name && (
-                <span className="figma-code-chip px-2.5 py-0.5 text-xs font-mono text-[#14C7C3]">
+                <span className="hai-tag text-xs font-mono font-bold">
                   School: {activeUser.school_name}
                 </span>
               )}
             </div>
-            <h2 className="mt-2 text-lg font-bold text-[#E0FFF9] font-[var(--font-jakarta)]">
+            <h2 className="mt-2.5 text-xl font-bold text-[#111010] font-[var(--font-jakarta)]">
               {activeUser.full_name}
             </h2>
-            <p className="text-xs text-[#B8F4F3] mt-0.5">
+            <p className="text-xs text-[#111010]/70 mt-0.5">
               {activeUser.role === 'teacher' &&
                 `Approve activities for ${activeUser.school_name}. Small logs (≤ ${formatLkr(
                   config.macro_revenue_threshold_usd
@@ -291,10 +291,10 @@ export function VerificationEngineView({
                     onSwitchUser(u.id);
                     setFeedbackBanner(null);
                   }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-full text-xs font-semibold transition cursor-pointer ${
                     activeUser.id === u.id
-                      ? 'bg-[#14C7C3] border-[#14C7C3] text-[#074140]'
-                      : 'bg-[#181C21] border-[#095856] text-[#B8F4F3] hover:text-[#E0FFF9]'
+                      ? 'bg-[#005FA3] text-[#9CF2F2]'
+                      : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60 hover:text-[#005FA3]'
                   }`}
                 >
                   {u.full_name.split(' (')[0]} ({u.role === 'expert_admin' ? 'Panel' : u.role})
@@ -307,18 +307,18 @@ export function VerificationEngineView({
       {/* Feedback Banner */}
       {feedbackBanner && (
         <div
-          className={`rounded-xl border p-4 flex items-start justify-between gap-4 ${
+          className={`rounded-[18px_18px_18px_4px] border p-4 flex items-start justify-between gap-4 ${
             feedbackBanner.type === 'success'
-              ? 'bg-[#053321] border-[#085D3A] text-[#75E0A7]'
+              ? 'bg-[#E9F5F4] border-[#14494F]/30 text-[#14494F]'
               : feedbackBanner.type === 'warning'
-              ? 'bg-[#1C2126] border-[#FDB022] text-[#FDB022]'
-              : 'bg-rose-950/80 border-rose-500/60 text-rose-200'
+              ? 'bg-[#FFFFFF] border-[#005FA3] text-[#005FA3]'
+              : 'bg-rose-50 border-rose-300 text-rose-800'
           }`}
         >
-          <div className="text-xs sm:text-sm font-medium">{feedbackBanner.message}</div>
+          <div className="text-xs sm:text-sm font-semibold">{feedbackBanner.message}</div>
           <button
             onClick={() => setFeedbackBanner(null)}
-            className="text-xs underline shrink-0 cursor-pointer"
+            className="text-xs font-bold underline shrink-0 cursor-pointer"
           >
             Close
           </button>
@@ -327,24 +327,24 @@ export function VerificationEngineView({
 
       {/* Read-Only Notice for Student or Mentor */}
       {(activeUser.role === 'student' || activeUser.role === 'mentor') && (
-        <div className="bg-[#1C2126] border border-[#FDB022]/50 rounded-xl p-6 text-center space-y-3">
-          <Lock className="w-8 h-8 text-[#FDB022] mx-auto" />
-          <h3 className="text-base font-bold text-[#E0FFF9]">
+        <div className="hai-card p-8 text-center space-y-3">
+          <Lock className="w-8 h-8 text-[#005FA3] mx-auto" />
+          <h3 className="text-lg font-bold text-[#111010]">
             Approvals Restricted to Teachers &amp; National Panel
           </h3>
-          <p className="text-xs text-[#B8F4F3] max-w-lg mx-auto">
+          <p className="text-xs text-[#111010]/70 max-w-lg mx-auto">
             Students submit data via the Telegram Bot, and Mentors have read-only access. Switch to a Teacher or National Panel member below to test approvals:
           </p>
-          <div className="flex flex-wrap justify-center gap-3 pt-1">
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
             <button
               onClick={() => onSwitchUser('usr-teacher-01')}
-              className="figma-skeuomorphic-btn px-4 py-2 text-xs font-semibold cursor-pointer"
+              className="hai-btn-primary px-5 py-2.5 text-xs cursor-pointer"
             >
               Switch to Mrs. Kumari Senanayake (Teacher - Royal College)
             </button>
             <button
               onClick={() => onSwitchUser('usr-expert-01')}
-              className="px-4 py-2 rounded-full bg-[#181C21] border border-[#095856] text-[#14C7C3] text-xs font-semibold cursor-pointer"
+              className="hai-btn-secondary px-5 py-2.5 text-xs cursor-pointer"
             >
               Switch to Dr. Nuwan Gunasekara (National Panel)
             </button>
@@ -354,32 +354,32 @@ export function VerificationEngineView({
 
       {/* TIER 1: TEACHER APPROVAL QUEUE */}
       {activeUser.role === 'teacher' && (
-        <div className="space-y-4">
-          <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-5">
+          <div className="hai-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-[#14C7C3]" />
-              <span className="text-sm font-semibold text-[#E0FFF9]">
+              <ShieldCheck className="w-5 h-5 text-[#005FA3]" />
+              <span className="text-sm font-semibold text-[#111010]">
                 Pending Submissions for {activeUser.school_name} ({teacherPendingLogs.length})
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 text-xs">
-              <label className="inline-flex items-center gap-1.5 text-[#B8F4F3] cursor-pointer">
+            <div className="flex flex-wrap items-center gap-4 text-xs">
+              <label className="inline-flex items-center gap-1.5 text-[#111010]/80 font-medium cursor-pointer">
                 <input
                   type="checkbox"
                   checked={forceRandomAuditOnApprove}
                   onChange={(e) => setForceRandomAuditOnApprove(e.target.checked)}
-                  className="rounded accent-[#14C7C3]"
+                  className="rounded accent-[#005FA3]"
                 />
                 <span>Include in 10% Audit Sample</span>
               </label>
 
-              <label className="inline-flex items-center gap-1.5 text-rose-300 cursor-pointer">
+              <label className="inline-flex items-center gap-1.5 text-rose-700 font-medium cursor-pointer">
                 <input
                   type="checkbox"
                   checked={showCrossSchoolRlsTest}
                   onChange={(e) => setShowCrossSchoolRlsTest(e.target.checked)}
-                  className="rounded accent-rose-500"
+                  className="rounded accent-rose-600"
                 />
                 <span>Test Other School Block (RLS)</span>
               </label>
@@ -387,7 +387,7 @@ export function VerificationEngineView({
           </div>
 
           {teacherPendingLogs.length === 0 ? (
-            <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-8 text-center text-[#B8F4F3] text-sm">
+            <div className="hai-card p-8 text-center text-[#111010]/70 text-sm">
               All pending submissions for {activeUser.school_name} have been reviewed!
             </div>
           ) : (
@@ -399,52 +399,56 @@ export function VerificationEngineView({
                 return (
                   <div
                     key={log.id}
-                    className={`bg-[#1C2126] border rounded-xl p-5 space-y-4 ${
-                      isForeignSchool ? 'border-rose-500/60' : 'border-[#095856]'
+                    className={`hai-card p-6 space-y-4 ${
+                      isForeignSchool ? 'border-rose-400' : ''
                     }`}
                   >
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="figma-code-chip font-mono text-xs px-2 py-0.5 text-[#E0FFF9]">
+                          <span className="hai-tag font-mono text-xs font-bold">
                             {log.school_name}
                           </span>
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                            className={`px-3 py-0.5 rounded-full text-xs font-semibold ${
                               log.transaction_type === 'macro'
-                                ? 'border-[#F670C7] text-[#F670C7] bg-[#181C21]'
-                                : 'border-[#14C7C3] text-[#14C7C3] bg-[#181C21]'
+                                ? 'bg-[#005FA3] text-[#9CF2F2]'
+                                : 'bg-[#9CF2F2] text-[#005FA3]'
                             }`}
                           >
                             {log.transaction_type === 'macro'
                               ? `Macro Sale (> ${formatLkr(config.macro_revenue_threshold_usd)})`
                               : `Micro Activity (≤ ${formatLkr(config.macro_revenue_threshold_usd)})`}
                           </span>
-                          <span className="text-xs text-[#75E0A7]">
+                          <span className="text-xs font-semibold text-[#14494F]">
                             <MapPin className="w-3.5 h-3.5 inline mr-1" />
                             {log.campus_distance_meters}m from school ({log.on_campus_verified ? 'On-Campus' : 'Off-Campus'})
                           </span>
                         </div>
 
-                        <h4 className="mt-2 text-base font-bold text-[#E0FFF9] font-[var(--font-jakarta)]">
+                        <h4 className="mt-2.5 text-lg font-bold text-[#111010] font-[var(--font-jakarta)]">
                           {log.activity_title}
                         </h4>
-                        <p className="text-xs text-[#B8F4F3] mt-0.5">
-                          Submitted by <strong className="text-[#E0FFF9]">{log.student_name}</strong> • {log.description}
+                        <p className="text-xs text-[#111010]/75 mt-0.5">
+                          Submitted by <strong className="text-[#111010]">{log.student_name}</strong> • {log.description}
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-4 bg-[#181C21] border border-[#095856] rounded-xl px-4 py-2.5 shrink-0">
+                      <div className="flex items-center gap-4 hai-chrome-box px-4 py-3 shrink-0">
                         <div>
-                          <div className="text-[10px] uppercase text-[#B8F4F3]">Waste Recycled</div>
-                          <div className="text-sm font-bold text-[#75E0A7] font-mono">
+                          <div className="text-[10px] uppercase font-semibold text-[#111010]/60">
+                            Waste Recycled
+                          </div>
+                          <div className="text-sm font-bold text-[#14494F] font-mono">
                             {log.waste_kg} kg
                           </div>
                         </div>
-                        <div className="h-7 w-px bg-[#095856]" />
+                        <div className="h-7 w-px bg-[#111010]/15" />
                         <div>
-                          <div className="text-[10px] uppercase text-[#B8F4F3]">Sales (Rs.)</div>
-                          <div className="text-sm font-bold text-[#E0FFF9] font-mono">
+                          <div className="text-[10px] uppercase font-semibold text-[#111010]/60">
+                            Sales (Rs.)
+                          </div>
+                          <div className="text-sm font-bold text-[#111010] font-mono">
                             {formatLkr(log.revenue_usd)}
                           </div>
                         </div>
@@ -452,15 +456,15 @@ export function VerificationEngineView({
                     </div>
 
                     {isHighRevZeroEnv && (
-                      <div className="bg-rose-950/50 border border-rose-500/40 rounded-lg p-3 flex items-center gap-2 text-xs text-rose-200">
-                        <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                      <div className="bg-rose-50 border border-rose-300 rounded-lg p-3 flex items-center gap-2 text-xs text-rose-800">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                         <span>
                           <strong>Warning:</strong> High sales ({formatLkr(log.revenue_usd)}) reported with 0 kg recycled waste. Please Reject or Flag.
                         </span>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 pt-2 border-t border-[#095856]">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 pt-3 border-t border-[#111010]/12">
                       <div className="lg:col-span-5">
                         <input
                           type="text"
@@ -469,7 +473,7 @@ export function VerificationEngineView({
                             setReviewNotes((prev) => ({ ...prev, [log.id]: e.target.value }))
                           }
                           placeholder="Teacher comment (optional)..."
-                          className="w-full bg-[#181C21] border border-[#095856] rounded-lg px-3 py-2 text-xs text-[#E0FFF9]"
+                          className="w-full hai-input px-3 py-2 text-xs"
                         />
                       </div>
 
@@ -481,7 +485,7 @@ export function VerificationEngineView({
                             setRejectionReasons((prev) => ({ ...prev, [log.id]: e.target.value }))
                           }
                           placeholder="Reason if rejecting (sent via Telegram)..."
-                          className="w-full bg-[#181C21] border border-rose-500/40 rounded-lg px-3 py-2 text-xs text-[#E0FFF9]"
+                          className="w-full hai-input px-3 py-2 text-xs"
                         />
                       </div>
 
@@ -489,7 +493,7 @@ export function VerificationEngineView({
                         <button
                           disabled={busyLogId === log.id}
                           onClick={() => handleTeacherDecision(log, 'approve')}
-                          className="figma-skeuomorphic-btn px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                          className="hai-btn-primary px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           {log.transaction_type === 'macro' ? 'Endorse' : 'Approve'}
@@ -498,7 +502,7 @@ export function VerificationEngineView({
                         <button
                           disabled={busyLogId === log.id}
                           onClick={() => handleTeacherDecision(log, 'reject')}
-                          className="px-3 py-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                          className="px-3.5 py-2 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
                         >
                           <XCircle className="w-3.5 h-3.5" />
                           Reject
@@ -507,7 +511,7 @@ export function VerificationEngineView({
                         <button
                           disabled={busyLogId === log.id}
                           onClick={() => handleTeacherDecision(log, 'flag')}
-                          className="px-2.5 py-2 rounded-full bg-[#181C21] border border-[#FDB022]/50 text-[#FDB022] text-xs font-semibold cursor-pointer"
+                          className="hai-btn-secondary px-2.5 py-2 text-xs cursor-pointer"
                           title="Flag for review"
                         >
                           <Flag className="w-3.5 h-3.5" />
@@ -525,13 +529,13 @@ export function VerificationEngineView({
       {/* TIER 2: NATIONAL EXPERT PANEL */}
       {activeUser.role === 'expert_admin' && (
         <div className="space-y-6">
-          <div className="flex flex-wrap gap-2 border-b border-[#095856] pb-3">
+          <div className="flex flex-wrap gap-2 border-b border-[#111010]/15 pb-3">
             <button
               onClick={() => setExpertSubTab('macro_scoring')}
               className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
                 expertSubTab === 'macro_scoring'
-                  ? 'bg-[#14C7C3] text-[#074140]'
-                  : 'bg-[#1C2126] text-[#B8F4F3] border border-[#095856]'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#FFFFFF] text-[#111010]/80 border border-[#111010]/15'
               }`}
             >
               <Gavel className="w-4 h-4" />
@@ -542,8 +546,8 @@ export function VerificationEngineView({
               onClick={() => setExpertSubTab('random_audit')}
               className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
                 expertSubTab === 'random_audit'
-                  ? 'bg-[#14C7C3] text-[#074140]'
-                  : 'bg-[#1C2126] text-[#B8F4F3] border border-[#095856]'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#FFFFFF] text-[#111010]/80 border border-[#111010]/15'
               }`}
             >
               <Dice5 className="w-4 h-4" />
@@ -554,8 +558,8 @@ export function VerificationEngineView({
               onClick={() => setExpertSubTab('algorithm_config')}
               className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
                 expertSubTab === 'algorithm_config'
-                  ? 'bg-[#14C7C3] text-[#074140]'
-                  : 'bg-[#1C2126] text-[#B8F4F3] border border-[#095856]'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#FFFFFF] text-[#111010]/80 border border-[#111010]/15'
               }`}
             >
               <Sliders className="w-4 h-4" />
@@ -566,7 +570,7 @@ export function VerificationEngineView({
           {expertSubTab === 'macro_scoring' && (
             <div className="space-y-4">
               {expertMacroQueue.length === 0 ? (
-                <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-8 text-center text-[#B8F4F3] text-sm">
+                <div className="hai-card p-8 text-center text-[#111010]/70 text-sm">
                   All Teacher-endorsed Macro submissions have been scored!
                 </div>
               ) : (
@@ -582,33 +586,33 @@ export function VerificationEngineView({
                   return (
                     <div
                       key={log.id}
-                      className="bg-[#1C2126] border border-[#095856] rounded-xl p-5 space-y-4"
+                      className="hai-card p-6 space-y-5"
                     >
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#095856] pb-4">
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#111010]/12 pb-4">
                         <div>
-                          <span className="figma-code-chip font-mono text-xs px-2.5 py-0.5 text-[#E0FFF9]">
+                          <span className="hai-tag font-mono text-xs font-bold">
                             {log.school_name} • {log.club_name}
                           </span>
-                          <h4 className="mt-2 text-lg font-bold text-[#E0FFF9] font-[var(--font-jakarta)]">
+                          <h4 className="mt-2.5 text-lg font-bold text-[#111010] font-[var(--font-jakarta)]">
                             {log.activity_title}
                           </h4>
-                          <p className="text-xs text-[#B8F4F3] mt-0.5">{log.description}</p>
+                          <p className="text-xs text-[#111010]/75 mt-0.5">{log.description}</p>
                         </div>
 
-                        <div className="bg-[#181C21] border border-[#095856] rounded-xl p-3.5 text-right shrink-0">
-                          <div className="text-[11px] text-[#14C7C3] font-semibold">
+                        <div className="hai-chrome-box p-4 text-right shrink-0">
+                          <div className="text-[11px] text-[#005FA3] font-bold uppercase">
                             Points to Release
                           </div>
-                          <div className="text-xl font-bold text-[#E0FFF9] font-mono">
+                          <div className="text-xl font-bold text-[#005FA3] font-mono">
                             +{previewPoints} pts
                           </div>
-                          <div className="text-xs text-[#B8F4F3]">
+                          <div className="text-xs text-[#111010]/70">
                             {log.waste_kg} kg • {formatLkr(log.revenue_usd)}
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                         {(
                           [
                             ['relevance', '1. Relevance'],
@@ -619,13 +623,10 @@ export function VerificationEngineView({
                             ['institutional_commitment', '6. School Commitment'],
                           ] as Array<[keyof CriteriaScores, string]>
                         ).map(([key, label]) => (
-                          <div
-                            key={key}
-                            className="bg-[#181C21] border border-[#095856] rounded-lg p-3"
-                          >
+                          <div key={key} className="hai-chrome-box p-3.5">
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-[#E0FFF9]">{label}</span>
-                              <span className="font-mono font-bold text-[#14C7C3]">
+                              <span className="font-semibold text-[#111010]">{label}</span>
+                              <span className="font-mono font-bold text-[#005FA3]">
                                 {scores[key]}/100
                               </span>
                             </div>
@@ -643,7 +644,7 @@ export function VerificationEngineView({
                                   scores
                                 )
                               }
-                              className="w-full mt-2 accent-[#14C7C3] cursor-pointer"
+                              className="w-full mt-2 accent-[#005FA3] cursor-pointer"
                             />
                           </div>
                         ))}
@@ -660,13 +661,13 @@ export function VerificationEngineView({
                             }))
                           }
                           placeholder="Rejection reason if rejecting..."
-                          className="flex-1 bg-[#181C21] border border-[#095856] rounded-lg px-3 py-2 text-xs text-[#E0FFF9]"
+                          className="flex-1 hai-input px-3 py-2 text-xs"
                         />
                         <div className="flex items-center gap-2">
                           <button
                             disabled={busyLogId === log.id}
                             onClick={() => handleExpertAction(log, 'approve_macro')}
-                            className="figma-skeuomorphic-btn px-4 py-2 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                            className="hai-btn-primary px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
                           >
                             <Sparkles className="w-4 h-4" />
                             Approve (+{previewPoints} pts)
@@ -674,7 +675,7 @@ export function VerificationEngineView({
                           <button
                             disabled={busyLogId === log.id}
                             onClick={() => handleExpertAction(log, 'reject_macro')}
-                            className="px-3.5 py-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                            className="px-4 py-2 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                           >
                             <XCircle className="w-4 h-4" />
                             Reject
@@ -691,23 +692,23 @@ export function VerificationEngineView({
           {expertSubTab === 'random_audit' && (
             <div className="space-y-4">
               {expertRandomAuditQueue.length === 0 ? (
-                <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-8 text-center text-[#B8F4F3] text-sm">
+                <div className="hai-card p-8 text-center text-[#111010]/70 text-sm">
                   No micro-transactions waiting in the 10% random audit queue.
                 </div>
               ) : (
                 expertRandomAuditQueue.map((log) => (
                   <div
                     key={log.id}
-                    className="bg-[#1C2126] border border-[#095856] rounded-xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                    className="hai-card p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                   >
                     <div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-[#181C21] text-[#FDB022] border border-[#FDB022] font-mono text-xs">
+                      <span className="hai-cyan-pill font-mono text-xs font-bold">
                         10% Random Audit • {log.school_name}
                       </span>
-                      <h4 className="mt-2 text-base font-bold text-[#E0FFF9]">
+                      <h4 className="mt-2.5 text-base font-bold text-[#111010]">
                         {log.activity_title} ({log.waste_kg} kg • {formatLkr(log.revenue_usd)})
                       </h4>
-                      <p className="text-xs text-[#B8F4F3] mt-0.5">
+                      <p className="text-xs text-[#111010]/70 mt-0.5">
                         Approved by {log.teacher_reviewer_name} • Awarded +{log.points_awarded} pts
                       </p>
                     </div>
@@ -716,7 +717,7 @@ export function VerificationEngineView({
                       <button
                         disabled={busyLogId === log.id}
                         onClick={() => handleExpertAction(log, 'audit_pass')}
-                        className="figma-skeuomorphic-btn px-4 py-2 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                        className="hai-btn-primary px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         Confirm Valid
@@ -725,7 +726,7 @@ export function VerificationEngineView({
                       <button
                         disabled={busyLogId === log.id}
                         onClick={() => handleExpertAction(log, 'audit_fraud')}
-                        className="px-4 py-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                       >
                         <ShieldAlert className="w-4 h-4" />
                         Flag Invalid (-{config.fraud_penalty_points} pts penalty)
@@ -738,9 +739,9 @@ export function VerificationEngineView({
           )}
 
           {expertSubTab === 'algorithm_config' && (
-            <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-6 space-y-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#E0FFF9]">
-                <Settings2 className="w-4 h-4 text-[#14C7C3]" />
+            <div className="hai-card p-6 space-y-5">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#111010]">
+                <Settings2 className="w-4 h-4 text-[#005FA3]" />
                 <span>National Scoring Criteria Weights</span>
               </div>
 
@@ -755,13 +756,10 @@ export function VerificationEngineView({
                     ['institutional_commitment_weight', 'School Support'],
                   ] as Array<[keyof GamificationConfig, string]>
                 ).map(([key, label]) => (
-                  <div
-                    key={key}
-                    className="bg-[#181C21] border border-[#095856] rounded-lg p-3.5"
-                  >
+                  <div key={key} className="hai-chrome-box p-4">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#E0FFF9]">{label}</span>
-                      <span className="font-mono text-[#14C7C3] font-bold">
+                      <span className="font-semibold text-[#111010]">{label}</span>
+                      <span className="font-mono text-[#005FA3] font-bold">
                         {(Number(configDraft[key]) * 100).toFixed(0)}%
                       </span>
                     </div>
@@ -778,7 +776,7 @@ export function VerificationEngineView({
                           [key]: Number(e.target.value),
                         }))
                       }
-                      className="w-full mt-2 accent-[#14C7C3] cursor-pointer"
+                      className="w-full mt-2 accent-[#005FA3] cursor-pointer"
                     />
                   </div>
                 ))}
@@ -787,7 +785,7 @@ export function VerificationEngineView({
               <div className="flex justify-end">
                 <button
                   onClick={handleSaveConfig}
-                  className="figma-skeuomorphic-btn px-5 py-2 text-xs font-semibold cursor-pointer"
+                  className="hai-btn-primary px-5 py-2.5 text-xs cursor-pointer"
                 >
                   Save &amp; Recalculate Rankings
                 </button>

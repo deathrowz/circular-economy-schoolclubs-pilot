@@ -43,65 +43,65 @@ export function HealthRiskDashboardView({
   return (
     <div className="space-y-6">
       {/* 4 Simple Alert Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-5">
-          <div className="flex items-center justify-between text-[#FDB022] text-xs font-semibold">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="hai-card p-5">
+          <div className="flex items-center justify-between text-[#005FA3] text-xs font-bold">
             <span>Inactive Clubs (&gt;14 Days)</span>
             <Clock className="w-4 h-4" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-[#E0FFF9] font-[var(--font-jakarta)]">
+          <div className="mt-2 text-2xl font-bold text-[#111010] font-[var(--font-jakarta)]">
             {inactiveCount} Schools
           </div>
-          <p className="text-xs text-[#B8F4F3] mt-1">
+          <p className="text-xs text-[#111010]/70 mt-1">
             Need Teacher follow-up on Telegram
           </p>
         </div>
 
-        <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-5">
-          <div className="flex items-center justify-between text-rose-400 text-xs font-semibold">
+        <div className="hai-card p-5">
+          <div className="flex items-center justify-between text-rose-700 text-xs font-bold">
             <span>High Sales / 0 kg Waste</span>
             <TrendingDown className="w-4 h-4" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-[#E0FFF9] font-[var(--font-jakarta)]">
+          <div className="mt-2 text-2xl font-bold text-[#111010] font-[var(--font-jakarta)]">
             {greenwashCount} Flagged
           </div>
-          <p className="text-xs text-[#B8F4F3] mt-1">
+          <p className="text-xs text-[#111010]/70 mt-1">
             Sales reported without recycled material
           </p>
         </div>
 
-        <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-5">
-          <div className="flex items-center justify-between text-[#14C7C3] text-xs font-semibold">
+        <div className="hai-card p-5">
+          <div className="flex items-center justify-between text-[#005FA3] text-xs font-bold">
             <span>Off-Campus Photos</span>
             <MapPinOff className="w-4 h-4" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-[#E0FFF9] font-[var(--font-jakarta)]">
+          <div className="mt-2 text-2xl font-bold text-[#111010] font-[var(--font-jakarta)]">
             {geofenceCount} Photos
           </div>
-          <p className="text-xs text-[#B8F4F3] mt-1">
+          <p className="text-xs text-[#111010]/70 mt-1">
             GPS outside school boundary
           </p>
         </div>
 
-        <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-5">
-          <div className="flex items-center justify-between text-[#F670C7] text-xs font-semibold">
+        <div className="hai-card p-5">
+          <div className="flex items-center justify-between text-rose-700 text-xs font-bold">
             <span>Audit Penalties</span>
             <ShieldAlert className="w-4 h-4" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-rose-400 font-[var(--font-jakarta)]">
+          <div className="mt-2 text-2xl font-bold text-rose-700 font-[var(--font-jakarta)]">
             {fraudCount} Applied
           </div>
-          <p className="text-xs text-[#B8F4F3] mt-1">
+          <p className="text-xs text-[#111010]/70 mt-1">
             Flagged in 10% random audit
           </p>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-[#1C2126] border border-[#095856] rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="hai-card p-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <AlertOctagon className="w-5 h-5 text-rose-400" />
-          <h3 className="text-sm font-semibold text-[#E0FFF9] font-[var(--font-jakarta)]">
+          <AlertOctagon className="w-5 h-5 text-[#005FA3]" />
+          <h3 className="text-sm font-semibold text-[#111010] font-[var(--font-jakarta)]">
             School Activity Alerts ({filteredAlerts.length})
           </h3>
         </div>
@@ -117,10 +117,10 @@ export function HealthRiskDashboardView({
             <button
               key={tab.id}
               onClick={() => setSelectedCategory(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
                 selectedCategory === tab.id
-                  ? 'bg-[#14C7C3] text-[#074140]'
-                  : 'bg-[#181C21] text-[#B8F4F3] border border-[#095856] hover:text-[#E0FFF9]'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/50 hover:text-[#005FA3]'
               }`}
             >
               {tab.label}
@@ -130,74 +130,65 @@ export function HealthRiskDashboardView({
       </div>
 
       {/* Alert Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredAlerts.map((alert) => {
-          const borderStyle =
-            alert.severity === 'critical'
-              ? 'border-rose-500/60 bg-[#1C2126]'
-              : alert.severity === 'high'
-              ? 'border-[#FDB022]/60 bg-[#1C2126]'
-              : 'border-[#095856] bg-[#1C2126]';
-
-          return (
-            <div
-              key={alert.id}
-              className={`border rounded-xl p-5 flex flex-col justify-between gap-4 ${borderStyle}`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="figma-code-chip px-2.5 py-0.5 font-mono text-xs font-semibold text-[#E0FFF9]">
-                    {alert.school_name}
-                  </span>
-                  <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-[#181C21] border border-[#095856] text-rose-300">
-                    {alert.metric_highlight}
-                  </span>
-                </div>
-
-                <h4 className="mt-2.5 text-base font-semibold text-[#E0FFF9] font-[var(--font-jakarta)]">
-                  {alert.title}
-                </h4>
-                <p className="text-xs text-[#B8F4F3] mt-1 leading-relaxed">
-                  {alert.description}
-                </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {filteredAlerts.map((alert) => (
+          <div
+            key={alert.id}
+            className="hai-card p-6 flex flex-col justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="hai-tag font-mono text-xs font-bold">
+                  {alert.school_name}
+                </span>
+                <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-rose-800">
+                  {alert.metric_highlight}
+                </span>
               </div>
 
-              <div className="pt-3 border-t border-[#095856] flex items-center justify-between gap-2 text-xs">
-                <span className="text-[#FDB022] font-medium">
-                  Next Step: {alert.recommended_action}
-                </span>
-                <div className="flex items-center gap-2 shrink-0">
+              <h4 className="mt-3 text-base font-semibold text-[#111010] font-[var(--font-jakarta)]">
+                {alert.title}
+              </h4>
+              <p className="text-xs text-[#111010]/75 mt-1 leading-relaxed">
+                {alert.description}
+              </p>
+            </div>
+
+            <div className="pt-3.5 border-t border-[#111010]/12 flex items-center justify-between gap-2 text-xs">
+              <span className="text-[#005FA3] font-semibold">
+                Next Step: {alert.recommended_action}
+              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => onInspectClub(alert.club_id)}
+                  className="hai-btn-secondary px-3.5 py-1.5 text-xs cursor-pointer"
+                >
+                  View Club
+                </button>
+                {alert.related_log_id && (
                   <button
-                    onClick={() => onInspectClub(alert.club_id)}
-                    className="px-3 py-1 rounded-full bg-[#181C21] border border-[#095856] text-[#E0FFF9] font-semibold cursor-pointer"
+                    onClick={onNavigateToVerification}
+                    className="hai-btn-primary px-3.5 py-1.5 text-xs cursor-pointer"
                   >
-                    View Club
+                    Review →
                   </button>
-                  {alert.related_log_id && (
-                    <button
-                      onClick={onNavigateToVerification}
-                      className="figma-skeuomorphic-btn px-3 py-1 text-xs font-semibold cursor-pointer"
-                    >
-                      Review →
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {/* Simplified 5-Column Approval & Audit History Table */}
-      <div className="bg-[#1C2126] border border-[#095856] rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#095856] flex items-center justify-between">
+      <div className="hai-card overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#111010]/15 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Database className="w-5 h-5 text-[#14C7C3]" />
-            <h3 className="text-sm font-semibold text-[#E0FFF9] font-[var(--font-jakarta)]">
+            <Database className="w-5 h-5 text-[#005FA3]" />
+            <h3 className="text-base font-semibold text-[#111010] font-[var(--font-jakarta)]">
               Recent Approval &amp; Audit History
             </h3>
           </div>
-          <span className="figma-emerald-pill px-2.5 py-0.5 font-mono text-xs">
+          <span className="hai-cyan-pill font-mono text-xs font-bold">
             {auditLogs.length} Records
           </span>
         </div>
@@ -205,7 +196,7 @@ export function HealthRiskDashboardView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="h-[44px] border-b border-[#095856] bg-[#1C2126] text-[#B8F4F3] font-medium">
+              <tr className="h-[44px] border-b border-[#111010]/15 bg-[#F0F3F5] text-[#111010]/75 font-semibold">
                 <th className="py-3 px-6">Date</th>
                 <th className="py-3 px-4">School &amp; Club</th>
                 <th className="py-3 px-4">Reviewer</th>
@@ -213,34 +204,34 @@ export function HealthRiskDashboardView({
                 <th className="py-3 px-6">Notes</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#095856]">
+            <tbody className="divide-y divide-[#111010]/12">
               {auditLogs.map((entry) => (
-                <tr key={entry.id} className="h-[64px] hover:bg-[#181C21]/90">
-                  <td className="py-3 px-6 font-mono text-[#B8F4F3] whitespace-nowrap">
+                <tr key={entry.id} className="h-[64px] hover:bg-[#E6F1FA]/50">
+                  <td className="py-3 px-6 font-mono text-[#111010]/70 whitespace-nowrap">
                     {new Date(entry.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-3 px-4">
-                    <div className="font-semibold text-[#E0FFF9]">{entry.school_name}</div>
-                    <div className="text-[11px] text-[#B8F4F3]">{entry.club_name}</div>
+                    <div className="font-semibold text-[#111010]">{entry.school_name}</div>
+                    <div className="text-[11px] text-[#111010]/65">{entry.club_name}</div>
                   </td>
                   <td className="py-3 px-4">
-                    <div className="font-semibold text-[#E0FFF9]">{entry.actor_name}</div>
+                    <div className="font-semibold text-[#111010]">{entry.actor_name}</div>
                   </td>
                   <td className="py-3 px-4 font-mono text-[11px]">
-                    <span className="text-[#B8F4F3]">{entry.previous_status || 'new'}</span>
-                    <span className="mx-1.5 text-[#14C7C3]">→</span>
-                    <span className="text-[#E0FFF9] font-bold">{entry.new_status}</span>
+                    <span className="text-[#111010]/65">{entry.previous_status || 'new'}</span>
+                    <span className="mx-1.5 text-[#005FA3] font-bold">→</span>
+                    <span className="text-[#005FA3] font-bold">{entry.new_status}</span>
                     {entry.points_delta !== 0 && (
                       <span
                         className={`ml-2 font-bold ${
-                          entry.points_delta > 0 ? 'text-[#75E0A7]' : 'text-rose-400'
+                          entry.points_delta > 0 ? 'text-[#14494F]' : 'text-rose-700'
                         }`}
                       >
                         ({entry.points_delta > 0 ? `+${entry.points_delta}` : entry.points_delta} pts)
                       </span>
                     )}
                   </td>
-                  <td className="py-3 px-6 text-[#B8F4F3] max-w-md">
+                  <td className="py-3 px-6 text-[#111010]/75 max-w-md">
                     {entry.reason_or_notes}
                   </td>
                 </tr>

@@ -59,10 +59,10 @@ export default function PlatformDashboardPage() {
 
   if (!snapshot) {
     return (
-      <div className="min-h-screen bg-[#0C111D] flex items-center justify-center p-6">
-        <div className="flex items-center gap-3 text-[#14C7C3] font-semibold text-sm">
-          <Recycle className="w-6 h-6 animate-spin" />
-          <span>Loading Sri Lanka 15-School Circular Enterprise Dashboard...</span>
+      <div className="min-h-screen bg-[#E6F1FA] flex items-center justify-center p-6">
+        <div className="hai-card px-6 py-4 flex items-center gap-3 text-[#005FA3] font-semibold text-sm shadow-xs">
+          <Recycle className="w-5 h-5 animate-spin" />
+          <span>Loading Haritha Pasal • Sri Lanka School Circular Index...</span>
         </div>
       </div>
     );
@@ -82,222 +82,148 @@ export default function PlatformDashboardPage() {
 
   const navMeta: Record<
     NavTab,
-    { title: string; subtitle: string; badge?: string | number }
+    { eyebrow: string; title: string; subtitle: string; badge?: string | number }
   > = {
     leaderboard: {
-      title: 'Sri Lanka School Circular Leaderboard',
+      eyebrow: 'Haritha Pasal • 2026 National Pilot Report',
+      title: 'Sri Lanka School Circular Index',
       subtitle:
-        'Tracking waste recycled (kg), student sales (Rs.), and seed grants across 15 pilot schools',
+        'Tracking verified school waste recycled (kg), student enterprise sales (Rs.), and top-off seed funding across 15 participating Sri Lankan schools.',
       badge: '15 Schools',
     },
     clubs: {
-      title: 'School Clubs & Student Projects',
+      eyebrow: 'Participating Schools & Student Enterprises',
+      title: 'School Clubs & Projects',
       subtitle:
-        'Simple overview of each school club, student office bearers, and verified sales & recycling logs',
+        'Explore each school’s circular-economy enterprise, student office bearers, teacher-in-charge, and verified recycling & sales ledger.',
     },
     verification: {
+      eyebrow: 'Two-Tier School Validation Loop',
       title: 'Teacher & National Panel Approvals',
       subtitle:
-        'Teachers verify school activities (≤ Rs. 15,000) • National Panel scores larger sales (> Rs. 15,000) & 10% audits',
+        'Teachers endorse campus activities up to Rs. 15,000 immediately. The National Panel scores larger sales (> Rs. 15,000) and audits a 10% sample.',
       badge: pendingTeacherCount + pendingExpertCount,
     },
     telegram_bot: {
-      title: 'Student Telegram Submission Bot',
+      eyebrow: 'Student Data Entry (@HarithaPasalBot)',
+      title: 'Telegram Activity Submission',
       subtitle:
-        'Students send uncompressed activity photos via Telegram (/log_impact) to log waste (kg) and sales (Rs.)',
+        'Students submit uncompressed activity photos as Documents/Files via Telegram (/log_impact) to verify school GPS coordinates, waste (kg), and sales (Rs.).',
     },
     health_risk: {
+      eyebrow: 'Program Integrity & Governance',
       title: 'School Activity Alerts & Audit Log',
       subtitle:
-        'Flags inactive clubs (>14 days), off-campus photos, and high sales with zero recycled material',
+        'Automated monitoring for inactive school clubs (>14 days), off-campus photo GPS coordinates, and high sales reported with zero recycled waste.',
       badge: snapshot.healthAlerts.length,
     },
   };
 
+  const navItems: Array<{
+    id: NavTab;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    count?: number;
+  }> = [
+    { id: 'leaderboard', label: 'School Index', icon: Trophy, count: 15 },
+    { id: 'clubs', label: 'School Clubs', icon: Building2 },
+    {
+      id: 'verification',
+      label: 'Approvals',
+      icon: ShieldCheck,
+      count: pendingTeacherCount + pendingExpertCount,
+    },
+    { id: 'telegram_bot', label: 'Telegram Bot', icon: Bot },
+    {
+      id: 'health_risk',
+      label: 'School Alerts',
+      icon: Activity,
+      count: snapshot.healthAlerts.length,
+    },
+  ];
+
   return (
-    <div className="min-h-screen flex bg-[#0C111D] text-[#E0FFF9]">
-      {/* Left Sidebar Navigation */}
-      <aside className="w-64 shrink-0 bg-[#0C111D] border-r border-[#1F242F] flex flex-col justify-between sticky top-0 h-screen hidden lg:flex">
-        <div className="p-4 space-y-6">
-          {/* Brand Header */}
-          <div className="flex items-center gap-3 px-2 pt-1">
-            <div className="w-9 h-9 rounded-lg bg-[#1C2126] border border-[#095856] flex items-center justify-center text-[#14C7C3] shadow-sm shrink-0">
-              <Recycle className="w-5 h-5 stroke-[2.2]" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-sm tracking-tight text-[#E0FFF9] font-[var(--font-jakarta)] truncate">
-                  Haritha Pasal
-                </span>
-                <span className="figma-emerald-pill px-1.5 py-0.2 text-[10px] font-mono">
-                  LK
-                </span>
-              </div>
-              <p className="text-[11px] text-[#B8F4F3] truncate">
-                15-School Circular Pilot
-              </p>
-            </div>
-          </div>
-
-          {/* Primary Navigation Items */}
-          <nav className="space-y-1.5">
-            <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#94969C]">
-              School Dashboard
-            </div>
-
+    <div className="min-h-screen flex flex-col bg-[#E6F1FA] text-[#111010]">
+      {/* ====================================================================
+       * Top Horizontal SiteHeaderUI (hai.stanford.edu/ai-index + Figma #1:379744)
+       * ==================================================================== */}
+      <header className="sticky top-0 z-30 bg-[#E6F1FA]/95 backdrop-blur-xs border-b border-[#111010]/15">
+        <div className="max-w-[1320px] mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-4">
+          {/* Left: Stanford HAI Style Editorial Lockup */}
+          <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => setActiveTab('leaderboard')}
-              className={`w-full px-3 py-2.5 rounded-md text-xs font-semibold flex items-center justify-between transition cursor-pointer ${
-                activeTab === 'leaderboard'
-                  ? 'bg-[#1F242F] text-[#ECECED] border-l-2 border-[#14C7C3]'
-                  : 'text-[#94969C] hover:bg-[#161B26] hover:text-[#ECECED]'
-              }`}
+              className="flex items-center gap-3 text-left group cursor-pointer"
             >
-              <span className="flex items-center gap-2.5">
-                <Trophy
-                  className={`w-4 h-4 ${
-                    activeTab === 'leaderboard' ? 'text-[#14C7C3]' : 'text-[#94969C]'
-                  }`}
-                />
-                <span>School Leaderboard</span>
-              </span>
-              <span className="figma-code-chip px-1.5 py-0.5 text-[10px] font-mono text-[#B8F4F3]">
-                15
-              </span>
+              <div className="w-10 h-10 rounded-[12px_12px_12px_2px] bg-[#005FA3] text-[#9CF2F2] flex items-center justify-center shadow-xs group-hover:bg-[#0B3E6E] transition">
+                <Recycle className="w-5 h-5 stroke-[2.2]" />
+              </div>
+              <div className="flex items-center gap-3">
+                <div>
+                  <div className="text-base sm:text-lg font-bold tracking-tight text-[#111010] leading-none">
+                    Haritha Pasal
+                  </div>
+                  <div className="text-[11px] font-medium text-[#111010]/70 mt-0.5">
+                    Sri Lanka
+                  </div>
+                </div>
+                <div className="h-7 w-px bg-[#111010]/20 hidden sm:block" />
+                <div className="hidden sm:block text-sm font-medium text-[#005FA3]">
+                  School Circular Index
+                </div>
+              </div>
             </button>
+          </div>
 
-            <button
-              onClick={() => setActiveTab('clubs')}
-              className={`w-full px-3 py-2.5 rounded-md text-xs font-semibold flex items-center justify-between transition cursor-pointer ${
-                activeTab === 'clubs'
-                  ? 'bg-[#1F242F] text-[#ECECED] border-l-2 border-[#14C7C3]'
-                  : 'text-[#94969C] hover:bg-[#161B26] hover:text-[#ECECED]'
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <Building2
-                  className={`w-4 h-4 ${
-                    activeTab === 'clubs' ? 'text-[#14C7C3]' : 'text-[#94969C]'
+          {/* Center: Horizontal Navigation Tabs */}
+          <nav
+            aria-label="Primary Navigation"
+            className="hidden lg:flex items-center gap-1.5"
+          >
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
+                    isActive
+                      ? 'bg-[#005FA3] text-[#9CF2F2]'
+                      : 'text-[#111010]/80 hover:bg-[#9CF2F2]/60 hover:text-[#005FA3]'
                   }`}
-                />
-                <span>School Clubs</span>
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('verification')}
-              className={`w-full px-3 py-2.5 rounded-md text-xs font-semibold flex items-center justify-between transition cursor-pointer ${
-                activeTab === 'verification'
-                  ? 'bg-[#1F242F] text-[#ECECED] border-l-2 border-[#14C7C3]'
-                  : 'text-[#94969C] hover:bg-[#161B26] hover:text-[#ECECED]'
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <ShieldCheck
-                  className={`w-4 h-4 ${
-                    activeTab === 'verification' ? 'text-[#14C7C3]' : 'text-[#94969C]'
-                  }`}
-                />
-                <span>Teacher & Panel Review</span>
-              </span>
-              <span className="figma-emerald-pill px-1.5 py-0.2 text-[10px] font-mono">
-                {pendingTeacherCount + pendingExpertCount}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('telegram_bot')}
-              className={`w-full px-3 py-2.5 rounded-md text-xs font-semibold flex items-center justify-between transition cursor-pointer ${
-                activeTab === 'telegram_bot'
-                  ? 'bg-[#1F242F] text-[#ECECED] border-l-2 border-[#14C7C3]'
-                  : 'text-[#94969C] hover:bg-[#161B26] hover:text-[#ECECED]'
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <Bot
-                  className={`w-4 h-4 ${
-                    activeTab === 'telegram_bot' ? 'text-[#14C7C3]' : 'text-[#94969C]'
-                  }`}
-                />
-                <span>Telegram Student Bot</span>
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('health_risk')}
-              className={`w-full px-3 py-2.5 rounded-md text-xs font-semibold flex items-center justify-between transition cursor-pointer ${
-                activeTab === 'health_risk'
-                  ? 'bg-[#1F242F] text-[#ECECED] border-l-2 border-[#14C7C3]'
-                  : 'text-[#94969C] hover:bg-[#161B26] hover:text-[#ECECED]'
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <Activity
-                  className={`w-4 h-4 ${
-                    activeTab === 'health_risk' ? 'text-rose-400' : 'text-[#94969C]'
-                  }`}
-                />
-                <span>School Alerts</span>
-              </span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-rose-950/80 border border-rose-500/40 text-rose-300">
-                {snapshot.healthAlerts.length}
-              </span>
-            </button>
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{item.label}</span>
+                  {item.count !== undefined && (
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                        isActive
+                          ? 'bg-[#9CF2F2] text-[#005FA3]'
+                          : 'bg-[#FFFFFF] text-[#005FA3]'
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
 
-          {/* Simple Sri Lanka Program Summary Box */}
-          <div className="p-3.5 rounded-xl bg-[#1C2126] border border-[#095856] space-y-2 text-xs">
-            <div className="font-semibold text-[#E0FFF9]">
-              Quick Guide for Schools
-            </div>
-            <ul className="space-y-1.5 text-[11px] text-[#B8F4F3]">
-              <li>• <strong className="text-[#E0FFF9]">Students:</strong> Send activity photos as Files on Telegram</li>
-              <li>• <strong className="text-[#E0FFF9]">Teachers:</strong> Approve school activities up to Rs. 15,000</li>
-              <li>• <strong className="text-[#E0FFF9]">National Panel:</strong> Scores sales &gt; Rs. 15,000 &amp; awards seed grants</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Bottom Active User Role Switcher */}
-        <div className="p-4 border-t border-[#1F242F] bg-[#0C111D] space-y-2">
-          <div className="flex items-center justify-between text-[11px] text-[#94969C]">
-            <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wider">
-              <UserCheck className="w-3.5 h-3.5 text-[#14C7C3]" />
-              Logged In As
-            </span>
-            <span className="figma-emerald-pill px-2 py-0.2 text-[10px] font-mono uppercase">
-              {activeUser.role.replace('_', ' ')}
-            </span>
-          </div>
-          <select
-            value={activeUser.id}
-            onChange={(e) => setActiveUserId(e.target.value)}
-            aria-label="Switch User Account"
-            className="w-full bg-[#161B26] border border-[#1F242F] rounded-lg px-2.5 py-2 text-xs font-medium text-[#E0FFF9] focus:outline-none focus:border-[#14C7C3] cursor-pointer"
-          >
-            {snapshot.users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.full_name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <div className="flex-1 min-w-0 bg-[#181C21] flex flex-col">
-        {/* Mobile Navigation Bar */}
-        <div className="lg:hidden bg-[#0C111D] border-b border-[#1F242F] px-4 py-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Recycle className="w-5 h-5 text-[#14C7C3]" />
-              <span className="font-bold text-sm text-[#E0FFF9]">Haritha Pasal LK</span>
+          {/* Right: Active Role Switcher */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="hidden xl:flex flex-col items-end">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#111010]/60 flex items-center gap-1">
+                <UserCheck className="w-3 h-3 text-[#005FA3]" />
+                Active Account ({activeUser.role.replace('_', ' ')})
+              </span>
             </div>
             <select
               value={activeUser.id}
               onChange={(e) => setActiveUserId(e.target.value)}
-              aria-label="Mobile Switch User"
-              className="bg-[#161B26] border border-[#1F242F] rounded-lg px-2 py-1 text-xs text-[#E0FFF9]"
+              aria-label="Switch User Account"
+              className="hai-input px-3 py-2 text-xs font-semibold text-[#111010] cursor-pointer max-w-[230px]"
             >
               {snapshot.users.map((u) => (
                 <option key={u.id} value={u.id}>
@@ -306,114 +232,172 @@ export default function PlatformDashboardPage() {
               ))}
             </select>
           </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            {(
-              [
-                ['leaderboard', 'Leaderboard'],
-                ['clubs', 'School Clubs'],
-                ['verification', 'Approvals'],
-                ['telegram_bot', 'Telegram Bot'],
-                ['health_risk', 'Alerts'],
-              ] as [NavTab, string][]
-            ).map(([tab, label]) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap ${
-                  activeTab === tab
-                    ? 'bg-[#14C7C3] text-[#074140]'
-                    : 'bg-[#161B26] text-[#B8F4F3]'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
 
-        {/* Main Workspace Container */}
-        <main className="flex-1 p-5 sm:p-8 space-y-6 max-w-[1280px] w-full mx-auto">
-          {/* Clean Page Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#095856]">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight text-[#E0FFF9] font-[var(--font-jakarta)]">
-                  {navMeta[activeTab].title}
-                </h1>
-                {navMeta[activeTab].badge !== undefined && (
-                  <span className="figma-emerald-pill px-2.5 py-0.5 text-xs font-medium">
-                    {navMeta[activeTab].badge}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-[#B8F4F3]">{navMeta[activeTab].subtitle}</p>
-            </div>
+        {/* Mobile / Tablet Navigation Strip */}
+        <div className="lg:hidden border-t border-[#111010]/10 px-4 py-2.5 flex items-center gap-1.5 overflow-x-auto">
+          {navItems.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+                  isActive
+                    ? 'bg-[#005FA3] text-[#9CF2F2]'
+                    : 'bg-[#FFFFFF] text-[#111010]/80 border border-[#111010]/15'
+                }`}
+              >
+                {item.label}
+                {item.count !== undefined ? ` (${item.count})` : ''}
+              </button>
+            );
+          })}
+        </div>
+      </header>
+
+      {/* ====================================================================
+       * Main Editorial Page Container (hai.stanford.edu/ai-index Grid)
+       * ==================================================================== */}
+      <main className="flex-1 max-w-[1320px] w-full mx-auto px-4 sm:px-8 pt-8 sm:pt-12 pb-16 space-y-8 sm:space-y-10">
+        {/* Stanford HAI AI Index Editorial PageHeader */}
+        <section className="pb-8 border-b border-[#111010]/15">
+          <div className="flex flex-wrap items-center gap-2.5 mb-3">
+            <span className="text-xs font-bold uppercase tracking-[0.06em] text-[#005FA3]">
+              {navMeta[activeTab].eyebrow}
+            </span>
+            {navMeta[activeTab].badge !== undefined && (
+              <span className="hai-cyan-pill text-xs font-bold">
+                {navMeta[activeTab].badge}
+              </span>
+            )}
           </div>
 
-          {/* Active View */}
-          {activeTab === 'leaderboard' && (
-            <LeaderboardView
-              leaderboard={snapshot.leaderboard}
-              config={snapshot.gamificationConfig}
-              onSelectClubProfile={(clubId) => {
-                setSelectedClubId(clubId);
-                setActiveTab('clubs');
-              }}
-              onOpenTelegramWorkbench={() => setActiveTab('telegram_bot')}
-              onOpenVerification={() => setActiveTab('verification')}
-            />
-          )}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
+            <div className="lg:col-span-7">
+              <h1 className="text-3xl sm:text-5xl font-semibold tracking-[-0.035em] leading-[1.04] text-[#111010] font-[var(--font-jakarta)]">
+                {navMeta[activeTab].title}
+              </h1>
+            </div>
+            <div className="lg:col-span-5">
+              <p className="text-sm sm:text-base text-[#111010]/75 leading-relaxed">
+                {navMeta[activeTab].subtitle}
+              </p>
+            </div>
+          </div>
+        </section>
 
-          {activeTab === 'clubs' && (
-            <ClubProfilesView
-              clubs={snapshot.clubs}
-              impactLogs={snapshot.impactLogs}
-              activeUser={activeUser}
-              selectedClubId={selectedClubId}
-              onSelectClub={setSelectedClubId}
-            />
-          )}
+        {/* Active View Content */}
+        {activeTab === 'leaderboard' && (
+          <LeaderboardView
+            leaderboard={snapshot.leaderboard}
+            config={snapshot.gamificationConfig}
+            onSelectClubProfile={(clubId) => {
+              setSelectedClubId(clubId);
+              setActiveTab('clubs');
+            }}
+            onOpenTelegramWorkbench={() => setActiveTab('telegram_bot')}
+            onOpenVerification={() => setActiveTab('verification')}
+          />
+        )}
 
-          {activeTab === 'verification' && (
-            <VerificationEngineView
-              activeUser={activeUser}
-              users={snapshot.users}
-              schools={snapshot.schools}
-              impactLogs={snapshot.impactLogs}
-              config={snapshot.gamificationConfig}
-              onSwitchUser={setActiveUserId}
-              onRefreshSnapshot={setSnapshot}
-            />
-          )}
+        {activeTab === 'clubs' && (
+          <ClubProfilesView
+            clubs={snapshot.clubs}
+            impactLogs={snapshot.impactLogs}
+            activeUser={activeUser}
+            selectedClubId={selectedClubId}
+            onSelectClub={setSelectedClubId}
+          />
+        )}
 
-          {activeTab === 'telegram_bot' && (
-            <TelegramBotWorkbench
-              clubs={snapshot.clubs}
-              schools={snapshot.schools}
-              users={snapshot.users}
-              impactLogs={snapshot.impactLogs}
-              telegramMessages={snapshot.telegramMessages}
-              onRefreshSnapshot={setSnapshot}
-              onNavigateToVerification={() => setActiveTab('verification')}
-            />
-          )}
+        {activeTab === 'verification' && (
+          <VerificationEngineView
+            activeUser={activeUser}
+            users={snapshot.users}
+            schools={snapshot.schools}
+            impactLogs={snapshot.impactLogs}
+            config={snapshot.gamificationConfig}
+            onSwitchUser={setActiveUserId}
+            onRefreshSnapshot={setSnapshot}
+          />
+        )}
 
-          {activeTab === 'health_risk' && (
-            <HealthRiskDashboardView
-              healthAlerts={snapshot.healthAlerts}
-              auditLogs={snapshot.auditLogs}
-              onInspectClub={(clubId) => {
-                setSelectedClubId(clubId);
-                setActiveTab('clubs');
-              }}
-              onNavigateToVerification={() => {
-                setActiveUserId('usr-expert-01');
-                setActiveTab('verification');
-              }}
-            />
-          )}
-        </main>
-      </div>
+        {activeTab === 'telegram_bot' && (
+          <TelegramBotWorkbench
+            clubs={snapshot.clubs}
+            schools={snapshot.schools}
+            users={snapshot.users}
+            impactLogs={snapshot.impactLogs}
+            telegramMessages={snapshot.telegramMessages}
+            onRefreshSnapshot={setSnapshot}
+            onNavigateToVerification={() => setActiveTab('verification')}
+          />
+        )}
+
+        {activeTab === 'health_risk' && (
+          <HealthRiskDashboardView
+            healthAlerts={snapshot.healthAlerts}
+            auditLogs={snapshot.auditLogs}
+            onInspectClub={(clubId) => {
+              setSelectedClubId(clubId);
+              setActiveTab('clubs');
+            }}
+            onNavigateToVerification={() => {
+              setActiveUserId('usr-expert-01');
+              setActiveTab('verification');
+            }}
+          />
+        )}
+
+        {/* ====================================================================
+         * Stanford HAI AI Index Style White Asymmetric Footer Card
+         * ==================================================================== */}
+        <footer className="hai-card p-6 sm:p-8 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+            <div className="md:col-span-5 space-y-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-[8px_8px_8px_2px] bg-[#005FA3] text-[#9CF2F2] flex items-center justify-center">
+                  <Recycle className="w-4 h-4" />
+                </div>
+                <span className="font-bold text-base text-[#111010]">
+                  Haritha Pasal • Sri Lanka School Circular Index
+                </span>
+              </div>
+              <p className="text-xs text-[#111010]/70 leading-relaxed max-w-md">
+                A national circular-economy pilot across 15 Sri Lankan schools. Empowering student-led recycling enterprises with transparent metrics and performance-based seed grants.
+              </p>
+            </div>
+
+            <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="hai-chrome-box p-3.5">
+                <div className="font-bold text-[#005FA3] uppercase tracking-wider text-[10px]">
+                  1. Students (Telegram)
+                </div>
+                <p className="text-[#111010]/80 mt-1">
+                  Send uncompressed activity photos as Files on Telegram to log waste (kg) and sales (Rs.).
+                </p>
+              </div>
+              <div className="hai-chrome-box p-3.5">
+                <div className="font-bold text-[#005FA3] uppercase tracking-wider text-[10px]">
+                  2. Teachers (≤ Rs. 15,000)
+                </div>
+                <p className="text-[#111010]/80 mt-1">
+                  Verify on-campus student logs up to Rs. 15,000 to award school points immediately.
+                </p>
+              </div>
+              <div className="hai-chrome-box p-3.5">
+                <div className="font-bold text-[#005FA3] uppercase tracking-wider text-[10px]">
+                  3. National Panel (&gt; Rs. 15,000)
+                </div>
+                <p className="text-[#111010]/80 mt-1">
+                  Score larger school sales across 6 criteria and unlock top-off seed funding in Rs.
+                </p>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }

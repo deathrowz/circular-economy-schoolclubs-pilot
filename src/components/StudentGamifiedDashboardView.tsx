@@ -13,6 +13,7 @@ import {
   Leaf,
   MapPin,
   RefreshCw,
+  Receipt,
   Send,
   ShieldCheck,
   Sparkles,
@@ -779,6 +780,22 @@ export function StudentGamifiedDashboardView({
                   <div className="font-bold text-[#111010] text-sm">
                     {log.activity_title}
                   </div>
+                  {((log.verified_documents && log.verified_documents.length > 0) || log.scored_via_telegram) && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                      {log.verified_documents && log.verified_documents.length > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-[#E6F1FA] text-[#005FA3] font-semibold border border-[#005FA3]/20">
+                          <Receipt className="w-3 h-3" />
+                          {log.verified_documents.length} Verified {log.verified_documents.length === 1 ? 'Doc' : 'Docs'}
+                        </span>
+                      )}
+                      {log.scored_via_telegram && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200">
+                          <Bot className="w-3 h-3 text-emerald-600" />
+                          Scored via Telegram
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-[11px] text-[#111010]/70 font-mono">
                     <span>
                       {log.waste_kg} kg • {formatLkr(log.revenue_usd)}

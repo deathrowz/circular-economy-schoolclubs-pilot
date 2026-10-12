@@ -202,10 +202,77 @@ async function runVerificationSuite() {
   assert.equal(secondResubAttempt.ok, false);
   assert.ok(secondResubAttempt.botReply.includes('RESOLUTION LOOP LOCKED'));
   console.log(
-    '✅ [7/7] Step 5 Resolution Loop: 1st resubmission succeeded; 2nd resubmission locked & rejected.'
+    '✅ [7/9] Step 5 Resolution Loop: 1st resubmission succeeded; 2nd resubmission locked & rejected.'
   );
 
-  console.log('\n🎉 ALL 7 CORE ARCHITECTURAL & VALIDATION TESTS PASSED!');
+  // 8. Test Telegram Documentation Pipeline: Teacher uploads verified invoice/receipt via bot
+  // Teacher for Royal College (usr-teacher-01) initiates invoice upload for log-102
+  const teacherChatId = 888001;
+  const teacherUploadStart = await handleTelegramBotUpdate({
+    chatId: teacherChatId,
+    actorRole: 'teacher',
+    actorId: 'usr-teacher-01',
+    text: '/upload_invoice log-102',
+  });
+  assert.equal(teacherUploadStart.ok, true);
+  assert.equal(teacherUploadStart.stage, 'AWAITING_TEACHER_INVOICE_DOC');
+
+  // Teacher submits official invoice document (PDF)
+  const teacherUploadDoc = await handleTelegramBotUpdate({
+    chatId: teacherChatId,
+    actorRole: 'teacher',
+    actorId: 'usr-teacher-01',
+    document: {
+      fileName: 'INV-RC-2026-081_ZONAL_DELIVERY.PDF',
+      mimeType: 'application/pdf',
+      simulatedExif: {
+        timestamp: '2026-10-12T11:30:00Z',
+        lat: 6.9048,
+        lng: 79.8613,
+      },
+    },
+  });
+  assert.equal(teacherUploadDoc.ok, true);
+  assert.ok(teacherUploadDoc.botReply.includes('TEACHER-VERIFIED INVOICE'));
+
+  // Verify log-102 now has verified_documents and telegram_dossier_sent_to_experts
+  const snapAfterInvoice = getFullPlatformSnapshot();
+  const log102 = snapAfterInvoice.impactLogs.find((l) => l.id === 'log-102')!;
+  assert.ok(log102.verified_documents && log102.verified_documents.length > 0);
+  assert.equal(log102.verified_documents[0].file_name, 'INV-RC-2026-081_ZONAL_DELIVERY.PDF');
+  assert.equal(log102.verified_documents[0].uploaded_via_telegram, true);
+  assert.equal(log102.telegram_dossier_sent_to_experts, true);
+  console.log(
+    '✅ [8/9] Telegram Invoice Pipeline: Teacher uploaded verified invoice, attached to log, and dispatched dossier to GIZ/Expert group.'
+  );
+
+  // 9. Test Telegram Expert Criteria Scoring: Expert submits 6 criteria scores via Telegram bot
+  const expertChatId = 800999;
+  const expertScoreResult = await handleTelegramBotUpdate({
+    chatId: expertChatId,
+    actorRole: 'expert_admin',
+    actorId: 'usr-expert-01',
+    text: '/score log-102 92 88 86 94 95 90',
+  });
+  assert.equal(expertScoreResult.ok, true);
+  assert.ok(expertScoreResult.botReply.includes('SCORED & SUBMITTED VIA TELEGRAM'));
+
+  const snapAfterScore = getFullPlatformSnapshot();
+  const scoredLog102 = snapAfterScore.impactLogs.find((l) => l.id === 'log-102')!;
+  assert.equal(scoredLog102.status, 'approved');
+  assert.equal(scoredLog102.scored_via_telegram, true);
+  assert.ok(scoredLog102.points_awarded > 0);
+  assert.equal(scoredLog102.criteria_scores?.relevance, 92);
+  assert.equal(scoredLog102.criteria_scores?.institutional_commitment, 90);
+
+  // Verify live leaderboard updated for Royal College (sch-01)
+  const royalScore = snapAfterScore.leaderboard.find((s) => s.school.id === 'sch-01')!;
+  assert.ok(royalScore.composite_leaderboard_score > 0);
+  console.log(
+    `✅ [9/9] Telegram Expert Scoring: Expert scored 6 criteria via Telegram (/score log-102), released +${scoredLog102.points_awarded} pts live to dashboard.`
+  );
+
+  console.log('\n🎉 ALL 9 CORE ARCHITECTURAL & VALIDATION TESTS PASSED!');
 }
 
 runVerificationSuite().catch((err) => {

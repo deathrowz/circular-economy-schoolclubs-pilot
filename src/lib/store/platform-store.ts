@@ -3,11 +3,13 @@ import {
   AuditLogEntry,
   Club,
   CriteriaScores,
+  DocumentCategory,
   GamificationConfig,
   ImpactLog,
   School,
   TelegramBotOutboundMessage,
   UserProfile,
+  VerifiedDocument,
 } from '@/types/domain';
 import {
   APPROVED_HISTORICAL_LOGS,
@@ -658,6 +660,222 @@ export async function performExpertAdjudication(params: {
 
   store.auditLogs.unshift(auditEntry);
   return { log, auditEntry };
+}
+
+/**
+ * TEACHER DOCUMENT VERIFICATION PIPELINE:
+ * Once verified locally by the school's supervising teacher, the teacher uploads
+ * the sales invoice, official receipt, or scale ticket to the Telegram Bot.
+ * The bot logs the document, marks the transaction, and automatically sends a review
+ * package to the GIZ & National Expert Panel channel!
+ */
+export async function attachTeacherVerifiedDocumentToLog(params: {
+  actorId: string;
+  logId: string;
+  docCategory: DocumentCategory;
+  fileName: string;
+  mimeType: string;
+  s3Url: string;
+  s3Key: string;
+  verifiedAmountLkr?: number;
+  notes?: string;
+  uploadedViaTelegram?: boolean;
+}): Promise<{ log: ImpactLog; document: VerifiedDocument; auditEntry: AuditLogEntry }> {
+  const store = getPlatformStore();
+  const actor = store.users.find((u) => u.id === params.actorId);
+
+  if (!actor || (actor.role !== 'teacher' && actor.role !== 'super_admin')) {
+    throw new Error(
+      'RBAC_ROLE_VIOLATION: Only a Supervising Teacher or GIZ Admin can upload verified school invoices/receipts.'
+    );
+  }
+
+  const log = store.impactLogs.find((l) => l.id === params.logId);
+  if (!log) {
+    throw new Error(`Impact log not found: ${params.logId}`);
+  }
+
+  // If teacher, enforce school scope
+  if (actor.role === 'teacher' && actor.school_id !== log.school_id) {
+    throw new Error(
+      `RBAC_SCHOOL_SCOPE_VIOLATION: Teacher ${actor.full_name} cannot upload invoices for ${log.school_name}.`
+    );
+  }
+
+  const now = new Date().toISOString();
+  const verifiedDoc: VerifiedDocument = {
+    id: `doc-${Date.now().toString().slice(-6)}`,
+    log_id: log.id,
+    doc_category: params.docCategory,
+    file_name: params.fileName,
+    mime_type: params.mimeType,
+    s3_url: params.s3Url,
+    s3_key: params.s3Key,
+    uploaded_by_role: actor.role,
+    uploaded_by_id: actor.id,
+    uploaded_by_name: actor.full_name.split(' (')[0],
+    verified_by_teacher_id: actor.id,
+    verified_by_teacher_name: actor.full_name.split(' (')[0],
+    verified_amount_lkr: params.verifiedAmountLkr ?? (log.revenue_usd * 300),
+    uploaded_via_telegram: Boolean(params.uploadedViaTelegram),
+    notes: params.notes || 'Verified by supervising teacher on school campus.',
+    created_at: now,
+  };
+
+  if (!log.verified_documents) {
+    log.verified_documents = [];
+  }
+  log.verified_documents.push(verifiedDoc);
+  log.teacher_reviewer_id = actor.id;
+  log.teacher_reviewer_name = actor.full_name.split(' (')[0];
+  log.telegram_dossier_sent_to_experts = true;
+  log.updated_at = now;
+
+  // Create audit entry
+  const auditEntry: AuditLogEntry = {
+    id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    impact_log_id: log.id,
+    club_id: log.club_id,
+    club_name: log.club_name,
+    school_id: log.school_id,
+    school_name: log.school_name,
+    school_code: log.school_code,
+    actor_id: actor.id,
+    actor_name: actor.full_name,
+    actor_role: actor.role,
+    action_type: 'TEACHER_UPLOADED_VERIFIED_DOCUMENT',
+    previous_status: log.status,
+    new_status: log.status,
+    points_delta: 0,
+    reason_or_notes: `Teacher uploaded verified ${params.docCategory.replace(/_/g, ' ')} (${params.fileName}) via Telegram Bot. Forwarded to GIZ & National Expert Panel.`,
+    metadata: {
+      doc_id: verifiedDoc.id,
+      doc_category: params.docCategory,
+      s3_url: params.s3Url,
+      verified_amount_lkr: verifiedDoc.verified_amount_lkr,
+      uploaded_via_telegram: verifiedDoc.uploaded_via_telegram,
+    },
+    created_at: now,
+  };
+
+  store.auditLogs.unshift(auditEntry);
+
+  // Dispatch notification to GIZ & Expert Panel in Telegram
+  await dispatchTelegramNotification({
+    chatId: 800999, // GIZ & Expert Panel channel
+    studentName: 'GIZ & National Expert Panel',
+    telegramUsername: '@giz_cea_expert_panel',
+    logId: log.id,
+    type: 'APPROVAL_NOTICE',
+    text:
+      `📋 GIZ & NATIONAL EXPERT VERIFICATION PACKAGE (${log.id}):\n` +
+      `• School: ${log.school_name} (${log.school_code})\n` +
+      `• Enterprise: ${log.club_name} — "${log.activity_title}"\n` +
+      `• Verified Revenue: Rs. ${(verifiedDoc.verified_amount_lkr || 0).toLocaleString()} | Recycled: ${log.waste_kg} kg\n` +
+      `• Document Attached: 📄 ${verifiedDoc.file_name} (${verifiedDoc.doc_category.replace(/_/g, ' ')})\n` +
+      `• Teacher Endorser: ${verifiedDoc.verified_by_teacher_name}\n\n` +
+      `⚖️ EXPERT REVIEW ACTION VIA TELEGRAM:\n` +
+      `Reply to score this activity across the 6 criteria:\n` +
+      `👉 /score ${log.id} <relevance> <business> <feasibility> <ownership> <sustainability> <commitment>\n` +
+      `Example: /score ${log.id} 92 88 86 94 95 90\n` +
+      `Or type /review ${log.id} for guided step-by-step scoring!`,
+  });
+
+  return { log, document: verifiedDoc, auditEntry };
+}
+
+/**
+ * EXPERT TELEGRAM SCORING PIPELINE:
+ * Experts review the invoice, sales receipt, and environmental data directly in Telegram.
+ * When the expert submits their selection criteria scores via Telegram,
+ * points are calculated, posted to the Leaderboard, and reflected live on the Dashboard!
+ */
+export async function submitExpertScoresViaTelegram(params: {
+  actorId: string;
+  logId: string;
+  criteriaScores: CriteriaScores;
+  notesOrReason?: string;
+}): Promise<{ log: ImpactLog; auditEntry: AuditLogEntry; pointsAwarded: number }> {
+  const store = getPlatformStore();
+  const actor = store.users.find((u) => u.id === params.actorId);
+
+  if (!actor || (actor.role !== 'expert_admin' && actor.role !== 'super_admin')) {
+    throw new Error(
+      'RBAC_ROLE_VIOLATION: Only an Expert Panel member or GIZ Super Admin can submit selection criteria scores via Telegram.'
+    );
+  }
+
+  const log = store.impactLogs.find((l) => l.id === params.logId);
+  if (!log) {
+    throw new Error(`Impact log not found: ${params.logId}`);
+  }
+
+  const previousStatus = log.status;
+  const now = new Date().toISOString();
+
+  const awardedPoints = calculateMacroTransactionPoints({
+    criteriaScores: params.criteriaScores,
+    wasteKg: log.waste_kg,
+    revenueUsd: log.revenue_usd,
+    config: store.gamificationConfig,
+  });
+
+  log.criteria_scores = params.criteriaScores;
+  log.status = 'approved';
+  log.points_awarded = awardedPoints;
+  log.scored_via_telegram = true;
+  log.expert_reviewer_id = actor.id;
+  log.expert_reviewer_name = actor.full_name.split(' (')[0];
+  log.expert_reviewed_at = now;
+  log.expert_notes =
+    params.notesOrReason ||
+    'Scored via Telegram Bot after reviewing teacher-verified sales invoice & environmental evidence.';
+  log.updated_at = now;
+
+  const auditEntry: AuditLogEntry = {
+    id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    impact_log_id: log.id,
+    club_id: log.club_id,
+    club_name: log.club_name,
+    school_id: log.school_id,
+    school_name: log.school_name,
+    school_code: log.school_code,
+    actor_id: actor.id,
+    actor_name: actor.full_name,
+    actor_role: actor.role,
+    action_type: 'EXPERT_SCORED_VIA_TELEGRAM',
+    previous_status: previousStatus,
+    new_status: 'approved',
+    points_delta: awardedPoints,
+    reason_or_notes: `Expert submitted criteria scores via Telegram: [${params.criteriaScores.relevance}, ${params.criteriaScores.business}, ${params.criteriaScores.feasibility}, ${params.criteriaScores.student_ownership}, ${params.criteriaScores.sustainability}, ${params.criteriaScores.institutional_commitment}]. Released +${awardedPoints} pts to ${log.school_name}.`,
+    metadata: {
+      criteria_scores: params.criteriaScores,
+      scored_via_telegram: true,
+      points_awarded: awardedPoints,
+      verified_documents_count: log.verified_documents?.length || 0,
+    },
+    created_at: now,
+  };
+
+  store.auditLogs.unshift(auditEntry);
+
+  // Send confirmation to Student, Teacher, and GIZ
+  await dispatchTelegramNotification({
+    chatId: 800101,
+    studentName: log.student_name,
+    telegramUsername: log.telegram_username || '@student',
+    logId: log.id,
+    type: 'APPROVAL_NOTICE',
+    text:
+      `🏆 SELECTION CRITERIA SCORED VIA TELEGRAM (${log.id}):\n` +
+      `• Evaluator: ${log.expert_reviewer_name} (National Expert Panel)\n` +
+      `• School: ${log.school_name} — "${log.activity_title}"\n` +
+      `• Criteria Scores: Relevance: ${params.criteriaScores.relevance} | Business: ${params.criteriaScores.business} | Feasibility: ${params.criteriaScores.feasibility} | Student Leadership: ${params.criteriaScores.student_ownership} | Sustainability: ${params.criteriaScores.sustainability} | School Support: ${params.criteriaScores.institutional_commitment}\n` +
+      `• Points Released: +${awardedPoints} pts added to Leaderboard in real-time!\n` +
+      `• Status: APPROVED on School Dashboard`,
+  });
+
+  return { log, auditEntry, pointsAwarded: awardedPoints };
 }
 
 /**

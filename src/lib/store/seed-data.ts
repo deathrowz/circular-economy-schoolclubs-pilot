@@ -902,6 +902,29 @@ export const INITIAL_IMPACT_LOGS: ImpactLog[] = [
     teacher_reviewed_at: '2026-10-11T17:10:00Z',
     teacher_notes:
       'Verified on school premises at the agricultural plot. Weighbridge logs and cash book receipts checked.',
+    verified_documents: [
+      {
+        id: 'doc-seed-103',
+        log_id: 'log-103',
+        doc_category: 'sales_invoice',
+        file_name: 'INV-VV-2026-104_HARITHA_COMPOST_SALES.PDF',
+        mime_type: 'application/pdf',
+        s3_url:
+          'https://s3.ap-south-1.amazonaws.com/srilanka-circular-schools/sch-02/invoices/INV-VV-2026-104_HARITHA_COMPOST_SALES.PDF',
+        s3_key: 'sch-02/club-02/invoices/INV-VV-2026-104_HARITHA_COMPOST_SALES.PDF',
+        uploaded_by_role: 'teacher',
+        uploaded_by_id: 'usr-teacher-02',
+        uploaded_by_name: 'Mr. Rohan Wijesinghe',
+        verified_by_teacher_id: 'usr-teacher-02',
+        verified_by_teacher_name: 'Mr. Rohan Wijesinghe',
+        verified_amount_lkr: 73500,
+        uploaded_via_telegram: true,
+        notes:
+          'Official PTA Pola Sales Invoice & Weighbridge Ticket attached. Verified on campus.',
+        created_at: '2026-10-11T17:15:00Z',
+      },
+    ],
+    telegram_dossier_sent_to_experts: true,
     random_audit_selected: false,
     audit_status: 'not_selected',
     audit_flagged_fraud: false,

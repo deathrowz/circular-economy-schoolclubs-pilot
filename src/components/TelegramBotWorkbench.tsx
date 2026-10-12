@@ -5,19 +5,28 @@ import {
   AlertOctagon,
   Bot,
   CameraOff,
+  CheckCircle2,
   CloudUpload,
+  FileCheck,
+  FileText,
+  Gavel,
   MessageSquareWarning,
   RefreshCw,
   Send,
+  Sparkles,
+  UserCheck,
 } from 'lucide-react';
 import {
   Club,
+  DocumentCategory,
   ImpactLog,
   School,
   TelegramBotOutboundMessage,
   UserProfile,
+  UserRole,
 } from '@/types/domain';
 import { postTelegramWebhookClient } from '@/lib/client/platform-bridge';
+import { formatLkr } from '@/lib/gamification/engine';
 
 interface TelegramBotWorkbenchProps {
   clubs: Club[];
@@ -31,7 +40,7 @@ interface TelegramBotWorkbenchProps {
 
 interface ChatBubble {
   id: string;
-  sender: 'student' | 'bot';
+  sender: 'student' | 'teacher' | 'expert' | 'bot';
   text: string;
   timestamp: string;
   badge?: string;
@@ -41,31 +50,54 @@ interface ChatBubble {
 export function TelegramBotWorkbench({
   clubs,
   schools,
+  users,
   impactLogs,
   telegramMessages,
   onRefreshSnapshot,
   onNavigateToVerification,
 }: TelegramBotWorkbenchProps) {
   const [selectedClubId, setSelectedClubId] = useState<string>('club-01');
+  const [activeBotRole, setActiveBotRole] = useState<'student' | 'teacher' | 'expert'>('teacher');
   const [botStage, setBotStage] = useState<string>('IDLE');
   const [chatInput, setChatInput] = useState<string>('');
   const [isSending, setIsSending] = useState<boolean>(false);
+  const [selectedInvoiceLogId, setSelectedInvoiceLogId] = useState<string>('log-102');
 
   const selectedClub = clubs.find((c) => c.id === selectedClubId) || clubs[0];
   const selectedSchool =
     schools.find((s) => s.id === selectedClub.school_id) || schools[0];
+
+  const currentActor = (() => {
+    if (activeBotRole === 'expert') {
+      return users.find((u) => u.role === 'expert_admin') || users[1];
+    }
+    if (activeBotRole === 'teacher') {
+      return (
+        users.find((u) => u.role === 'teacher' && u.school_id === selectedSchool.id) ||
+        users.find((u) => u.role === 'teacher') ||
+        users[3]
+      );
+    }
+    return (
+      users.find((u) => u.role === 'student' && u.school_id === selectedSchool.id) ||
+      users.find((u) => u.role === 'student') ||
+      users[0]
+    );
+  })();
 
   const [chatHistory, setChatHistory] = useState<ChatBubble[]>([
     {
       id: 'init-1',
       sender: 'bot',
       text:
-        `Ayubowan / Vanakkam! Welcome to the Haritha Pasal Student Bot (${selectedClub.name} • ${selectedSchool.name}).\n\n` +
-        `📌 IMPORTANT PHOTO RULE:\n` +
-        `Always send your activity photo as a "Document / File" (📎 Attach → File), NOT as a normal compressed photo, so the date and school GPS location remain intact.\n\n` +
-        `Click /log_impact below to submit a new activity or /resubmit log-108 to resubmit a rejected entry.`,
+        `Ayubowan / Vanakkam! Welcome to the Haritha Pasal Circular Enterprise Telegram Gateway (${selectedClub.name} • ${selectedSchool.name}).\n\n` +
+        `📋 COMPLETE VERIFICATION PIPELINE ACTIVE:\n` +
+        `1. Students: Log activities & photos via /log_impact\n` +
+        `2. Teachers: Upload verified invoices & receipts via /upload_invoice <log_id>\n` +
+        `3. GIZ & Experts: Review invoices & submit selection criteria scores via /score <log_id> ...\n\n` +
+        `Switch the role tab above to simulate any step of the pipeline!`,
       timestamp: '09:30 AM',
-      badge: 'Telegram Bot Ready',
+      badge: 'Telegram Gateway Ready',
     },
   ]);
 
@@ -85,20 +117,23 @@ export function TelegramBotWorkbench({
 
   const sendWebhookUpdate = async (
     payload: Record<string, any>,
-    studentDisplayMessage: string,
-    studentBadge?: string
+    displayMessage: string,
+    badge?: string,
+    senderRole: 'student' | 'teacher' | 'expert' = activeBotRole
   ) => {
     setIsSending(true);
     appendBubble({
-      sender: 'student',
-      text: studentDisplayMessage,
-      badge: studentBadge,
+      sender: senderRole,
+      text: displayMessage,
+      badge: badge || `${senderRole.toUpperCase()} ACTION`,
     });
 
     try {
       const data = await postTelegramWebhookClient({
-        chatId: 800101,
-        studentId: 'usr-student-01',
+        chatId: currentActor.telegram_user_id || 800101,
+        actorId: currentActor.id,
+        actorRole: currentActor.role,
+        studentId: currentActor.role === 'student' ? currentActor.id : undefined,
         clubId: selectedClub.id,
         ...payload,
       });
@@ -109,10 +144,12 @@ export function TelegramBotWorkbench({
       appendBubble({
         sender: 'bot',
         text: data.botReply || data.error || 'No response from bot.',
-        badge: data.createdLogId
-          ? `Submitted ${data.createdLogId} (Pending Teacher)`
-          : data.rejectedReason
-          ? `Rejected: ${data.rejectedReason}`
+        badge: data.scoredPoints
+          ? `🏆 SCORED VIA TELEGRAM: +${data.scoredPoints} pts posted to Leaderboard!`
+          : data.attachedDocId
+          ? `📄 INVOICE VERIFIED & FORWARDED TO GIZ/EXPERTS`
+          : data.createdLogId
+          ? `Logged ${data.createdLogId} (Pending Teacher)`
           : undefined,
         isError: !data.ok,
       });
@@ -129,91 +166,176 @@ export function TelegramBotWorkbench({
     await sendWebhookUpdate({ text }, text);
   };
 
-  const rejectedLogs = impactLogs.filter((l) => l.status === 'rejected');
+  const pendingTeacherLogs = impactLogs.filter(
+    (l) => l.school_id === selectedSchool.id && l.status !== 'approved'
+  );
+
+  const logsWithDocs = impactLogs.filter(
+    (l) => l.verified_documents && l.verified_documents.length > 0
+  );
 
   return (
     <div className="space-y-6">
-      {/* School Club Selector Header */}
-      <div className="hai-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#005FA3] text-[#9CF2F2]">
-            <Bot className="w-5 h-5" />
+      {/* School Club & Pipeline Role Selector Header */}
+      <div className="hai-card p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#005FA3] text-[#9CF2F2]">
+              <Bot className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-[#111010] font-[var(--font-jakarta)]">
+                Telegram Invoice, Receipt &amp; Criteria Scoring Gateway
+              </h2>
+              <p className="text-xs text-[#111010]/70">
+                End-to-end pipeline: Student entry → Teacher invoice upload → GIZ dispatch → Expert criteria scoring via Telegram
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base font-bold text-[#111010] font-[var(--font-jakarta)]">
-              Student Telegram Submission Simulator
-            </h2>
-            <p className="text-xs text-[#111010]/70">
-              Students send uncompressed File photos to log waste recycled (kg) and sales (Rs.)
-            </p>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <select
+              value={selectedClubId}
+              onChange={(e) => setSelectedClubId(e.target.value)}
+              aria-label="Select School Club"
+              className="hai-input px-3.5 py-2 text-xs text-[#111010] font-semibold"
+            >
+              {clubs.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.school_name} — {c.name}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={onNavigateToVerification}
+              className="hai-btn-secondary px-3.5 py-2 text-xs cursor-pointer"
+            >
+              Dashboard Approvals →
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <select
-            value={selectedClubId}
-            onChange={(e) => setSelectedClubId(e.target.value)}
-            aria-label="Select School Club"
-            className="hai-input px-3.5 py-2 text-xs text-[#111010] font-semibold"
-          >
-            {clubs.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.school_name} — {c.name}
-              </option>
-            ))}
-          </select>
+        {/* 3 Pipeline Role Simulation Tabs */}
+        <div className="pt-2 border-t border-[#111010]/12 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-bold text-[#005FA3] uppercase tracking-wider">
+              Simulate Telegram Role:
+            </span>
+            <button
+              onClick={() => setActiveBotRole('student')}
+              className={`px-3 py-1.5 rounded-full font-semibold transition cursor-pointer ${
+                activeBotRole === 'student'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+              }`}
+            >
+              1. Student Mode (/log_impact)
+            </button>
+            <button
+              onClick={() => setActiveBotRole('teacher')}
+              className={`px-3 py-1.5 rounded-full font-semibold transition cursor-pointer ${
+                activeBotRole === 'teacher'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+              }`}
+            >
+              2. Teacher Mode (Upload Invoice)
+            </button>
+            <button
+              onClick={() => setActiveBotRole('expert')}
+              className={`px-3 py-1.5 rounded-full font-semibold transition cursor-pointer ${
+                activeBotRole === 'expert'
+                  ? 'bg-[#005FA3] text-[#9CF2F2]'
+                  : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60'
+              }`}
+            >
+              3. Expert Mode (/score via Telegram)
+            </button>
+          </div>
 
-          <button
-            onClick={onNavigateToVerification}
-            className="hai-btn-primary px-4 py-2 text-xs cursor-pointer"
-          >
-            Teacher Approvals →
-          </button>
+          <div className="text-xs text-[#111010]/70 font-mono">
+            Sender: <strong className="text-[#005FA3]">{currentActor.full_name.split(' (')[0]}</strong> ({currentActor.role})
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Chat Window (7 cols) */}
+        {/* Left Column: Telegram Chat Gateway (7 cols) */}
         <div className="lg:col-span-7 hai-card flex flex-col overflow-hidden">
-          <div className="bg-[#005FA3] text-white px-5 py-3.5 flex items-center justify-between">
+          {/* Header */}
+          <div className="bg-[#005FA3] text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-xs font-bold text-white">
-                @HarithaPasalBot • {selectedSchool.name} ({selectedSchool.city})
+              <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>@HarithaPasalBot</span>
+                <span className="px-2 py-0.2 rounded-full bg-[#9CF2F2] text-[#005FA3] font-mono text-[10px] uppercase font-bold">
+                  {activeBotRole.toUpperCase()} ACTIVE
+                </span>
               </div>
               <div className="text-[11px] text-[#9CF2F2]">
-                School GPS: {selectedSchool.campus_lat.toFixed(4)}, {selectedSchool.campus_lng.toFixed(4)}
+                {selectedSchool.name} • Actor: {currentActor.full_name.split(' (')[0]}
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => sendWebhookUpdate({ text: '/log_impact' }, '/log_impact')}
-                className="hai-btn-on-zeal px-3 py-1 text-xs font-mono cursor-pointer"
-              >
-                /log_impact
-              </button>
-              <button
-                onClick={() => sendWebhookUpdate({ text: '/status' }, '/status')}
-                className="px-3 py-1 rounded-full bg-white/15 border border-white/30 text-white text-xs font-mono cursor-pointer hover:bg-white/25"
-              >
-                /status
-              </button>
+              {activeBotRole === 'teacher' && (
+                <button
+                  onClick={() =>
+                    sendWebhookUpdate(
+                      { text: `/upload_invoice ${selectedInvoiceLogId}` },
+                      `/upload_invoice ${selectedInvoiceLogId}`,
+                      'Teacher Invoice Prompt'
+                    )
+                  }
+                  className="hai-btn-on-zeal px-3 py-1 text-xs font-mono cursor-pointer"
+                >
+                  /upload_invoice
+                </button>
+              )}
+              {activeBotRole === 'expert' && (
+                <button
+                  onClick={() =>
+                    sendWebhookUpdate(
+                      { text: '/expert_queue' },
+                      '/expert_queue',
+                      'Expert Queue Check'
+                    )
+                  }
+                  className="hai-btn-on-zeal px-3 py-1 text-xs font-mono cursor-pointer"
+                >
+                  /expert_queue
+                </button>
+              )}
+              {activeBotRole === 'student' && (
+                <button
+                  onClick={() =>
+                    sendWebhookUpdate({ text: '/log_impact' }, '/log_impact')
+                  }
+                  className="hai-btn-on-zeal px-3 py-1 text-xs font-mono cursor-pointer"
+                >
+                  /log_impact
+                </button>
+              )}
             </div>
           </div>
 
           {/* Chat Bubbles */}
-          <div className="p-5 space-y-3.5 h-[360px] overflow-y-auto bg-[#F0F3F5]">
+          <div className="p-5 space-y-3.5 h-[370px] overflow-y-auto bg-[#F0F3F5]">
             {chatHistory.map((item) => (
               <div
                 key={item.id}
                 className={`flex flex-col ${
-                  item.sender === 'student' ? 'items-end' : 'items-start'
+                  item.sender !== 'bot' ? 'items-end' : 'items-start'
                 }`}
               >
                 <div
                   className={`max-w-[85%] rounded-[16px_16px_16px_4px] px-4 py-3 text-xs whitespace-pre-wrap leading-relaxed shadow-2xs ${
-                    item.sender === 'student'
+                    item.sender === 'expert'
+                      ? 'bg-[#14494F] text-white font-medium'
+                      : item.sender === 'teacher'
                       ? 'bg-[#005FA3] text-white font-medium'
+                      : item.sender === 'student'
+                      ? 'bg-[#0B3E6E] text-white font-medium'
                       : item.isError
                       ? 'bg-rose-50 border border-rose-300 text-rose-900'
                       : 'bg-[#FFFFFF] border border-[#111010]/12 text-[#111010]'
@@ -226,109 +348,259 @@ export function TelegramBotWorkbench({
                   )}
                   {item.text}
                 </div>
-                <span className="text-[10px] text-[#111010]/60 mt-1 px-1">{item.timestamp}</span>
+                <span className="text-[10px] text-[#111010]/60 mt-1 px-1">
+                  {item.timestamp}
+                </span>
               </div>
             ))}
           </div>
 
-          {/* Test Photo Attachment Buttons */}
+          {/* Action Pad tailored to Active Role */}
           <div className="bg-[#FFFFFF] border-t border-[#111010]/12 p-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              <button
-                disabled={isSending}
-                onClick={() =>
-                  sendWebhookUpdate(
-                    { sentAsCompressedPhoto: true },
-                    '📷 [Sent Normal Compressed Photo]',
-                    'Compressed Photo (Rejected)'
-                  )
-                }
-                className="p-3 rounded-[12px_12px_12px_2px] bg-rose-50/70 hover:bg-rose-100/70 border border-rose-300 text-left transition cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 text-rose-800 font-bold text-xs">
-                  <CameraOff className="w-3.5 h-3.5 shrink-0" />
-                  <span>1. Normal Photo</span>
+            {/* 1. TEACHER INVOICE UPLOAD ACTION PAD */}
+            {activeBotRole === 'teacher' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-[#005FA3]">
+                  <span>Teacher Quick Document Uploads for {selectedSchool.name}:</span>
+                  <select
+                    value={selectedInvoiceLogId}
+                    onChange={(e) => setSelectedInvoiceLogId(e.target.value)}
+                    className="hai-input px-2 py-1 text-xs"
+                    aria-label="Select Target Log for Invoice Upload"
+                  >
+                    {pendingTeacherLogs.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.id}: {l.activity_title.slice(0, 28)} ({formatLkr(l.revenue_usd)})
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div className="text-[10px] text-rose-700/80 mt-0.5">
-                  Bot rejects (EXIF stripped)
-                </div>
-              </button>
 
-              <button
-                disabled={isSending}
-                onClick={() =>
-                  sendWebhookUpdate(
-                    {
-                      document: {
-                        fileName: 'NO_GPS_PHOTO.JPG',
-                        mimeType: 'image/jpeg',
-                        simulatedExif: {
-                          timestamp: new Date().toISOString(),
-                          lat: null,
-                          lng: null,
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    disabled={isSending}
+                    onClick={() =>
+                      sendWebhookUpdate(
+                        {
+                          actorId: currentActor.id,
+                          actorRole: 'teacher',
+                          docCategory: 'sales_invoice',
+                          verifiedAmountLkr: 57000,
+                          document: {
+                            fileName: `INVOICE_${selectedSchool.code}_OFFICIAL_SALES.PDF`,
+                            mimeType: 'application/pdf',
+                          },
+                        },
+                        `📎 [Teacher Uploaded Verified Invoice: INVOICE_${selectedSchool.code}_OFFICIAL_SALES.PDF (Rs. 57,000)]`,
+                        'Teacher Invoice Upload'
+                      )
+                    }
+                    className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 border border-[#005FA3]/30 text-left transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
+                      <FileText className="w-3.5 h-3.5 shrink-0" />
+                      <span>1. Sales Invoice (PDF)</span>
+                    </div>
+                    <div className="text-[10px] text-[#111010]/70 mt-0.5">
+                      Auto-forwards to GIZ &amp; Experts
+                    </div>
+                  </button>
+
+                  <button
+                    disabled={isSending}
+                    onClick={() =>
+                      sendWebhookUpdate(
+                        {
+                          actorId: currentActor.id,
+                          actorRole: 'teacher',
+                          docCategory: 'official_receipt',
+                          verifiedAmountLkr: 11400,
+                          document: {
+                            fileName: `BOOKSHOP_RECEIPT_${selectedSchool.code}.JPG`,
+                            mimeType: 'image/jpeg',
+                          },
+                        },
+                        `📎 [Teacher Uploaded Verified Receipt: BOOKSHOP_RECEIPT_${selectedSchool.code}.JPG (Rs. 11,400)]`,
+                        'Teacher Receipt Upload'
+                      )
+                    }
+                    className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] border border-[#111010]/15 text-left transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5 text-[#111010] font-bold text-xs">
+                      <FileCheck className="w-3.5 h-3.5 shrink-0 text-[#14494F]" />
+                      <span>2. Pola Receipt (JPG)</span>
+                    </div>
+                    <div className="text-[10px] text-[#111010]/65 mt-0.5">
+                      Teacher certified on campus
+                    </div>
+                  </button>
+
+                  <button
+                    disabled={isSending}
+                    onClick={() =>
+                      sendWebhookUpdate(
+                        {
+                          actorId: currentActor.id,
+                          actorRole: 'teacher',
+                          docCategory: 'waste_scale_ticket',
+                          document: {
+                            fileName: `WEIGHBRIDGE_SCALE_TICKET_${selectedSchool.code}.PDF`,
+                            mimeType: 'application/pdf',
+                          },
+                        },
+                        `📎 [Teacher Uploaded Scale Ticket: WEIGHBRIDGE_SCALE_TICKET_${selectedSchool.code}.PDF]`,
+                        'Waste Scale Ticket'
+                      )
+                    }
+                    className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] border border-[#111010]/15 text-left transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5 text-[#111010] font-bold text-xs">
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-[#005FA3]" />
+                      <span>3. Scale Ticket (PDF)</span>
+                    </div>
+                    <div className="text-[10px] text-[#111010]/65 mt-0.5">
+                      Certified kg scale weight
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 2. EXPERT SELECTION CRITERIA SCORING ACTION PAD */}
+            {activeBotRole === 'expert' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-[#005FA3]">
+                  <span>Expert Scoring Actions via Telegram:</span>
+                  <span className="font-mono text-[11px] text-[#14494F]">
+                    Target: {selectedInvoiceLogId}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    disabled={isSending}
+                    onClick={() =>
+                      sendWebhookUpdate(
+                        {
+                          actorId: 'usr-expert-01',
+                          actorRole: 'expert_admin',
+                          text: `/review ${selectedInvoiceLogId}`,
+                        },
+                        `/review ${selectedInvoiceLogId}`,
+                        'Expert Review Dossier',
+                        'expert'
+                      )
+                    }
+                    className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] border border-[#111010]/15 text-left transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
+                      <FileCheck className="w-3.5 h-3.5 shrink-0" />
+                      <span>1. Inspect Invoice Dossier</span>
+                    </div>
+                    <div className="text-[10px] text-[#111010]/65 mt-0.5">
+                      Review invoice document &amp; metrics
+                    </div>
+                  </button>
+
+                  <button
+                    disabled={isSending}
+                    onClick={() =>
+                      sendWebhookUpdate(
+                        {
+                          actorId: 'usr-expert-01',
+                          actorRole: 'expert_admin',
+                          text: `/score ${selectedInvoiceLogId} 92 88 86 94 95 90`,
+                        },
+                        `/score ${selectedInvoiceLogId} 92 88 86 94 95 90`,
+                        'Telegram Criteria Scores',
+                        'expert'
+                      )
+                    }
+                    className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#E9F5F4] hover:bg-[#9CF2F2]/60 border border-[#14494F]/30 text-left transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5 text-[#14494F] font-bold text-xs">
+                      <Gavel className="w-3.5 h-3.5 shrink-0" />
+                      <span>2. Submit 6 Scores via Telegram</span>
+                    </div>
+                    <div className="text-[10px] text-[#14494F]/80 mt-0.5">
+                      Releases points live to Dashboard!
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 3. STUDENT ACTIVITY SUBMISSION ACTION PAD */}
+            {activeBotRole === 'student' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  disabled={isSending}
+                  onClick={() =>
+                    sendWebhookUpdate(
+                      {
+                        actorRole: 'student',
+                        document: {
+                          fileName: `${selectedSchool.code}_ACTIVITY.JPG`,
+                          mimeType: 'image/jpeg',
+                          simulatedExif: {
+                            timestamp: new Date().toISOString(),
+                            lat: Number((selectedSchool.campus_lat + 0.0001).toFixed(6)),
+                            lng: Number((selectedSchool.campus_lng - 0.0001).toFixed(6)),
+                            deviceMake: 'Samsung',
+                            deviceModel: 'Galaxy A54 (Uncompressed)',
+                          },
                         },
                       },
-                    },
-                    '📎 [Sent File without GPS]',
-                    'Missing GPS (Rejected)'
-                  )
-                }
-                className="p-3 rounded-[12px_12px_12px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] border border-[#111010]/20 text-left transition cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 text-[#111010] font-bold text-xs">
-                  <AlertOctagon className="w-3.5 h-3.5 shrink-0 text-[#005FA3]" />
-                  <span>2. File Missing GPS</span>
-                </div>
-                <div className="text-[10px] text-[#111010]/65 mt-0.5">
-                  Bot rejects missing location
-                </div>
-              </button>
+                      `📎 [Student Sent Valid EXIF File: ${selectedSchool.code}_ACTIVITY.JPG]`,
+                      'Valid EXIF File',
+                      'student'
+                    )
+                  }
+                  className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 border border-[#005FA3]/30 text-left transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
+                    <CloudUpload className="w-3.5 h-3.5 shrink-0" />
+                    <span>Send School Activity File</span>
+                  </div>
+                  <div className="text-[10px] text-[#111010]/70 mt-0.5">
+                    Starts 4-step activity logging
+                  </div>
+                </button>
 
-              <button
-                disabled={isSending}
-                onClick={() =>
-                  sendWebhookUpdate(
-                    {
-                      document: {
-                        fileName: `${selectedSchool.code}_SCHOOL_ACTIVITY.JPG`,
-                        mimeType: 'image/jpeg',
-                        simulatedExif: {
-                          timestamp: new Date().toISOString(),
-                          lat: Number((selectedSchool.campus_lat + 0.0001).toFixed(6)),
-                          lng: Number((selectedSchool.campus_lng - 0.0001).toFixed(6)),
-                          deviceMake: 'Samsung',
-                          deviceModel: 'Galaxy A54 (Uncompressed File)',
-                        },
-                      },
-                    },
-                    `📎 [Sent Valid File: ${selectedSchool.code}_SCHOOL_ACTIVITY.JPG]`,
-                    'Valid EXIF File'
-                  )
-                }
-                className="p-3 rounded-[12px_12px_12px_2px] bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 border border-[#005FA3]/30 text-left transition cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
-                  <CloudUpload className="w-3.5 h-3.5 shrink-0" />
-                  <span>3. Valid School File</span>
-                </div>
-                <div className="text-[10px] text-[#111010]/70 mt-0.5">
-                  Verifies GPS &amp; asks questions
-                </div>
-              </button>
-            </div>
+                <button
+                  disabled={isSending}
+                  onClick={() =>
+                    sendWebhookUpdate(
+                      { sentAsCompressedPhoto: true },
+                      '📷 [Sent Normal Compressed Photo]',
+                      'Compressed Photo',
+                      'student'
+                    )
+                  }
+                  className="p-2.5 rounded-[10px_10px_10px_2px] bg-rose-50 hover:bg-rose-100 border border-rose-300 text-left transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-1.5 text-rose-800 font-bold text-xs">
+                    <CameraOff className="w-3.5 h-3.5 shrink-0" />
+                    <span>Test Compressed Photo</span>
+                  </div>
+                  <div className="text-[10px] text-rose-700/80 mt-0.5">
+                    Bot rejects (EXIF stripped)
+                  </div>
+                </button>
+              </div>
+            )}
 
+            {/* Input Bar */}
             <form onSubmit={handleSendText} className="flex items-center gap-2 pt-1">
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder={
-                  botStage === 'AWAITING_ACTIVITY_TITLE'
-                    ? 'Enter activity name (e.g. "Canteen Compost Batch")...'
-                    : botStage === 'AWAITING_WASTE_KG'
-                    ? 'Enter waste recycled in kg (e.g. "20")...'
-                    : botStage === 'AWAITING_REVENUE_USD'
-                    ? 'Enter sales in Rs. (e.g. "9000" or "24000")...'
+                  activeBotRole === 'expert'
+                    ? 'Enter: /score log-102 92 88 86 94 95 90 or /review log-102...'
+                    : activeBotRole === 'teacher'
+                    ? 'Enter: /upload_invoice log-102 or /invoices...'
                     : 'Type /log_impact or reply here...'
                 }
                 className="flex-1 hai-input px-3.5 py-2 text-xs"
@@ -345,61 +617,104 @@ export function TelegramBotWorkbench({
           </div>
         </div>
 
-        {/* Right Column: Resubmission & Recent Bot Messages (5 cols) */}
+        {/* Right Column: Teacher Verified Documents & GIZ/Expert Notifications Feed (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="hai-card p-6 space-y-3.5">
+          {/* Teacher Invoices & Receipts Feed */}
+          <div className="hai-card p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[#005FA3] font-bold text-xs uppercase">
-                <RefreshCw className="w-4 h-4" />
-                <span>Rejected Submissions (1x Resubmission Allowed)</span>
+                <FileCheck className="w-4 h-4" />
+                <span>Verified Invoices &amp; Receipts ({logsWithDocs.length})</span>
               </div>
+              <span className="hai-cyan-pill text-[11px] font-bold">
+                Forwarded to GIZ
+              </span>
             </div>
 
-            <div className="space-y-3">
-              {rejectedLogs.map((rLog) => (
-                <div
-                  key={rLog.id}
-                  className="hai-chrome-box p-4 text-xs space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#111010]">
-                      {rLog.activity_title} ({rLog.school_name})
-                    </span>
-                    <span className="hai-tag font-mono text-[10px] font-bold">
-                      {rLog.resubmission_count}/1 used
-                    </span>
-                  </div>
-                  <div className="text-rose-700 font-medium text-[11px]">
-                    Reason: &ldquo;{rLog.rejection_reason}&rdquo;
-                  </div>
-                  <button
-                    onClick={() =>
-                      sendWebhookUpdate(
-                        { text: `/resubmit ${rLog.id}` },
-                        `/resubmit ${rLog.id}`,
-                        'Resubmit Entry'
-                      )
-                    }
-                    className="w-full py-2 hai-btn-secondary text-xs cursor-pointer"
-                  >
-                    Resubmit {rLog.id} in Bot →
-                  </button>
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              {logsWithDocs.length === 0 ? (
+                <div className="hai-chrome-box p-4 text-xs text-[#111010]/70 text-center">
+                  No invoices uploaded yet. Switch to Teacher Mode to upload an invoice for GIZ verification!
                 </div>
-              ))}
+              ) : (
+                logsWithDocs.map((log) => (
+                  <div key={log.id} className="hai-chrome-box p-3.5 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[#111010]">
+                        [{log.id}] {log.school_code} — {log.activity_title}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          log.status === 'approved'
+                            ? 'bg-[#005FA3] text-[#9CF2F2]'
+                            : 'bg-[#9CF2F2] text-[#005FA3]'
+                        }`}
+                      >
+                        {log.status === 'approved' ? '✓ Expert Scored' : 'Awaiting Expert Score'}
+                      </span>
+                    </div>
+
+                    {log.verified_documents?.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="bg-white border border-[#111010]/10 rounded-[8px_8px_8px_0px] p-2.5 text-[11px] space-y-1"
+                      >
+                        <div className="flex items-center justify-between font-mono font-bold text-[#005FA3]">
+                          <span>📄 {doc.file_name}</span>
+                          <span>Rs. {(doc.verified_amount_lkr || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="text-[#111010]/70">
+                          Teacher: {doc.verified_by_teacher_name} •{' '}
+                          {doc.uploaded_via_telegram && 'Uploaded via Telegram'}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="flex items-center justify-between pt-1">
+                      <button
+                        onClick={() => {
+                          setSelectedInvoiceLogId(log.id);
+                          setActiveBotRole('expert');
+                          sendWebhookUpdate(
+                            {
+                              actorId: 'usr-expert-01',
+                              actorRole: 'expert_admin',
+                              text: `/score ${log.id} 92 88 86 94 95 90`,
+                            },
+                            `/score ${log.id} 92 88 86 94 95 90`,
+                            'Expert Telegram Score',
+                            'expert'
+                          );
+                        }}
+                        className="hai-btn-primary px-3 py-1 text-[11px] cursor-pointer"
+                      >
+                        Score via Telegram (/score {log.id}) →
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
+          {/* Telegram Notifications Feed */}
           <div className="hai-card p-6 space-y-3.5">
             <div className="flex items-center gap-2 text-[#005FA3] font-bold text-xs uppercase">
               <MessageSquareWarning className="w-4 h-4" />
-              <span>Recent Telegram Notifications Sent to Students</span>
+              <span>GIZ &amp; Expert Telegram Broadcast Feed</span>
             </div>
 
             <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
-              {telegramMessages.map((msg) => (
-                <div key={msg.id} className="hai-chrome-box p-3.5 text-xs space-y-1">
-                  <div className="font-bold text-[#111010]">
-                    To: {msg.student_name} ({msg.telegram_username})
+              {telegramMessages.slice(0, 6).map((msg) => (
+                <div key={msg.id} className="hai-chrome-box p-3 text-xs space-y-1">
+                  <div className="font-bold text-[#111010] flex items-center justify-between">
+                    <span>To: {msg.student_name}</span>
+                    <span className="font-mono text-[10px] text-[#111010]/60">
+                      {new Date(msg.sent_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
                   </div>
                   <p className="text-[#111010]/75 whitespace-pre-wrap text-[11px] leading-relaxed">
                     {msg.text}

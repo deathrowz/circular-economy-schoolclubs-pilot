@@ -140,6 +140,32 @@ export interface ExifMetadata {
   mimeType: string;
 }
 
+export type DocumentCategory =
+  | 'sales_invoice'
+  | 'official_receipt'
+  | 'waste_scale_ticket'
+  | 'delivery_challan'
+  | 'canteen_sales_summary';
+
+export interface VerifiedDocument {
+  id: string;
+  log_id: string;
+  doc_category: DocumentCategory;
+  file_name: string;
+  mime_type: string;
+  s3_url: string;
+  s3_key: string;
+  uploaded_by_role: UserRole;
+  uploaded_by_id: string;
+  uploaded_by_name: string;
+  verified_by_teacher_id?: string;
+  verified_by_teacher_name?: string;
+  verified_amount_lkr?: number;
+  uploaded_via_telegram: boolean;
+  notes?: string;
+  created_at: string;
+}
+
 export interface ImpactLog {
   id: string;
   club_id: string;
@@ -174,6 +200,11 @@ export interface ImpactLog {
   revenue_usd: number;
   co2_saved_kg: number;
   is_final_pitch: boolean;
+
+  // Invoices, Sales Receipts & Documentation Pipeline
+  verified_documents?: VerifiedDocument[];
+  scored_via_telegram?: boolean;
+  telegram_dossier_sent_to_experts?: boolean;
 
   // Routing & Validation State
   transaction_type: TransactionTier;
@@ -226,7 +257,9 @@ export interface AuditLogEntry {
     | 'STUDENT_RESUBMISSION'
     | 'TEACHER_APPROVED_MICRO'
     | 'TEACHER_ENDORSED_MACRO_ROUTED'
+    | 'TEACHER_UPLOADED_VERIFIED_DOCUMENT'
     | 'EXPERT_APPROVED_MACRO'
+    | 'EXPERT_SCORED_VIA_TELEGRAM'
     | 'SUBMISSION_REJECTED_RESOLUTION_LOOP'
     | 'SUBMISSION_FLAGGED_FOR_INVESTIGATION'
     | 'EXPERT_AUDIT_PASSED'

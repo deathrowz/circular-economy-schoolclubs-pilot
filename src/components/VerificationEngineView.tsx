@@ -3,12 +3,18 @@
 import React, { useState } from 'react';
 import {
   AlertTriangle,
+  Bot,
+  Check,
   CheckCircle2,
+  Copy,
   Dice5,
+  ExternalLink,
+  FileText,
   Flag,
   Gavel,
   Lock,
   MapPin,
+  Receipt,
   Settings2,
   ShieldAlert,
   ShieldCheck,
@@ -57,6 +63,7 @@ export function VerificationEngineView({
     message: string;
   } | null>(null);
   const [busyLogId, setBusyLogId] = useState<string | null>(null);
+  const [copiedScoreCmd, setCopiedScoreCmd] = useState<string | null>(null);
 
   const [criteriaDrafts, setCriteriaDrafts] = useState<Record<string, CriteriaScores>>({});
   const [configDraft, setConfigDraft] = useState<GamificationConfig>(config);
@@ -497,6 +504,54 @@ export function VerificationEngineView({
                       </div>
                     )}
 
+                    {/* Teacher-Verified Invoices & Documentation */}
+                    <div className="hai-chrome-box p-3.5 space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-[#111010] flex items-center gap-1.5">
+                          <Receipt className="w-3.5 h-3.5 text-[#005FA3]" />
+                          Verified Invoices, Receipts &amp; Scale Slips
+                        </span>
+                        <span className="text-[11px] font-mono text-[#005FA3] font-bold">
+                          {log.verified_documents?.length || 0} attached
+                        </span>
+                      </div>
+
+                      {log.verified_documents && log.verified_documents.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {log.verified_documents.map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="bg-white p-2.5 rounded border border-[#111010]/12 flex items-center justify-between gap-2"
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <FileText className="w-4 h-4 text-[#005FA3] shrink-0" />
+                                <div className="truncate">
+                                  <div className="font-semibold text-[#111010] text-[11px] truncate">
+                                    {doc.file_name}
+                                  </div>
+                                  <div className="text-[10px] text-[#111010]/70">
+                                    {doc.doc_category.replace(/_/g, ' ').toUpperCase()} • Uploaded by {doc.uploaded_by_name}
+                                  </div>
+                                </div>
+                              </div>
+                              <a
+                                href={doc.s3_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="hai-btn-secondary px-2.5 py-1 text-[10px] shrink-0 flex items-center gap-1"
+                              >
+                                View Doc <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-[#111010]/70 italic">
+                          No invoices attached yet. As teacher, you can verify paper receipts and attach them via Telegram: <code className="bg-white px-1.5 py-0.5 rounded font-mono text-[#005FA3]">/upload_invoice {log.id}</code>
+                        </p>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 pt-3 border-t border-[#111010]/12">
                       <div className="lg:col-span-5">
                         <input
@@ -642,6 +697,109 @@ export function VerificationEngineView({
                           <div className="text-xs text-[#111010]/70">
                             {log.waste_kg} kg • {formatLkr(log.revenue_usd)}
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Teacher-Verified Documentation Dossier */}
+                      <div className="hai-chrome-box p-4 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#111010]/10 pb-2">
+                          <div className="flex items-center gap-2">
+                            <Receipt className="w-4 h-4 text-[#005FA3]" />
+                            <span className="text-xs font-bold text-[#111010]">
+                              Teacher-Verified Documentation Dossier
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            {log.telegram_dossier_sent_to_experts && (
+                              <span className="hai-cyan-pill text-[10px] font-bold">
+                                📡 Dossier Sent to GIZ &amp; Experts (Chat 800999)
+                              </span>
+                            )}
+                            {log.scored_via_telegram && (
+                              <span className="hai-tag font-bold text-[10px] bg-emerald-100 text-emerald-800">
+                                ⚡ Scored via Telegram Bot
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {log.verified_documents && log.verified_documents.length > 0 ? (
+                          <div className="space-y-2">
+                            {log.verified_documents.map((doc) => (
+                              <div
+                                key={doc.id}
+                                className="bg-white p-3 rounded-lg border border-[#111010]/12 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                              >
+                                <div className="flex items-start sm:items-center gap-2.5">
+                                  <FileText className="w-5 h-5 text-[#005FA3] shrink-0 mt-0.5 sm:mt-0" />
+                                  <div>
+                                    <div className="font-bold text-[#111010] flex items-center gap-2">
+                                      <span>{doc.file_name}</span>
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#E6F1FA] text-[#005FA3]">
+                                        {doc.doc_category.replace(/_/g, ' ').toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <div className="text-[11px] text-[#111010]/70 mt-0.5">
+                                      Verified on campus by {doc.verified_by_teacher_name || doc.uploaded_by_name} •{' '}
+                                      {doc.uploaded_via_telegram ? 'Uploaded via Telegram Bot' : 'Web Upload'}
+                                      {doc.notes && ` • "${doc.notes}"`}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <a
+                                  href={doc.s3_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="hai-btn-primary px-3 py-1.5 text-xs shrink-0 flex items-center justify-center gap-1.5"
+                                >
+                                  <span>View Document</span>
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
+                            Teacher has not attached an invoice document yet. Teacher can attach via Telegram: <code className="font-mono font-bold">/upload_invoice {log.id}</code>
+                          </div>
+                        )}
+
+                        {/* Telegram Scoring Quick Command */}
+                        <div className="bg-[#E6F1FA] border border-[#005FA3]/30 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="text-xs">
+                            <div className="font-bold text-[#005FA3] flex items-center gap-1.5">
+                              <Bot className="w-3.5 h-3.5" />
+                              <span>Score directly via Telegram Bot:</span>
+                            </div>
+                            <code className="text-[11px] font-mono text-[#111010] mt-0.5 block break-all">
+                              /score {log.id} {scores.relevance} {scores.business} {scores.feasibility} {scores.student_ownership} {scores.sustainability} {scores.institutional_commitment}
+                            </code>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cmd = `/score ${log.id} ${scores.relevance} ${scores.business} ${scores.feasibility} ${scores.student_ownership} ${scores.sustainability} ${scores.institutional_commitment}`;
+                              navigator.clipboard?.writeText(cmd);
+                              setCopiedScoreCmd(log.id);
+                              setTimeout(() => setCopiedScoreCmd(null), 2500);
+                            }}
+                            className="hai-btn-secondary px-3 py-1.5 text-xs shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            {copiedScoreCmd === log.id ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Copy Command</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
 

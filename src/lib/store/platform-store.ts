@@ -25,6 +25,7 @@ import {
   classifyTransactionTier,
   computeSchoolLeaderboard,
   detectHealthAndRiskAnomalies,
+  formatLkr,
   shouldSelectForRandomExpertAudit,
 } from '@/lib/gamification/engine';
 import { calculateDistanceMeters } from '@/lib/exif/parser';
@@ -226,8 +227,8 @@ export async function createStudentImpactSubmission(params: {
     exif_timestamp: params.exifTimestamp,
     exif_lat: params.exifLat,
     exif_lng: params.exifLng,
-    exif_device_make: params.exifDeviceMake || 'Apple',
-    exif_device_model: params.exifDeviceModel || 'iPhone 15 Pro (RAW Document)',
+    exif_device_make: params.exifDeviceMake || 'Samsung',
+    exif_device_model: params.exifDeviceModel || 'Galaxy A54 (RAW Document)',
     campus_distance_meters: campusDistance,
     on_campus_verified: onCampusVerified,
     activity_title: params.activityTitle,
@@ -272,7 +273,7 @@ export async function createStudentImpactSubmission(params: {
     reason_or_notes:
       resubmissionCount > 0
         ? `Student resubmitted transaction (Attempt 1/1) for "${newLog.activity_title}"`
-        : `Submitted via Telegram Bot as ${transactionType.toUpperCase()} transaction ($${newLog.revenue_usd} rev, ${newLog.waste_kg} kg waste)`,
+        : `Submitted via Telegram Bot as ${transactionType.toUpperCase()} transaction (${formatLkr(newLog.revenue_usd)} sales, ${newLog.waste_kg} kg waste)`,
     metadata: {
       transaction_type: transactionType,
       exif_lat: newLog.exif_lat,
@@ -317,9 +318,9 @@ export async function createStudentImpactSubmission(params: {
     telegramUsername: newLog.telegram_username || '@student',
     logId: newLog.id,
     type: 'SUBMISSION_RECEIPT',
-    text: `✅ SUBMISSION LOGGED (${newLog.id}): "${newLog.activity_title}"\n• Tier: ${newLog.transaction_type.toUpperCase()} ($${newLog.revenue_usd} / ${newLog.waste_kg} kg)\n• EXIF Campus Check: ${newLog.campus_distance_meters}m from ${newLog.school_code} (${
+    text: `✅ SUBMISSION LOGGED (${newLog.id}): "${newLog.activity_title}"\n• Tier: ${newLog.transaction_type.toUpperCase()} (${formatLkr(newLog.revenue_usd)} / ${newLog.waste_kg} kg)\n• School GPS Check: ${newLog.campus_distance_meters}m from ${newLog.school_code} (${
       newLog.on_campus_verified ? 'Verified On-Campus' : 'Off-Campus Flag'
-    })\n• Status: PENDING Tier 1 Teacher Endorsement`,
+    })\n• Status: PENDING Teacher Review`,
   });
 
   return newLog;
@@ -374,16 +375,16 @@ export async function performTeacherReview(params: {
 
   if (params.decision === 'approve') {
     log.teacher_notes =
-      params.notesOrReason || 'Confirmed student activity occurred on campus with valid EXIF.';
+      params.notesOrReason || 'Confirmed student activity occurred on school premises with valid EXIF.';
 
     // STEP 3: Threshold Routing (The Safeguard)
     if (log.transaction_type === 'macro') {
-      // Macro-Transaction (>$50 revenue or final pitch) -> Route to Expert Panel!
+      // Macro-Transaction (>Rs. 15,000 sales or final pitch) -> Route to Expert Panel!
       // Teacher CANNOT award leaderboard points directly on Macro transactions.
       log.status = 'pending_expert_review';
       log.points_awarded = 0;
       actionType = 'TEACHER_ENDORSED_MACRO_ROUTED';
-      auditReason = `Teacher endorsed Macro-Transaction ($${log.revenue_usd} rev). Routed to Expert Panel (status: pending_expert_review).`;
+      auditReason = `Teacher endorsed Macro-Transaction (${formatLkr(log.revenue_usd)} sales). Routed to National Expert Panel (status: pending_expert_review).`;
     } else {
       // Micro-Transaction -> Automatically post points to Leaderboard + 10% Random Audit Roll
       const awarded = calculateMicroTransactionPoints({

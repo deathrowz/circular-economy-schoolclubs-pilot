@@ -10,10 +10,20 @@ import {
   TransactionTier,
 } from '@/types/domain';
 
+export const LKR_PER_UNIT = 300;
+
+/**
+ * Formats an internal financial amount into Sri Lankan Rupees (Rs.)
+ */
+export function formatLkr(amountUsd: number): string {
+  const lkr = Math.round(amountUsd * LKR_PER_UNIT);
+  return `Rs. ${lkr.toLocaleString('en-LK')}`;
+}
+
 /**
  * Classifies a transaction as Micro or Macro based on strict threshold rules:
- * - Macro: Revenue > $50 (configurable threshold) OR final funding pitch
- * - Micro: Low-stakes activity (<= $50 revenue and not a final pitch)
+ * - Macro: Revenue > Rs. 15,000 ($50 internal unit) OR final funding pitch
+ * - Micro: Low-stakes activity (<= Rs. 15,000 revenue and not a final pitch)
  */
 export function classifyTransactionTier(params: {
   revenueUsd: number;
@@ -102,7 +112,7 @@ export function computeWeightedCriteriaScore(
 }
 
 /**
- * Normalizes financial metrics (USD revenue) against environmental metrics (kg waste diverted).
+ * Normalizes financial metrics against environmental metrics (kg waste diverted).
  * Prevents high-revenue / zero-environmental-impact clubs from gaming the circular economy leaderboard.
  * Returns a multiplier between 0.60 and 1.35.
  */
@@ -115,7 +125,7 @@ export function computeFinancialEnvironmentalNormalizationIndex(
     return 1.0;
   }
 
-  // If high revenue (> $60) with zero or negligible environmental impact (< 1 kg), penalize heavily
+  // If high revenue (> Rs. 18,000) with zero or negligible environmental impact (< 1 kg), penalize heavily
   if (totalRevenueUsd > 60 && totalWasteKg < 1) {
     return 0.62;
   }
@@ -160,6 +170,7 @@ export function computeSchoolLeaderboard(params: {
 
   const entries: LeaderboardSchoolScore[] = schools.map((school) => {
     const club =
+      clubs.find((c) => c.id === school.id) ||
       clubs.find((c) => c.school_id === school.id) ||
       ({
         id: `club-${school.id}`,
@@ -167,7 +178,7 @@ export function computeSchoolLeaderboard(params: {
         school_name: school.name,
         school_code: school.code,
         slug: school.code.toLowerCase(),
-        name: `${school.name} Circular Lab`,
+        name: `${school.name} Eco Club`,
         tagline: 'Student Circular Enterprise',
         circular_sector: 'Circular Upcycling',
         business_model_canvas: {
@@ -284,7 +295,7 @@ export function computeSchoolLeaderboard(params: {
       approved_transactions_count: approvedLogs.length,
       pending_transactions_count: pendingLogs.length,
       audit_fraud_count: fraudLogs.length,
-      topoff_funding_tier: 'Base Only ($0)',
+      topoff_funding_tier: 'Base Grant Only',
       topoff_funding_amount_usd: 0,
     };
   });
@@ -292,23 +303,23 @@ export function computeSchoolLeaderboard(params: {
   // Sort descending by composite_leaderboard_score
   entries.sort((a, b) => b.composite_leaderboard_score - a.composite_leaderboard_score);
 
-  // Assign rank and gamified top-off seed funding award tiers
+  // Assign rank and gamified top-off seed funding award tiers in Sri Lankan Rupees (Rs.)
   return entries.map((entry, idx) => {
     const rank = idx + 1;
-    let topoff_funding_tier: LeaderboardSchoolScore['topoff_funding_tier'] = 'Base Only ($0)';
+    let topoff_funding_tier: LeaderboardSchoolScore['topoff_funding_tier'] = 'Base Grant Only';
     let topoff_funding_amount_usd = 0;
 
     if (rank <= 2) {
-      topoff_funding_tier = 'Platinum ($3,500)';
+      topoff_funding_tier = 'Platinum (Rs. 1,050,000)';
       topoff_funding_amount_usd = 3500;
     } else if (rank <= 5) {
-      topoff_funding_tier = 'Gold ($2,500)';
+      topoff_funding_tier = 'Gold (Rs. 750,000)';
       topoff_funding_amount_usd = 2500;
     } else if (rank <= 10) {
-      topoff_funding_tier = 'Silver ($1,500)';
+      topoff_funding_tier = 'Silver (Rs. 450,000)';
       topoff_funding_amount_usd = 1500;
     } else if (rank <= 13) {
-      topoff_funding_tier = 'Bronze ($500)';
+      topoff_funding_tier = 'Bronze (Rs. 150,000)';
       topoff_funding_amount_usd = 500;
     }
 
@@ -349,11 +360,11 @@ export function detectHealthAndRiskAnomalies(params: {
         school_code: club.school_code,
         club_id: club.id,
         club_name: club.name,
-        title: `Inactive Enterprise: ${daysInactive} Days Without Telegram Activity`,
-        description: `${club.name} (${club.school_name}) has not logged a verified circular-economy activity via the Telegram Bot in ${daysInactive} days.`,
-        metric_highlight: `${daysInactive} days dormant`,
+        title: `Inactive School Club: ${daysInactive} Days Without Activity`,
+        description: `${club.name} (${club.school_name}) has not submitted an activity via Telegram in ${daysInactive} days.`,
+        metric_highlight: `${daysInactive} days inactive`,
         recommended_action:
-          'Dispatch automated Telegram check-in to Student CEO and notify Supervising Teacher.',
+          'Message Student President on Telegram and check in with Supervising Teacher.',
         detected_at: now.toISOString(),
       });
     }
@@ -373,13 +384,13 @@ export function detectHealthAndRiskAnomalies(params: {
         club_id: log.club_id,
         club_name: log.club_name,
         related_log_id: log.id,
-        title: 'Anomalous Ratio: High Revenue ($' + log.revenue_usd + ') with Zero Circular Waste Impact',
-        description: `Submission "${log.activity_title}" reported $${log.revenue_usd.toFixed(
-          2
-        )} in revenue but ${log.waste_kg} kg of diverted material. Suspected non-circular resale activity.`,
-        metric_highlight: `$${log.revenue_usd} rev / ${log.waste_kg} kg waste`,
+        title: `High Sales (${formatLkr(log.revenue_usd)}) with 0 kg Recycled Material`,
+        description: `"${log.activity_title}" reported ${formatLkr(
+          log.revenue_usd
+        )} in sales but ${log.waste_kg} kg of recycled material. Possible non-circular resale.`,
+        metric_highlight: `${formatLkr(log.revenue_usd)} / ${log.waste_kg} kg`,
         recommended_action:
-          'Freeze Macro payout in Expert Adjudication and request physical feedstock invoice via Telegram.',
+          'Hold Macro grant points and request raw material receipt via Telegram.',
         detected_at: log.created_at,
       });
     }
@@ -398,13 +409,13 @@ export function detectHealthAndRiskAnomalies(params: {
         club_id: log.club_id,
         club_name: log.club_name,
         related_log_id: log.id,
-        title: `Off-Campus EXIF GPS Detected (${log.campus_distance_meters}m from campus center)`,
-        description: `Document EXIF coordinates (${log.exif_lat.toFixed(4)}, ${log.exif_lng.toFixed(
+        title: `Photo Taken Off-Campus (${log.campus_distance_meters}m from school)`,
+        description: `Photo GPS (${log.exif_lat.toFixed(4)}, ${log.exif_lng.toFixed(
           4
-        )}) are ${log.campus_distance_meters}m away from ${log.school_name} (allowed radius: ${radius}m).`,
-        metric_highlight: `${log.campus_distance_meters}m off-campus`,
+        )}) is ${log.campus_distance_meters}m away from ${log.school_name}.`,
+        metric_highlight: `${log.campus_distance_meters}m from school`,
         recommended_action:
-          'Supervising Teacher must verify off-site community partnership before endorsing.',
+          'Teacher should confirm if this was an approved off-site community sale.',
         detected_at: log.created_at,
       });
     }
@@ -421,11 +432,11 @@ export function detectHealthAndRiskAnomalies(params: {
         club_id: log.club_id,
         club_name: log.club_name,
         related_log_id: log.id,
-        title: `Fraudulent Micro-Transaction Flagged in 10% Random Audit (-${log.penalty_points} pts)`,
-        description: `Expert Panel flagged "${log.activity_title}" during random audit. Original points revoked and -${log.penalty_points} penalty points deducted from ${log.school_name}.`,
+        title: `Audit Penalty Applied (-${log.penalty_points} pts)`,
+        description: `National Panel flagged "${log.activity_title}" during random audit. Points revoked and -${log.penalty_points} penalty points deducted from ${log.school_name}.`,
         metric_highlight: `-${log.penalty_points} pts penalty`,
         recommended_action:
-          'Increase school random audit sampling rate and require Teacher co-signature.',
+          'Require Supervising Teacher co-signature on next school submissions.',
         detected_at: log.updated_at,
       });
     }

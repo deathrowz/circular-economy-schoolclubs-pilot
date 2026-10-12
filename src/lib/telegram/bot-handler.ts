@@ -6,6 +6,7 @@ import {
   dispatchTelegramNotification,
   getPlatformStore,
 } from '@/lib/store/platform-store';
+import { formatLkr } from '@/lib/gamification/engine';
 
 export type BotConversationStage =
   | 'IDLE'
@@ -121,11 +122,11 @@ export async function handleTelegramBotUpdate(
       ok: true,
       stage: 'IDLE',
       botReply:
-        `👋 Welcome to the Circular-Economy Student Enterprise Bot (${club.name} • ${club.school_code})!\n\n` +
+        `👋 Welcome to the Sri Lanka School Circular-Economy Bot (${club.name} • ${club.school_code})!\n\n` +
         `📌 COMMANDS:\n` +
-        `• /log_impact — Start logging a new circular activity, material weight (kg), and revenue ($)\n` +
+        `• /log_impact — Log a new recycling activity, material weight (kg), and sales revenue (Rs.)\n` +
         `• /resubmit <log_id> — Use your single (1x) resubmission attempt for a rejected transaction\n` +
-        `• /status — Check your club's pending and approved logs\n\n` +
+        `• /status — Check your school club's pending and approved logs\n\n` +
         `⚠️ METADATA CONSTRAINT: Always send photos as uncompressed "Documents/Files" (📎 Attach -> File), NEVER as standard compressed Photos, so EXIF GPS & Timestamp data remain intact.`,
     };
   }
@@ -150,7 +151,7 @@ export async function handleTelegramBotUpdate(
     const clubLogs = store.impactLogs.filter((l) => l.club_id === session.clubId).slice(0, 4);
     const summaryLines = clubLogs.map(
       (l) =>
-        `• [${l.id}] ${l.activity_title} — ${l.status.toUpperCase()} (${l.transaction_type.toUpperCase()}: $${l.revenue_usd}, ${l.waste_kg}kg)`
+        `• [${l.id}] ${l.activity_title} — ${l.status.toUpperCase()} (${l.transaction_type.toUpperCase()}: ${formatLkr(l.revenue_usd)}, ${l.waste_kg}kg)`
     );
     return {
       ok: true,
@@ -234,9 +235,9 @@ export async function handleTelegramBotUpdate(
       ok: true,
       stage: 'AWAITING_DOCUMENT',
       botReply:
-        `🌱 **New Circular Impact Submission (${club.name})**\n\n` +
-        `📎 **Step 1 of 4 (The Metadata Constraint):**\n` +
-        `Please send your activity evidence photo as an **Uncompressed Document / File** (Paperclip 📎 → Document/File).\n` +
+        `🌱 **New School Impact Submission (${club.name})**\n\n` +
+        `📎 **Step 1 of 4 (Uncompressed Photo):**\n` +
+        `Please send your activity photo as an **Uncompressed Document / File** (Paperclip 📎 → Document/File).\n` +
         `⚠️ *Do NOT send as a standard compressed photo — Telegram strips EXIF GPS & Timestamp data from standard photos, which will cause automatic rejection.*`,
     };
   }
@@ -281,8 +282,8 @@ export async function handleTelegramBotUpdate(
       fileBuffer = createSampleExifDocumentBuffer(
         doc.simulatedExif || {
           timestamp: new Date().toISOString(),
-          lat: store.schools.find((s) => s.id === club.school_id)?.campus_lat ?? 45.523062,
-          lng: store.schools.find((s) => s.id === club.school_id)?.campus_lng ?? -122.676482,
+          lat: store.schools.find((s) => s.id === club.school_id)?.campus_lat ?? 6.9047,
+          lng: store.schools.find((s) => s.id === club.school_id)?.campus_lng ?? 79.8612,
         }
       );
     }
@@ -340,12 +341,11 @@ export async function handleTelegramBotUpdate(
       exifExtracted: exifResult.metadata,
       s3Uploaded: s3Upload,
       botReply:
-        `✅ **EXIF Verified & Document Archived to S3!**\n` +
+        `✅ **EXIF Verified & Document Uploaded!**\n` +
         `• File: \`${doc.fileName}\` (Uncompressed Document)\n` +
         `• EXIF Timestamp: \`${exifResult.metadata.timestamp}\`\n` +
-        `• EXIF GPS: \`${exifResult.metadata.lat.toFixed(5)}, ${exifResult.metadata.lng.toFixed(5)}\`\n` +
-        `• S3 Key: \`${s3Upload.s3Key}\`\n\n` +
-        `📝 **Step 2 of 4:** What is the **Activity Title / Description**? (e.g., *"Weekly PETG Bottle Extrusion Batch"* or *"Final Funding Pitch & B2B Delivery"*)`,
+        `• EXIF GPS: \`${exifResult.metadata.lat.toFixed(5)}, ${exifResult.metadata.lng.toFixed(5)}\`\n\n` +
+        `📝 **Step 2 of 4:** What is the **Activity Name**? (e.g., *"Canteen PET Bottle Sorting"* or *"Haritha Pola Compost Sale"*)`,
     };
   }
 
@@ -370,8 +370,8 @@ export async function handleTelegramBotUpdate(
       ok: true,
       stage: 'AWAITING_WASTE_KG',
       botReply:
-        `♻️ **Step 3 of 4 (Environmental Metric):**\n` +
-        `How many **kilograms (kg)** of circular waste/feedstock were diverted or upcycled during *"${session.activityTitle}"*?\n` +
+        `♻️ **Step 3 of 4 (Waste Recycled in kg):**\n` +
+        `How many **kilograms (kg)** of school waste were collected or recycled during *"${session.activityTitle}"*?\n` +
         `*(Enter a number, e.g. ` +
         '`18.5`' +
         `)*`,
@@ -397,12 +397,12 @@ export async function handleTelegramBotUpdate(
       ok: true,
       stage: 'AWAITING_REVENUE_USD',
       botReply:
-        `💵 **Step 4 of 4 (Financial Metric):**\n` +
-        `How much **revenue ($ USD)** was generated from this activity?\n` +
-        `*(Note: Transactions **> $50** or Final Pitches are classified as **Macro-Transactions** requiring both Teacher Endorsement and Expert Panel adjudication. Enter a number, e.g. ` +
-        '`35`' +
+        `💵 **Step 4 of 4 (Sales Revenue in Rs.):**\n` +
+        `How much **sales revenue (Rs.)** was earned from this activity?\n` +
+        `*(Note: Sales **> Rs. 15,000** or Final Pitches are classified as **Macro-Transactions** requiring Teacher + National Panel review. Enter an amount in Rs., e.g. ` +
+        '`9000`' +
         ` or ` +
-        '`120`' +
+        '`24000`' +
         `)*`,
     };
   }
@@ -413,7 +413,7 @@ export async function handleTelegramBotUpdate(
       return {
         ok: false,
         stage: 'AWAITING_REVENUE_USD',
-        botReply: '⚠️ Please enter a valid non-negative dollar amount (e.g., `32` or `150`).',
+        botReply: '⚠️ Please enter a valid sales amount (e.g., `9000` or `24000`).',
       };
     }
 
@@ -426,6 +426,10 @@ export async function handleTelegramBotUpdate(
         botReply: '⚠️ Session expired. Please start over with /log_impact.',
       };
     }
+
+    // If user typed LKR directly (>= 1000, e.g. 9000 or 24000), convert to internal unit (1 unit = Rs. 300)
+    const normalizedRevenueUsd =
+      parsedRev >= 1000 ? Number((parsedRev / 300).toFixed(2)) : parsedRev;
 
     // Step 6: POST complete record to Supabase / Platform Store as `status: 'pending'`
     const createdLog = await createStudentImpactSubmission({
@@ -443,9 +447,9 @@ export async function handleTelegramBotUpdate(
       exifDeviceModel: session.exif.deviceModel,
       activityTitle: session.activityTitle,
       activityCategory: session.activityCategory || 'upcycled_production',
-      description: `Logged via Telegram Bot: ${session.activityTitle} (${session.wasteKg} kg circular waste, $${parsedRev} revenue).`,
+      description: `Logged via Telegram Bot: ${session.activityTitle} (${session.wasteKg} kg recycled waste, ${formatLkr(normalizedRevenueUsd)} sales).`,
       wasteKg: session.wasteKg ?? 0,
-      revenueUsd: parsedRev,
+      revenueUsd: normalizedRevenueUsd,
       isFinalPitch: session.activityCategory === 'final_funding_pitch',
       parentLogId: session.resubmitParentLogId,
     });
@@ -465,20 +469,20 @@ export async function handleTelegramBotUpdate(
       stage: 'IDLE',
       createdLogId: createdLog.id,
       botReply:
-        `🎉 **Submission Recorded in Supabase (\`status: pending\`)!**\n` +
+        `🎉 **Submission Recorded (\`status: pending\`)!**\n` +
         `• **Log ID:** \`${createdLog.id}\`${
           createdLog.resubmission_count > 0 ? ' *(Resubmission Attempt 1/1)*' : ''
         }\n` +
-        `• **Routing Tier:** \`${createdLog.transaction_type.toUpperCase()}\` (${
+        `• **Tier:** \`${createdLog.transaction_type.toUpperCase()}\` (${
           createdLog.transaction_type === 'macro'
-            ? '>$50 / High-Stakes → Teacher Endorsement + Expert Panel Scoring'
-            : '<=$50 Micro → Teacher Approval releases points + 10% Random Audit Safeguard'
+            ? '>Rs. 15,000 → Teacher Endorsement + National Panel Scoring'
+            : '<=Rs. 15,000 Micro → Teacher Approval awards points + 10% Random Audit'
         })\n` +
-        `• **Metrics:** \`${createdLog.waste_kg} kg\` diverted (${createdLog.co2_saved_kg} kg CO₂e) | \`$${createdLog.revenue_usd.toFixed(
-          2
-        )}\` revenue\n` +
-        `• **Campus Geofence:** \`${createdLog.campus_distance_meters}m\` from ${createdLog.school_code} (${
-          createdLog.on_campus_verified ? '✅ On-Campus Verified' : '⚠️ Off-Campus Distance Flag'
+        `• **Impact:** \`${createdLog.waste_kg} kg\` recycled | \`${formatLkr(
+          createdLog.revenue_usd
+        )}\` sales\n` +
+        `• **School GPS Check:** \`${createdLog.campus_distance_meters}m\` from ${createdLog.school_code} (${
+          createdLog.on_campus_verified ? '✅ On School Premises' : '⚠️ Off-Campus Distance Flag'
         })`,
     };
   }

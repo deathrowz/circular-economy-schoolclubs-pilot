@@ -247,7 +247,12 @@ export interface LeaderboardSchoolScore {
   approved_transactions_count: number;
   pending_transactions_count: number;
   audit_fraud_count: number;
-  topoff_funding_tier: 'Platinum ($3,500)' | 'Gold ($2,500)' | 'Silver ($1,500)' | 'Bronze ($500)' | 'Base Only ($0)';
+  topoff_funding_tier:
+    | 'Platinum (Rs. 1,050,000)'
+    | 'Gold (Rs. 750,000)'
+    | 'Silver (Rs. 450,000)'
+    | 'Bronze (Rs. 150,000)'
+    | 'Base Grant Only';
   topoff_funding_amount_usd: number;
 }
 

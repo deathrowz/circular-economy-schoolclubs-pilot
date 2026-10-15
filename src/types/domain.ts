@@ -116,6 +116,7 @@ export interface UserProfile {
   id: string;
   email: string;
   login_code?: string;
+  phone_number?: string; // E.164 MSISDN format (e.g., 94771234501)
   organization?: string;
   full_name: string;
   role: UserRole;
@@ -161,7 +162,8 @@ export interface VerifiedDocument {
   verified_by_teacher_id?: string;
   verified_by_teacher_name?: string;
   verified_amount_lkr?: number;
-  uploaded_via_telegram: boolean;
+  uploaded_via_whatsapp?: boolean;
+  uploaded_via_telegram?: boolean;
   notes?: string;
   created_at: string;
 }
@@ -175,6 +177,8 @@ export interface ImpactLog {
   school_code: string;
   student_id: string;
   student_name: string;
+  phone_number?: string;
+  whatsapp_message_id?: string;
   telegram_username?: string;
   telegram_message_id?: string;
   file_name: string;
@@ -182,6 +186,8 @@ export interface ImpactLog {
   is_uncompressed_document: boolean;
   s3_url: string;
   s3_key: string;
+  media_storage_path?: string;
+  file_size_bytes?: number;
 
   // EXIF Metadata
   exif_timestamp: string;
@@ -203,7 +209,11 @@ export interface ImpactLog {
 
   // Invoices, Sales Receipts & Documentation Pipeline
   verified_documents?: VerifiedDocument[];
+  uploaded_via_whatsapp?: boolean;
+  uploaded_via_telegram?: boolean;
+  scored_via_whatsapp?: boolean;
   scored_via_telegram?: boolean;
+  whatsapp_dossier_sent_to_experts?: boolean;
   telegram_dossier_sent_to_experts?: boolean;
 
   // Routing & Validation State
@@ -234,6 +244,8 @@ export interface ImpactLog {
   rejection_reason?: string;
   resubmission_count: number;
   parent_log_id?: string;
+  whatsapp_notification_sent?: boolean;
+  whatsapp_last_message?: string;
   telegram_notification_sent?: boolean;
   telegram_last_message?: string;
 
@@ -255,10 +267,12 @@ export interface AuditLogEntry {
   action_type:
     | 'STUDENT_SUBMISSION_CREATED'
     | 'STUDENT_RESUBMISSION'
+    | 'WHATSAPP_SUBMISSION_INGESTED'
     | 'TEACHER_APPROVED_MICRO'
     | 'TEACHER_ENDORSED_MACRO_ROUTED'
     | 'TEACHER_UPLOADED_VERIFIED_DOCUMENT'
     | 'EXPERT_APPROVED_MACRO'
+    | 'EXPERT_SCORED_VIA_WHATSAPP'
     | 'EXPERT_SCORED_VIA_TELEGRAM'
     | 'SUBMISSION_REJECTED_RESOLUTION_LOOP'
     | 'SUBMISSION_FLAGGED_FOR_INVESTIGATION'

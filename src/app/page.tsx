@@ -8,6 +8,7 @@ import {
   KeyRound,
   Lock,
   LogOut,
+  Phone,
   Recycle,
   ShieldCheck,
   Sparkles,
@@ -17,7 +18,7 @@ import {
 import { LeaderboardView } from '@/components/LeaderboardView';
 import { ClubProfilesView } from '@/components/ClubProfilesView';
 import { VerificationEngineView } from '@/components/VerificationEngineView';
-import { TelegramBotWorkbench } from '@/components/TelegramBotWorkbench';
+import { WhatsAppCloudWorkbench } from '@/components/WhatsAppCloudWorkbench';
 import { HealthRiskDashboardView } from '@/components/HealthRiskDashboardView';
 import { StudentGamifiedDashboardView } from '@/components/StudentGamifiedDashboardView';
 import { RoleLoginPortalView } from '@/components/RoleLoginPortalView';
@@ -40,6 +41,7 @@ type NavTab =
   | 'student_gamified'
   | 'verification'
   | 'clubs'
+  | 'whatsapp_ingestion'
   | 'telegram_bot'
   | 'health_risk'
   | 'login_portal';
@@ -234,9 +236,9 @@ export default function PlatformDashboardPage() {
           count: pendingExpertCount,
         },
         {
-          id: 'telegram_bot' as NavTab,
-          label: 'Teacher Invoices & Dossiers',
-          icon: Bot,
+          id: 'whatsapp_ingestion' as NavTab,
+          label: 'WhatsApp Invoices & Dossiers',
+          icon: Phone,
         },
         {
           id: 'leaderboard' as NavTab,
@@ -261,9 +263,9 @@ export default function PlatformDashboardPage() {
           count: pendingTeacherCount,
         },
         {
-          id: 'telegram_bot' as NavTab,
-          label: 'Upload Verified Invoices',
-          icon: Bot,
+          id: 'whatsapp_ingestion' as NavTab,
+          label: 'Upload WhatsApp Invoices',
+          icon: Phone,
         },
         {
           id: 'clubs' as NavTab,
@@ -286,9 +288,9 @@ export default function PlatformDashboardPage() {
         icon: Sparkles,
       },
       {
-        id: 'telegram_bot' as NavTab,
-        label: '📸 Touch Activity Logger',
-        icon: Bot,
+        id: 'whatsapp_ingestion' as NavTab,
+        label: '📱 WhatsApp Activity Hub',
+        icon: Phone,
       },
       {
         id: 'leaderboard' as NavTab,
@@ -386,13 +388,13 @@ export default function PlatformDashboardPage() {
     }
 
     if (activeUser.role === 'expert_admin') {
-      if (activeTab === 'telegram_bot') {
+      if (activeTab === 'whatsapp_ingestion' || activeTab === 'telegram_bot') {
         return {
           eyebrow: 'Category 2 • National Expert Evaluation Panel',
-          title: 'Teacher Invoices & Scoring Dossiers',
+          title: 'Teacher WhatsApp Invoices & Scoring Dossiers',
           subtitle:
-            'Review official sales invoices, bookshop receipts, and weighbridge scale tickets uploaded by supervising teachers, and score via Telegram or web.',
-          badge: 'Dossier Review',
+            'Review official sales invoices, bookshop receipts, and weighbridge scale tickets uploaded by supervising teachers, and score via WhatsApp or web.',
+          badge: 'WhatsApp Dossier Review',
         };
       }
       if (activeTab === 'leaderboard') {
@@ -423,13 +425,13 @@ export default function PlatformDashboardPage() {
     }
 
     if (activeUser.role === 'teacher') {
-      if (activeTab === 'telegram_bot') {
+      if (activeTab === 'whatsapp_ingestion' || activeTab === 'telegram_bot') {
         return {
           eyebrow: `Category 3 • Supervising Teacher • ${activeUser.school_name} (${activeUser.school_code})`,
-          title: 'Teacher Invoice & Receipt Upload Gateway',
+          title: 'Teacher WhatsApp Ingestion & Invoice Gateway',
           subtitle:
             'Attach verified sales invoices, pola receipts, or waste weighbridge scale tickets for transactions > Rs. 15,000 to forward to GIZ & Expert Panel.',
-          badge: `${activeUser.school_code} Teacher Gateway`,
+          badge: `${activeUser.school_code} WhatsApp Gateway`,
         };
       }
       if (activeTab === 'clubs') {
@@ -457,13 +459,13 @@ export default function PlatformDashboardPage() {
     }
 
     // Category 4: Student Role
-    if (activeTab === 'telegram_bot') {
+    if (activeTab === 'whatsapp_ingestion' || activeTab === 'telegram_bot') {
       return {
         eyebrow: `Category 4 • Student Enterprise • ${activeUser.school_name} (${activeUser.school_code})`,
-        title: 'Touch Activity Logger (@HarithaPasalBot)',
+        title: 'WhatsApp Cloud Activity Logger (+94 11 234 5678)',
         subtitle:
-          'Child-friendly touch buttons: tap to submit uncompressed activity photos, select enterprise categories, and log recycled kg & sales.',
-        badge: 'No Typing Required',
+          'Meta Graph API v20.0: submit uncompressed activity photos, select enterprise categories, and log recycled kg & sales.',
+        badge: 'WhatsApp Verified',
       };
     }
     if (activeTab === 'leaderboard') {
@@ -759,13 +761,13 @@ export default function PlatformDashboardPage() {
           />
         )}
 
-        {activeTab === 'telegram_bot' && (
-          <TelegramBotWorkbench
+        {(activeTab === 'whatsapp_ingestion' || activeTab === 'telegram_bot') && (
+          <WhatsAppCloudWorkbench
             clubs={snapshot.clubs}
             schools={snapshot.schools}
             users={snapshot.users}
             impactLogs={snapshot.impactLogs}
-            telegramMessages={snapshot.telegramMessages}
+            whatsappMessages={snapshot.telegramMessages}
             initialRole={
               activeUser.role === 'expert_admin'
                 ? 'expert'

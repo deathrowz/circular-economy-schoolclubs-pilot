@@ -53,7 +53,7 @@ export function HealthRiskDashboardView({
             {inactiveCount} Schools
           </div>
           <p className="text-xs text-[#111010]/70 mt-1">
-            Need Teacher follow-up on Telegram
+            Need Teacher follow-up on WhatsApp
           </p>
         </div>
 

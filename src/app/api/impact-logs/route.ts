@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const created = await createStudentImpactSubmission({
       actorId: body.actorId || 'usr-student-01',
       clubId: body.clubId || 'club-01',
-      fileName: body.fileName || 'TELEGRAM_DOC.JPG',
+      fileName: body.fileName || 'WHATSAPP_DOC.JPG',
       mimeType: body.mimeType || 'image/jpeg',
       isUncompressedDocument: Boolean(body.isUncompressedDocument),
       s3Url: body.s3Url,

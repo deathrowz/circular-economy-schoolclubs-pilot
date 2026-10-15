@@ -6,9 +6,9 @@ import {
   updateGamificationConfig,
 } from '@/lib/store/platform-store';
 import {
-  handleTelegramBotUpdate,
-  IncomingTelegramUpdate,
-} from '@/lib/telegram/bot-handler';
+  handleWhatsAppCloudUpdate,
+  IncomingWhatsAppUpdate,
+} from '@/lib/whatsapp/handler';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import {
   computeSchoolLeaderboard,
@@ -17,9 +17,9 @@ import {
 
 /**
  * Isomorphic Platform Bridge:
- * - In full-stack server environments (Next.js dev/start, Vercel, Docker), calls `/api/platform` & `/api/telegram/webhook`.
+ * - In full-stack server environments (Next.js dev/start, Vercel, Docker), calls `/api/platform` & `/api/webhook/whatsapp`.
  * - In static export environments (GitHub Pages `output: 'export'`), falls back seamlessly to the isomorphic in-browser platform engine.
- * - Always merges real-time records from Supabase PostgreSQL (e.g. newly uploaded Telegram bot submissions).
+ * - Always merges real-time records from Supabase PostgreSQL (e.g. newly uploaded WhatsApp Cloud API submissions).
  */
 export async function fetchPlatformSnapshotClient() {
   let snapshot = getFullPlatformSnapshot();
@@ -168,9 +168,9 @@ export async function postPlatformActionClient(body: Record<string, any>): Promi
   }
 }
 
-export async function postTelegramWebhookClient(body: Record<string, any>) {
+export async function postWhatsAppWebhookClient(body: Record<string, any>) {
   try {
-    const res = await fetch('/api/telegram/webhook', {
+    const res = await fetch('/api/webhook/whatsapp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -183,7 +183,7 @@ export async function postTelegramWebhookClient(body: Record<string, any>) {
   }
 
   try {
-    const result = await handleTelegramBotUpdate(body as IncomingTelegramUpdate);
+    const result = await handleWhatsAppCloudUpdate(body as IncomingWhatsAppUpdate);
     return {
       ...result,
       snapshot: getFullPlatformSnapshot(),
@@ -191,7 +191,12 @@ export async function postTelegramWebhookClient(body: Record<string, any>) {
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : 'Telegram webhook processing error',
+      error: err instanceof Error ? err.message : 'WhatsApp Cloud API webhook processing error',
     };
   }
 }
+
+/**
+ * @deprecated Use `postWhatsAppWebhookClient`
+ */
+export const postTelegramWebhookClient = postWhatsAppWebhookClient;

@@ -25,6 +25,7 @@ interface LeaderboardViewProps {
   config: GamificationConfig;
   activeSchoolId?: string | null;
   onSelectClubProfile: (clubId: string) => void;
+  onOpenWhatsAppWorkbench?: () => void;
   onOpenTelegramWorkbench?: () => void;
   onOpenVerification?: () => void;
 }
@@ -34,6 +35,7 @@ export function LeaderboardView({
   config,
   activeSchoolId,
   onSelectClubProfile,
+  onOpenWhatsAppWorkbench,
   onOpenTelegramWorkbench,
   onOpenVerification,
 }: LeaderboardViewProps) {
@@ -123,12 +125,12 @@ export function LeaderboardView({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            {onOpenTelegramWorkbench && (
+            {(onOpenWhatsAppWorkbench || onOpenTelegramWorkbench) && (
               <button
-                onClick={onOpenTelegramWorkbench}
+                onClick={onOpenWhatsAppWorkbench || onOpenTelegramWorkbench}
                 className="hai-btn-on-zeal px-5 py-2.5 text-xs sm:text-sm inline-flex items-center gap-1.5 cursor-pointer"
               >
-                <span>Submit via Telegram Bot</span>
+                <span>Submit via WhatsApp</span>
                 <ArrowUpRight className="w-4 h-4" />
               </button>
             )}

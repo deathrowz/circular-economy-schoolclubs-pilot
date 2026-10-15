@@ -32,7 +32,7 @@ import {
   UserProfile,
 } from '@/types/domain';
 import { formatLkr } from '@/lib/gamification/engine';
-import { postTelegramWebhookClient } from '@/lib/client/platform-bridge';
+import { postWhatsAppWebhookClient } from '@/lib/client/platform-bridge';
 
 interface StudentGamifiedDashboardViewProps {
   activeUser: UserProfile;
@@ -279,8 +279,8 @@ export function StudentGamifiedDashboardView({
     });
 
     try {
-      const data = await postTelegramWebhookClient({
-        chatId: currentStudentUser.telegram_user_id || 800101,
+      const data = await postWhatsAppWebhookClient({
+        phoneNumber: currentStudentUser.phone_number || '94771234501',
         studentId: currentStudentUser.id,
         clubId: club.id,
         ...payload,
@@ -752,7 +752,7 @@ export function StudentGamifiedDashboardView({
                   Log New Activity for {school.name}
                 </div>
                 <div className="text-[11px] text-[#9CF2F2]">
-                  Telegram Bot (@HarithaPasalBot) • School GPS: {school.campus_lat.toFixed(4)}, {school.campus_lng.toFixed(4)}
+                  WhatsApp Ingestion (+94 11 234 5678) • School GPS: {school.campus_lat.toFixed(4)}, {school.campus_lng.toFixed(4)}
                 </div>
               </div>
             </div>
@@ -928,7 +928,7 @@ export function StudentGamifiedDashboardView({
             {botStage === 'IDLE' && (
               <div className="pt-1 border-t border-[#111010]/10">
                 <div className="text-[10px] font-bold text-[#005FA3] uppercase tracking-wider mb-1.5">
-                  Telegram Touch Keyboard (Student Mode):
+                  WhatsApp Touch Keyboard (Student Mode):
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -1073,7 +1073,7 @@ export function StudentGamifiedDashboardView({
                   <div className="font-bold text-[#111010] text-sm">
                     {log.activity_title}
                   </div>
-                  {((log.verified_documents && log.verified_documents.length > 0) || log.scored_via_telegram) && (
+                  {((log.verified_documents && log.verified_documents.length > 0) || log.scored_via_whatsapp || log.scored_via_telegram) && (
                     <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                       {log.verified_documents && log.verified_documents.length > 0 && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-[#E6F1FA] text-[#005FA3] font-semibold border border-[#005FA3]/20">
@@ -1081,10 +1081,10 @@ export function StudentGamifiedDashboardView({
                           {log.verified_documents.length} Verified {log.verified_documents.length === 1 ? 'Doc' : 'Docs'}
                         </span>
                       )}
-                      {log.scored_via_telegram && (
+                      {(log.scored_via_whatsapp || log.scored_via_telegram) && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200">
                           <Bot className="w-3 h-3 text-emerald-600" />
-                          Scored via Telegram
+                          Scored via WhatsApp
                         </span>
                       )}
                     </div>

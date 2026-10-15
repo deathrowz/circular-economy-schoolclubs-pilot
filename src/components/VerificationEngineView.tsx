@@ -118,7 +118,7 @@ export function VerificationEngineView({
       onRefreshSnapshot(freshSnapshot);
       setFeedbackBanner({
         type: 'success',
-        message: '🔄 Live sync completed: Latest Telegram bot submissions updated from Supabase.',
+        message: '🔄 Live sync completed: Latest WhatsApp Cloud API submissions updated from Supabase.',
       });
     } catch {
       setFeedbackBanner({
@@ -211,7 +211,7 @@ export function VerificationEngineView({
         } else if (decision === 'reject') {
           setFeedbackBanner({
             type: 'warning',
-            message: `🔔 Rejected "${updatedLog.activity_title}". Sent reason to ${updatedLog.student_name} on Telegram for their 1x resubmission.`,
+            message: `🔔 Rejected "${updatedLog.activity_title}". Sent reason to ${updatedLog.student_name} on WhatsApp for their 1x resubmission.`,
           });
         } else {
           setFeedbackBanner({
@@ -263,7 +263,7 @@ export function VerificationEngineView({
         } else if (action === 'reject_macro') {
           setFeedbackBanner({
             type: 'warning',
-            message: `🔔 Rejected "${updatedLog.activity_title}". Student notified via Telegram for their single (1x) resubmission.`,
+            message: `🔔 Rejected "${updatedLog.activity_title}". Student notified via WhatsApp for their single (1x) resubmission.`,
           });
         } else if (action === 'audit_pass') {
           setFeedbackBanner({
@@ -440,7 +440,7 @@ export function VerificationEngineView({
             Approvals Restricted to Teachers &amp; National Panel
           </h3>
           <p className="text-xs text-[#111010]/70 max-w-lg mx-auto">
-            Students submit data via the Telegram Bot, and Mentors have read-only access. Switch to a Teacher or National Panel member below to test approvals:
+            Students submit data via WhatsApp Cloud API, and Mentors have read-only access. Switch to a Teacher or National Panel member below to test approvals:
           </p>
           <div className="flex flex-wrap justify-center gap-3 pt-2">
             <button
@@ -566,7 +566,7 @@ export function VerificationEngineView({
               <button
                 onClick={handleManualLiveSync}
                 disabled={isRefreshingLive}
-                title="Fetch latest student submissions from Telegram & Supabase"
+                title="Fetch latest student submissions from WhatsApp & Supabase"
                 className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 text-[#005FA3] border border-[#005FA3]/30 flex items-center gap-1.5 transition cursor-pointer"
               >
                 <RefreshCw className={`w-3 h-3 ${isRefreshingLive ? 'animate-spin text-[#005FA3]' : ''}`} />
@@ -718,7 +718,7 @@ export function VerificationEngineView({
                         </div>
                       ) : (
                         <p className="text-[11px] text-[#111010]/70 italic">
-                          No invoices attached yet. As teacher, you can verify paper receipts and attach them via Telegram: <code className="bg-white px-1.5 py-0.5 rounded font-mono text-[#005FA3]">/upload_invoice {log.id}</code>
+                          No invoices attached yet. As teacher, you can verify paper receipts and attach them via WhatsApp: <code className="bg-white px-1.5 py-0.5 rounded font-mono text-[#005FA3]">/upload_invoice {log.id}</code>
                         </p>
                       )}
                     </div>
@@ -743,7 +743,7 @@ export function VerificationEngineView({
                           onChange={(e) =>
                             setRejectionReasons((prev) => ({ ...prev, [log.id]: e.target.value }))
                           }
-                          placeholder="Reason if rejecting (sent via Telegram)..."
+                          placeholder="Reason if rejecting (sent via WhatsApp)..."
                           className="w-full hai-input px-3 py-2 text-xs"
                         />
                       </div>
@@ -1035,14 +1035,14 @@ export function VerificationEngineView({
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2">
-                            {log.telegram_dossier_sent_to_experts && (
+                            {(log.whatsapp_dossier_sent_to_experts || log.telegram_dossier_sent_to_experts) && (
                               <span className="hai-cyan-pill text-[10px] font-bold">
-                                📡 Dossier Sent to GIZ &amp; Experts (Chat 800999)
+                                📡 Dossier Sent to GIZ &amp; Experts
                               </span>
                             )}
-                            {log.scored_via_telegram && (
+                            {(log.scored_via_whatsapp || log.scored_via_telegram) && (
                               <span className="hai-tag font-bold text-[10px] bg-emerald-100 text-emerald-800">
-                                ⚡ Scored via Telegram Bot
+                                ⚡ Scored via WhatsApp
                               </span>
                             )}
                           </div>
@@ -1066,7 +1066,7 @@ export function VerificationEngineView({
                                     </div>
                                     <div className="text-[11px] text-[#111010]/70 mt-0.5">
                                       Verified on campus by {doc.verified_by_teacher_name || doc.uploaded_by_name} •{' '}
-                                      {doc.uploaded_via_telegram ? 'Uploaded via Telegram Bot' : 'Web Upload'}
+                                      {doc.uploaded_via_whatsapp || doc.uploaded_via_telegram ? 'Uploaded via WhatsApp Cloud API' : 'Web Upload'}
                                       {doc.notes && ` • "${doc.notes}"`}
                                     </div>
                                   </div>
@@ -1086,16 +1086,16 @@ export function VerificationEngineView({
                           </div>
                         ) : (
                           <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
-                            Teacher has not attached an invoice document yet. Teacher can attach via Telegram: <code className="font-mono font-bold">/upload_invoice {log.id}</code>
+                            Teacher has not attached an invoice document yet. Teacher can attach via WhatsApp: <code className="font-mono font-bold">/upload_invoice {log.id}</code>
                           </div>
                         )}
 
-                        {/* Telegram Scoring Quick Command */}
+                        {/* WhatsApp Scoring Quick Command */}
                         <div className="bg-[#E6F1FA] border border-[#005FA3]/30 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="text-xs">
                             <div className="font-bold text-[#005FA3] flex items-center gap-1.5">
                               <Bot className="w-3.5 h-3.5" />
-                              <span>Score directly via Telegram Bot:</span>
+                              <span>Score directly via WhatsApp Cloud API:</span>
                             </div>
                             <code className="text-[11px] font-mono text-[#111010] mt-0.5 block break-all">
                               /score {log.id} {scores.relevance} {scores.business} {scores.feasibility} {scores.student_ownership} {scores.sustainability} {scores.institutional_commitment}

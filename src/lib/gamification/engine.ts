@@ -361,10 +361,10 @@ export function detectHealthAndRiskAnomalies(params: {
         club_id: club.id,
         club_name: club.name,
         title: `Inactive School Club: ${daysInactive} Days Without Activity`,
-        description: `${club.name} (${club.school_name}) has not submitted an activity via Telegram in ${daysInactive} days.`,
+        description: `${club.name} (${club.school_name}) has not submitted an activity via WhatsApp in ${daysInactive} days.`,
         metric_highlight: `${daysInactive} days inactive`,
         recommended_action:
-          'Message Student President on Telegram and check in with Supervising Teacher.',
+          'Message Student President on WhatsApp and check in with Supervising Teacher.',
         detected_at: now.toISOString(),
       });
     }
@@ -390,7 +390,7 @@ export function detectHealthAndRiskAnomalies(params: {
         )} in sales but ${log.waste_kg} kg of recycled material. Possible non-circular resale.`,
         metric_highlight: `${formatLkr(log.revenue_usd)} / ${log.waste_kg} kg`,
         recommended_action:
-          'Hold Macro grant points and request raw material receipt via Telegram.',
+          'Hold Macro grant points and request raw material receipt via WhatsApp.',
         detected_at: log.created_at,
       });
     }

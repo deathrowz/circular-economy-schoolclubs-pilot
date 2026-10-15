@@ -264,6 +264,9 @@ export async function createStudentImpactSubmission(params: {
     school_code: school.code,
     student_id: student.id,
     student_name: student.full_name.split(' (')[0],
+    phone_number: student.phone_number || '94771234501',
+    whatsapp_message_id: `wamid.${Date.now()}`,
+    uploaded_via_whatsapp: true,
     telegram_username: student.telegram_username || '@student_entrepreneur',
     telegram_message_id: `tg-msg-${Date.now().toString().slice(-4)}`,
     file_name: params.fileName,
@@ -831,6 +834,7 @@ export async function attachTeacherVerifiedDocumentToLog(params: {
     verified_by_teacher_id: actor.id,
     verified_by_teacher_name: actor.full_name.split(' (')[0],
     verified_amount_lkr: params.verifiedAmountLkr ?? (log.revenue_usd * 300),
+    uploaded_via_whatsapp: true,
     uploaded_via_telegram: Boolean(params.uploadedViaTelegram),
     notes: params.notes || 'Verified by supervising teacher on school campus.',
     created_at: now,
@@ -842,6 +846,7 @@ export async function attachTeacherVerifiedDocumentToLog(params: {
   log.verified_documents.push(verifiedDoc);
   log.teacher_reviewer_id = actor.id;
   log.teacher_reviewer_name = actor.full_name.split(' (')[0];
+  log.whatsapp_dossier_sent_to_experts = true;
   log.telegram_dossier_sent_to_experts = true;
   log.updated_at = now;
 
@@ -948,6 +953,7 @@ export async function submitExpertScoresViaTelegram(params: {
   log.criteria_scores = params.criteriaScores;
   log.status = 'approved';
   log.points_awarded = awardedPoints;
+  log.scored_via_whatsapp = true;
   log.scored_via_telegram = true;
   log.expert_reviewer_id = actor.id;
   log.expert_reviewer_name = actor.full_name.split(' (')[0];
@@ -1069,8 +1075,12 @@ export function getFullPlatformSnapshot() {
     impactLogs: store.impactLogs,
     auditLogs: store.auditLogs,
     gamificationConfig: store.gamificationConfig,
+    whatsappMessages: store.telegramMessages,
     telegramMessages: store.telegramMessages,
     leaderboard,
     healthAlerts,
   };
 }
+
+export const submitExpertScoresViaWhatsApp = submitExpertScoresViaTelegram;
+export const dispatchWhatsAppNotification = dispatchTelegramNotification;

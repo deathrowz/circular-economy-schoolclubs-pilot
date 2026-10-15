@@ -82,9 +82,11 @@ jobs:
           force_orphan: true
           commit_message: 'deploy: publish Next.js static export to gh-pages'
 
-      - name: Check if GitHub Pages (Actions Workflow Mode) is Enabled
+      - name: Enable & Configure GitHub Pages
         id: config_pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
         continue-on-error: true
 
       - name: Upload GitHub Pages Artifact (when Pages Actions mode is enabled)

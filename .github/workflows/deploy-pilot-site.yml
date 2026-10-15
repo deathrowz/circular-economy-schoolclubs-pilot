@@ -23,10 +23,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -36,6 +36,9 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Run 7-Step Validation, EXIF & RBAC Unit Test Suite
+        env:
+          WHATSAPP_APP_SECRET: 'giz-haritha-test-secret-1234567890'
+          WHATSAPP_VERIFY_TOKEN: 'haritha-pasal-verify-token-2026'
         run: npm test
 
       - name: Verify Full-Stack Next.js Build (App Router + API Routes)
@@ -49,10 +52,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -65,10 +68,11 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: 'https://dqrdhvrunmnufxpcxnuq.supabase.co'
           NEXT_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxcmRodnJ1bm1udWZ4cGN4bnVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3OTcwNDcsImV4cCI6MjEwNzM3MzA0N30.vZ7QF5DLf1KG_pDA9p_b_dsZ2ELG30im1NeoI365dAg'
         run: |
-          mv src/app/api /tmp/nextjs-api-routes-backup
+          cp -r src/app/api /tmp/nextjs-api-routes-backup
+          rm -rf src/app/api
           npm run build
           touch out/.nojekyll
-          mv /tmp/nextjs-api-routes-backup src/app/api
+          cp -r /tmp/nextjs-api-routes-backup src/app/api
 
       - name: Publish Static Site Bundle to gh-pages Branch
         uses: peaceiris/actions-gh-pages@v4

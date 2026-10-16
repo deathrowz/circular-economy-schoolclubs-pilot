@@ -48,6 +48,9 @@ jobs:
     name: 2. Build & Publish Interactive Pilot Site (gh-pages & GitHub Pages)
     needs: verify-and-test
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

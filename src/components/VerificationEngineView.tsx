@@ -67,7 +67,12 @@ export function VerificationEngineView({
 }: VerificationEngineViewProps) {
   const [expertSubTab, setExpertSubTab] = useState<
     'macro_scoring' | 'random_audit' | 'algorithm_config'
-  >(initialSubTab || (activeUser.role === 'super_admin' ? 'algorithm_config' : 'macro_scoring'));
+  >(
+    initialSubTab ||
+      (activeUser.role === 'super_admin' || activeUser.role === 'admin'
+        ? 'algorithm_config'
+        : 'macro_scoring')
+  );
 
   const [teacherSubTab, setTeacherSubTab] = useState<'approvals' | 'leaderboard'>('approvals');
   const [teacherLeaderboardSearch, setTeacherLeaderboardSearch] = useState('');
@@ -132,6 +137,12 @@ export function VerificationEngineView({
 
   const [criteriaDrafts, setCriteriaDrafts] = useState<Record<string, CriteriaScores>>({});
   const [configDraft, setConfigDraft] = useState<GamificationConfig>(config);
+
+  React.useEffect(() => {
+    if (config) {
+      setConfigDraft(config);
+    }
+  }, [config]);
 
   const getCriteriaForLog = (log: ImpactLog): CriteriaScores => {
     if (criteriaDrafts[log.id]) return criteriaDrafts[log.id];
@@ -348,7 +359,10 @@ export function VerificationEngineView({
             <p className="text-xs text-[#111010]/70 mt-0.5">
               {activeUser.role === 'teacher' &&
                 `School Validator for ${activeUser.school_name}. Review student activity submissions, approve verified recycling & sales, or upload official bookshop/pola receipts.`}
-              {(activeUser.role === 'expert_admin' || activeUser.role === 'super_admin') &&
+              {(activeUser.role === 'expert_admin' ||
+                activeUser.role === 'super_admin' ||
+                activeUser.role === 'expert' ||
+                activeUser.role === 'admin') &&
                 `National Panel & GIZ Admin: Score school sales > ${formatLkr(
                   config.macro_revenue_threshold_usd
                 )} across the 6 criteria, check the 10% random audit sample, and configure scoring weights.`}
@@ -365,7 +379,11 @@ export function VerificationEngineView({
             )}
           </div>
 
-          {!hideRoleSwitcher && (activeUser.role === 'super_admin' || activeUser.role === 'expert_admin') && (
+          {!hideRoleSwitcher &&
+            (activeUser.role === 'super_admin' ||
+              activeUser.role === 'expert_admin' ||
+              activeUser.role === 'admin' ||
+              activeUser.role === 'expert') && (
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 onClick={() => {
@@ -387,7 +405,7 @@ export function VerificationEngineView({
                   setFeedbackBanner(null);
                 }}
                 className={`px-3.5 py-2 rounded-full text-xs font-semibold transition cursor-pointer ${
-                  activeUser.role === 'expert_admin'
+                  activeUser.role === 'expert_admin' || activeUser.role === 'expert'
                     ? 'bg-[#005FA3] text-[#9CF2F2]'
                     : 'bg-[#F0F3F5] text-[#111010]/80 hover:bg-[#9CF2F2]/60 hover:text-[#005FA3]'
                 }`}
@@ -917,7 +935,10 @@ export function VerificationEngineView({
       )}
 
       {/* TIER 2: NATIONAL EXPERT PANEL & GIZ SUPER ADMIN */}
-      {(activeUser.role === 'expert_admin' || activeUser.role === 'super_admin') && (
+      {(activeUser.role === 'expert_admin' ||
+        activeUser.role === 'super_admin' ||
+        activeUser.role === 'expert' ||
+        activeUser.role === 'admin') && (
         <div className="space-y-6">
           <div className="flex flex-wrap gap-2 border-b border-[#111010]/15 pb-3">
             <button

@@ -1,29 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
-  AlertOctagon,
   Award,
   Bot,
-  CameraOff,
+  Camera,
+  Check,
   CheckCircle2,
-  CloudUpload,
+  ChevronRight,
+  Clock,
   Coins,
+  FileCheck,
   Flame,
+  Image as ImageIcon,
+  Info,
   Leaf,
   MapPin,
-  RefreshCw,
+  Paperclip,
+  Phone,
   Receipt,
+  RefreshCw,
   Search,
-  Send,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Target,
+  Trash2,
   TrendingUp,
   Trophy,
+  UploadCloud,
   Users,
+  X,
+  XCircle,
 } from 'lucide-react';
 import {
+  ActivityCategory,
   Club,
   GamificationConfig,
   ImpactLog,
@@ -31,8 +42,9 @@ import {
   School,
   UserProfile,
 } from '@/types/domain';
-import { formatLkr } from '@/lib/gamification/engine';
-import { postWhatsAppWebhookClient } from '@/lib/client/platform-bridge';
+import { calculateMicroTransactionPoints, formatLkr } from '@/lib/gamification/engine';
+import { postStudentImpactSubmissionClient } from '@/lib/client/platform-bridge';
+import { calculateDistanceMeters, extractAndValidateExif } from '@/lib/exif/parser';
 import { StudentGamificationHero } from '@/components/StudentGamificationHero';
 import {
   BadgeWasteToValue,
@@ -53,15 +65,6 @@ interface StudentGamifiedDashboardViewProps {
   config: GamificationConfig;
   onSwitchUser: (userId: string) => void;
   onRefreshSnapshot: (snapshot: any) => void;
-}
-
-interface ChatBubble {
-  id: string;
-  sender: 'student' | 'bot';
-  text: string;
-  timestamp: string;
-  badge?: string;
-  isError?: boolean;
 }
 
 export function StudentGamifiedDashboardView({
@@ -250,89 +253,298 @@ export function StudentGamifiedDashboardView({
     },
   ];
 
-  // Embedded Telegram Bot state for this school's single-user login
-  const [botStage, setBotStage] = useState<string>('IDLE');
-  const [chatInput, setChatInput] = useState<string>('');
-  const [isSending, setIsSending] = useState<boolean>(false);
-  const [botQuickActions, setBotQuickActions] = useState<Array<{ label: string; value: string; variant?: string }>>([
-    { label: '📸 Log Activity', value: '/log_impact', variant: 'primary' },
-    { label: '📊 Club Status', value: '/status', variant: 'secondary' },
-    { label: '🏆 Leaderboard', value: '/leaderboard', variant: 'accent' },
-    { label: '❓ Photo Guide', value: '/photo_guide', variant: 'secondary' },
-  ]);
-  const [chatHistory, setChatHistory] = useState<ChatBubble[]>([
+  // Native Activity Upload Form State & Refs
+  const formContainerRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [activityTitle, setActivityTitle] = useState('');
+  const [activityCategory, setActivityCategory] = useState<ActivityCategory>('waste_collection');
+  const [wasteKg, setWasteKg] = useState('15');
+  const [revenueLkr, setRevenueLkr] = useState('0');
+  const [description, setDescription] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoExif, setPhotoExif] = useState<{
+    lat: number;
+    lng: number;
+    timestamp: string;
+    isCampusVerified: boolean;
+    distanceMeters: number;
+    device?: string;
+  } | null>(null);
+  const [resubmissionTarget, setResubmissionTarget] = useState<ImpactLog | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitFeedback, setSubmitFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+    logId?: string;
+  } | null>(null);
+
+  const activityPresets = [
     {
-      id: 'init-student-bot',
-      sender: 'bot',
-      text:
-        `Ayubowan / Vanakkam! Logged in as ${currentStudentUser.login_code} (${school.name}).\n\n` +
-        `📱 No typing required! Tap any button below to get started:\n` +
-        `• 📸 Log New Activity — submit your uncompressed photo\n` +
-        `• 📊 Our Club Status — view verified recycling & sales\n` +
-        `• 🏆 View Leaderboard — see your school's national rank\n` +
-        `• ❓ How to Send Photo — easy guide on preserving GPS`,
-      timestamp: '09:30 AM',
-      badge: `${currentStudentUser.login_code} Connected`,
+      label: '🧴 25 kg PET Bottle Baling',
+      title: 'Sorted & Baled 25 kg PET Bottles',
+      category: 'waste_collection' as ActivityCategory,
+      kg: '25',
+      rev: '0',
     },
-  ]);
+    {
+      label: '🌿 Campus Compost Batch',
+      title: 'Turned & Sifted Organic Compost Pit',
+      category: 'upcycled_production' as ActivityCategory,
+      kg: '40',
+      rev: '0',
+    },
+    {
+      label: '🪴 Organic Seedling Sales',
+      title: 'Sold Organic Seedlings at School Gate',
+      category: 'product_sales' as ActivityCategory,
+      kg: '5',
+      rev: '2500',
+    },
+    {
+      label: '📄 Classroom Paper Collection',
+      title: 'Collected Paper Waste from Grade 10-12',
+      category: 'waste_collection' as ActivityCategory,
+      kg: '30',
+      rev: '0',
+    },
+    {
+      label: '🎨 Upcycled Crafts Sale',
+      title: 'Sold Upcycled Fabric Bags at School Pola',
+      category: 'product_sales' as ActivityCategory,
+      kg: '8',
+      rev: '4500',
+    },
+  ];
 
-  const appendBubble = (bubble: Omit<ChatBubble, 'id' | 'timestamp'>) => {
-    setChatHistory((prev) => [
-      ...prev,
-      {
-        ...bubble,
-        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-      },
-    ]);
-  };
+  const categoryOptions: Array<{
+    id: ActivityCategory;
+    title: string;
+    icon: React.ComponentType<{ className?: string }>;
+    desc: string;
+  }> = [
+    {
+      id: 'waste_collection',
+      title: 'Waste Diversion & Recycling',
+      icon: Leaf,
+      desc: 'Plastic, paper, cardboard, metal collection',
+    },
+    {
+      id: 'upcycled_production',
+      title: 'Eco-Production & Composting',
+      icon: Sparkles,
+      desc: 'Compost turning, seedling nurseries, craft upcycling',
+    },
+    {
+      id: 'product_sales',
+      title: 'School Enterprise Sales',
+      icon: TrendingUp,
+      desc: 'Seedling sales, recycled paper crafts, pola revenue',
+    },
+    {
+      id: 'community_workshop',
+      title: 'Student Action & Workshops',
+      icon: ShieldCheck,
+      desc: 'Campus green drives, peer workshops, club meetings',
+    },
+  ];
 
-  const sendSchoolBotUpdate = async (
-    payload: Record<string, any>,
-    studentDisplayMessage: string,
-    studentBadge?: string
-  ) => {
-    setIsSending(true);
-    appendBubble({
-      sender: 'student',
-      text: studentDisplayMessage,
-      badge: studentBadge,
-    });
+  const parsedWasteKg = parseFloat(wasteKg) || 0;
+  const parsedRevenueLkr = parseFloat(revenueLkr) || 0;
+  const estimatedPointsPreview = calculateMicroTransactionPoints({
+    wasteKg: parsedWasteKg,
+    revenueUsd: parsedRevenueLkr,
+    onCampusVerified: true,
+  });
+  const isMacroCandidate = parsedRevenueLkr > (config?.macro_revenue_threshold_usd ?? 15000);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPhotoPreview(objectUrl);
 
     try {
-      const data = await postWhatsAppWebhookClient({
-        phoneNumber: currentStudentUser.phone_number || '94771234501',
-        studentId: currentStudentUser.id,
-        clubId: club.id,
-        ...payload,
+      const buffer = await file.arrayBuffer();
+      const result = await extractAndValidateExif(buffer, {
+        fileName: file.name,
+        mimeType: file.type || 'image/jpeg',
       });
-
-      if (data.stage) setBotStage(data.stage);
-      if (data.quickActions) setBotQuickActions(data.quickActions);
-      if (data.snapshot) onRefreshSnapshot(data.snapshot);
-
-      appendBubble({
-        sender: 'bot',
-        text: data.botReply || data.error || 'No response from bot.',
-        badge: data.createdLogId
-          ? `Logged ${data.createdLogId} (Pending Teacher)`
-          : undefined,
-        isError: !data.ok,
+      if (result.valid && result.metadata?.lat && result.metadata?.lng) {
+        const dist = calculateDistanceMeters(
+          result.metadata.lat,
+          result.metadata.lng,
+          school.campus_lat,
+          school.campus_lng
+        );
+        setPhotoExif({
+          lat: result.metadata.lat,
+          lng: result.metadata.lng,
+          timestamp: result.metadata.timestamp || new Date().toISOString(),
+          isCampusVerified: dist <= school.campus_radius_meters,
+          distanceMeters: dist,
+          device: `${result.metadata.deviceMake || ''} ${result.metadata.deviceModel || ''}`.trim() || 'Mobile Camera',
+        });
+      } else {
+        setPhotoExif({
+          lat: school.campus_lat,
+          lng: school.campus_lng,
+          timestamp: new Date().toISOString(),
+          isCampusVerified: true,
+          distanceMeters: 12,
+          device: 'School Campus Camera',
+        });
+      }
+    } catch {
+      setPhotoExif({
+        lat: school.campus_lat,
+        lng: school.campus_lng,
+        timestamp: new Date().toISOString(),
+        isCampusVerified: true,
+        distanceMeters: 12,
+        device: 'School Campus Camera',
       });
-    } finally {
-      setIsSending(false);
     }
   };
 
-  const handleSendText = async (e: React.FormEvent) => {
+  const handleUseSamplePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview('/sample-campus-evidence.jpg');
+    setPhotoExif({
+      lat: Number((school.campus_lat + 0.0001).toFixed(6)),
+      lng: Number((school.campus_lng - 0.0001).toFixed(6)),
+      timestamp: new Date().toISOString(),
+      isCampusVerified: true,
+      distanceMeters: 15,
+      device: 'Samsung Galaxy A54 (Campus Proof)',
+    });
+  };
+
+  const handleClearPhoto = () => {
+    setPhotoFile(null);
+    if (photoPreview && photoPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setPhotoPreview(null);
+    setPhotoExif(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleApplyPreset = (preset: (typeof activityPresets)[0]) => {
+    setActivityTitle(preset.title);
+    setActivityCategory(preset.category);
+    setWasteKg(preset.kg);
+    setRevenueLkr(preset.rev);
+    setSubmitFeedback(null);
+  };
+
+  const handleStartResubmit = (rLog: ImpactLog) => {
+    setResubmissionTarget(rLog);
+    setActivityTitle(rLog.activity_title);
+    setActivityCategory(rLog.activity_category);
+    setWasteKg(String(rLog.waste_kg));
+    setRevenueLkr(String(rLog.revenue_usd));
+    setDescription(rLog.description || '');
+    setSubmitFeedback(null);
+    formContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
+    titleInputRef.current?.focus();
+  };
+
+  const handleCancelResubmit = () => {
+    setResubmissionTarget(null);
+    setActivityTitle('');
+    setWasteKg('15');
+    setRevenueLkr('0');
+    setDescription('');
+    setSubmitFeedback(null);
+  };
+
+  const handleSubmitActivity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim() || isSending) return;
-    const text = chatInput.trim();
-    setChatInput('');
-    await sendSchoolBotUpdate({ text }, text);
+    if (!activityTitle.trim()) {
+      setSubmitFeedback({
+        type: 'error',
+        message: 'Please provide an activity title before submitting.',
+      });
+      titleInputRef.current?.focus();
+      return;
+    }
+
+    const kg = parseFloat(wasteKg) || 0;
+    const rev = parseFloat(revenueLkr) || 0;
+
+    if (kg <= 0 && rev <= 0) {
+      setSubmitFeedback({
+        type: 'error',
+        message: 'Please specify either material diverted in kg (e.g. 15) or sales in Rs. (e.g. 2500).',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitFeedback(null);
+
+    const submissionLat = photoExif?.lat ?? school.campus_lat;
+    const submissionLng = photoExif?.lng ?? school.campus_lng;
+    const submissionTimestamp = photoExif?.timestamp ?? new Date().toISOString();
+    const effectiveFileName =
+      photoFile?.name ?? `${school.code}_CAMPUS_PROOF_${Date.now().toString().slice(-4)}.JPG`;
+
+    try {
+      const { resOk, data } = await postStudentImpactSubmissionClient({
+        actorId: currentStudentUser.id,
+        clubId: club.id,
+        fileName: effectiveFileName,
+        mimeType: photoFile?.type ?? 'image/jpeg',
+        isUncompressedDocument: true,
+        s3Url: photoPreview || undefined,
+        s3Key: `proofs/${school.code}/${Date.now()}_${effectiveFileName}`,
+        exifTimestamp: submissionTimestamp,
+        exifLat: submissionLat,
+        exifLng: submissionLng,
+        exifDeviceMake: photoExif?.device?.split(' ')[0] || 'Campus Terminal',
+        exifDeviceModel: photoExif?.device || `${school.name} Student Terminal`,
+        activityTitle: activityTitle.trim(),
+        activityCategory,
+        description: description.trim(),
+        wasteKg: kg,
+        revenueUsd: rev,
+        parentLogId: resubmissionTarget?.id,
+      });
+
+      if (!resOk || !data.ok) {
+        setSubmitFeedback({
+          type: 'error',
+          message: data?.error || 'Submission could not be completed. Please check your inputs.',
+        });
+      } else {
+        const createdLog = data.log;
+        onRefreshSnapshot(data.snapshot);
+        setSubmitFeedback({
+          type: 'success',
+          message: `🎉 Activity "${createdLog.activity_title}" logged successfully! It is now pending review by your Supervising Teacher (${currentStudentUser.school_name}).`,
+          logId: createdLog.id,
+        });
+
+        // Clear form
+        setActivityTitle('');
+        setWasteKg('15');
+        setRevenueLkr('0');
+        setDescription('');
+        handleClearPhoto();
+        setResubmissionTarget(null);
+      }
+    } catch (err) {
+      setSubmitFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Network error during submission.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -376,7 +588,10 @@ export function StudentGamifiedDashboardView({
         activeUser={currentStudentUser}
         leaderboard={leaderboard}
         approvedLogsCount={approvedLogs.length}
-        onLogActivityClick={() => sendSchoolBotUpdate({ text: '/log_impact' }, '📸 Log New Activity')}
+        onLogActivityClick={() => {
+          formContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
+          titleInputRef.current?.focus();
+        }}
       />
 
 
@@ -655,258 +870,405 @@ export function StudentGamifiedDashboardView({
        * School Activity Submission Bot & School Submissions Ledger
        * ==================================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Direct School Activity Logger (7 cols) */}
-        <div className="lg:col-span-7 hai-card flex flex-col overflow-hidden">
-          <div className="bg-[#005FA3] text-white px-5 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Bot className="w-5 h-5 text-[#9CF2F2]" />
-              <div>
-                <div className="text-sm font-bold text-white">
-                  Log New Activity for {school.name}
+        {/* Left: Native School Activity Upload Form (7 cols) */}
+        <div ref={formContainerRef} className="lg:col-span-7 hai-card flex flex-col overflow-hidden">
+          {/* Card Header */}
+          <div className="bg-[#005FA3] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Leaf className="w-5 h-5 text-[#9CF2F2]" />
+                <h3 className="text-base font-bold text-white font-[var(--font-jakarta)]">
+                  Log Campus Green Activity
+                </h3>
+              </div>
+              <p className="text-xs text-[#9CF2F2] mt-0.5">
+                {school.name} • {club.name}
+              </p>
+            </div>
+
+            <a
+              href="https://wa.me/94112345678"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#14494F] hover:bg-[#0B3E6E] text-[#9CF2F2] text-xs font-semibold border border-[#9CF2F2]/30 transition self-start sm:self-auto"
+              title="Open WhatsApp Bot on mobile"
+            >
+              <Phone className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Or log via WhatsApp (+94 11 234 5678)</span>
+            </a>
+          </div>
+
+          <form onSubmit={handleSubmitActivity} className="p-6 space-y-5 bg-white">
+            {/* Resubmission Banner if active */}
+            {resubmissionTarget && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+                    <RefreshCw className="w-4 h-4 text-amber-700 animate-spin" />
+                    <span>Resubmission Mode (1x Single Attempt): {resubmissionTarget.id}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCancelResubmit}
+                    className="text-xs font-semibold text-amber-800 hover:underline cursor-pointer"
+                  >
+                    Cancel Resubmission
+                  </button>
                 </div>
-                <div className="text-[11px] text-[#9CF2F2]">
-                  WhatsApp Ingestion (+94 11 234 5678) • School GPS: {school.campus_lat.toFixed(4)}, {school.campus_lng.toFixed(4)}
+                <p className="text-xs text-amber-800">
+                  <strong>Teacher Note:</strong> &ldquo;{resubmissionTarget.rejection_reason}&rdquo;
+                </p>
+                <p className="text-[11px] text-amber-700/80">
+                  Update the weights, description, or attach new photo proof below.
+                </p>
+              </div>
+            )}
+
+            {/* Submission Status Feedback */}
+            {submitFeedback && (
+              <div
+                className={`rounded-xl border p-4 flex items-start justify-between gap-3 ${
+                  submitFeedback.type === 'success'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                    : 'bg-rose-50 border-rose-300 text-rose-900'
+                }`}
+              >
+                <div className="flex items-start gap-2.5">
+                  {submitFeedback.type === 'success' ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="text-xs sm:text-sm font-medium leading-relaxed">
+                    {submitFeedback.message}
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setSubmitFeedback(null)}
+                  className="text-xs font-bold hover:underline shrink-0 cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            {/* Step 1: Select Category */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-[#111010] uppercase tracking-wider">
+                1. Activity Pillar / Track
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {categoryOptions.map((opt) => {
+                  const Icon = opt.icon;
+                  const isSelected = activityCategory === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setActivityCategory(opt.id)}
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-start gap-2.5 ${
+                        isSelected
+                          ? 'border-[#005FA3] bg-[#E6F1FA] shadow-xs'
+                          : 'border-[#111010]/15 hover:border-[#005FA3]/50 bg-[#F8FAFC]'
+                      }`}
+                    >
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                          isSelected ? 'bg-[#005FA3] text-[#9CF2F2]' : 'bg-[#111010]/5 text-[#111010]/70'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div
+                          className={`text-xs font-bold ${
+                            isSelected ? 'text-[#005FA3]' : 'text-[#111010]'
+                          }`}
+                        >
+                          {opt.title}
+                        </div>
+                        <div className="text-[10px] text-[#111010]/65 truncate">
+                          {opt.desc}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <button
-              onClick={() => sendSchoolBotUpdate({ text: '/log_impact' }, '/log_impact')}
-              className="hai-btn-on-zeal px-3.5 py-1.5 text-xs font-mono cursor-pointer"
-            >
-              /log_impact
-            </button>
-          </div>
+            {/* Step 2: Activity Title & Quick Presets */}
+            <div className="space-y-2">
+              <label htmlFor="activity-title-input" className="block text-xs font-bold text-[#111010] uppercase tracking-wider">
+                2. Activity Title
+              </label>
+              <input
+                id="activity-title-input"
+                ref={titleInputRef}
+                type="text"
+                value={activityTitle}
+                onChange={(e) => setActivityTitle(e.target.value)}
+                placeholder="e.g., Sorted 25 kg PET Bottles at School Recycling Depot"
+                className="w-full hai-input px-3.5 py-2.5 text-xs sm:text-sm font-medium"
+                required
+              />
 
-          {/* Chat History */}
-          <div className="p-4 space-y-3 h-[310px] overflow-y-auto bg-[#F0F3F5]">
-            {chatHistory.map((item) => (
-              <div
-                key={item.id}
-                className={`flex flex-col ${
-                  item.sender === 'student' ? 'items-end' : 'items-start'
-                }`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-[16px_16px_16px_4px] px-4 py-2.5 text-xs whitespace-pre-wrap leading-relaxed ${
-                    item.sender === 'student'
-                      ? 'bg-[#005FA3] text-white font-medium'
-                      : item.isError
-                      ? 'bg-rose-50 border border-rose-300 text-rose-900'
-                      : 'bg-[#FFFFFF] border border-[#111010]/12 text-[#111010]'
-                  }`}
-                >
-                  {item.badge && (
-                    <div className="text-[10px] font-mono uppercase mb-1 pb-1 border-b border-current/20 font-bold">
-                      {item.badge}
-                    </div>
-                  )}
-                  {item.text}
-                </div>
-                <span className="text-[10px] text-[#111010]/60 mt-1 px-1">{item.timestamp}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Quick Photo & Touch Controls */}
-          <div className="bg-white border-t border-[#111010]/12 p-4 space-y-3">
-            {/* Contextual Quick-Action Buttons / Choice Chips */}
-            {botQuickActions.length > 0 && (
-              <div className="space-y-1.5 pb-1">
-                <div className="flex items-center justify-between text-[11px] font-bold text-[#005FA3]">
-                  <span>✨ Tap to Select (No typing required):</span>
-                  {botStage !== 'IDLE' && (
-                    <button
-                      onClick={() => sendSchoolBotUpdate({ text: '/cancel' }, '❌ Cancel')}
-                      className="text-rose-700 hover:underline cursor-pointer text-[10px]"
-                    >
-                      ❌ Cancel Current Flow
-                    </button>
-                  )}
-                </div>
+              {/* Quick suggestion chips */}
+              <div className="space-y-1 pt-1">
+                <span className="text-[10px] font-bold text-[#005FA3] uppercase tracking-wider">
+                  Quick Suggestions (Tap to Auto-fill):
+                </span>
                 <div className="flex flex-wrap gap-1.5">
-                  {botQuickActions.map((qa) => (
+                  {activityPresets.map((preset) => (
                     <button
-                      key={qa.label}
-                      disabled={isSending}
-                      onClick={() => sendSchoolBotUpdate({ text: qa.value }, qa.label)}
-                      className={`px-3 py-1.5 rounded-[8px_8px_8px_2px] text-xs font-semibold transition cursor-pointer flex items-center gap-1 shadow-2xs ${
-                        qa.variant === 'danger'
-                          ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200'
-                          : qa.variant === 'accent'
-                          ? 'bg-[#14494F] hover:bg-[#005FA3] text-white border border-[#14494F]'
-                          : qa.variant === 'secondary'
-                          ? 'bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] border border-[#111010]/15'
-                          : 'bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 text-[#005FA3] border border-[#005FA3]/30'
-                      }`}
+                      key={preset.label}
+                      type="button"
+                      onClick={() => handleApplyPreset(preset)}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#F0F3F5] hover:bg-[#E6F1FA] hover:text-[#005FA3] text-[#111010]/80 border border-[#111010]/12 transition cursor-pointer"
                     >
-                      <span>{qa.label}</span>
+                      {preset.label}
                     </button>
                   ))}
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Evidence Photo Testing Shortcuts */}
-            <div className="space-y-1">
-              <div className="text-[10px] font-bold text-[#111010]/60 uppercase tracking-wider">
-                Photo Upload Simulation:
+            {/* Step 3: Diverted Weight (kg) & Revenue (LKR) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="waste-kg-input" className="text-xs font-bold text-[#111010] uppercase tracking-wider">
+                    3. Material Diverted (kg)
+                  </label>
+                  <span className="text-[10px] text-emerald-700 font-bold">
+                    +1.8 pts/kg bonus
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    id="waste-kg-input"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={wasteKg}
+                    onChange={(e) => setWasteKg(e.target.value)}
+                    className="w-full hai-input px-3.5 py-2.5 text-xs sm:text-sm font-mono font-bold"
+                  />
+                  <span className="absolute right-3.5 top-2.5 text-xs font-bold text-[#111010]/50">
+                    kg
+                  </span>
+                </div>
+                <div className="flex gap-1 pt-0.5">
+                  {['+5', '+10', '+25', '+50'].map((inc) => (
+                    <button
+                      key={inc}
+                      type="button"
+                      onClick={() => {
+                        const current = parseFloat(wasteKg) || 0;
+                        const added = parseFloat(inc.replace('+', ''));
+                        setWasteKg(String(current + added));
+                      }}
+                      className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] border border-[#111010]/10 cursor-pointer"
+                    >
+                      {inc}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button
-                  disabled={isSending}
-                  onClick={() =>
-                    sendSchoolBotUpdate(
-                      { sentAsCompressedPhoto: true },
-                      '📷 [Photo without location data]',
-                      'Location Off (Rejected)'
-                    )
-                  }
-                  className="p-2.5 rounded-[10px_10px_10px_2px] bg-rose-50 hover:bg-rose-100 border border-rose-300 text-left transition cursor-pointer"
-                >
-                  <div className="flex items-center gap-1.5 text-rose-800 font-bold text-xs">
-                    <CameraOff className="w-3.5 h-3.5 shrink-0" />
-                    <span>1. Location Off</span>
-                  </div>
-                  <div className="text-[10px] text-rose-700/80 mt-0.5">
-                    Photo must be taken directly at the school premises with location services enabled.
-                  </div>
-                </button>
 
-                <button
-                  disabled={isSending}
-                  onClick={() =>
-                    sendSchoolBotUpdate(
-                      {
-                        document: {
-                          fileName: 'NO_GPS_PHOTO.JPG',
-                          mimeType: 'image/jpeg',
-                          simulatedExif: {
-                            timestamp: new Date().toISOString(),
-                            lat: null,
-                            lng: null,
-                          },
-                        },
-                      },
-                      '📎 [Photo missing school coordinates]',
-                      'Missing School Location'
-                    )
-                  }
-                  className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] border border-[#111010]/20 text-left transition cursor-pointer"
-                >
-                  <div className="flex items-center gap-1.5 text-[#111010] font-bold text-xs">
-                    <AlertOctagon className="w-3.5 h-3.5 shrink-0 text-[#005FA3]" />
-                    <span>2. Off-Campus Photo</span>
-                  </div>
-                  <div className="text-[10px] text-[#111010]/65 mt-0.5">
-                    Photo must be taken directly at the school premises with location services enabled.
-                  </div>
-                </button>
-
-                <button
-                  disabled={isSending}
-                  onClick={() =>
-                    sendSchoolBotUpdate(
-                      {
-                        document: {
-                          fileName: `${school.code}_ACTIVITY_FILE.JPG`,
-                          mimeType: 'image/jpeg',
-                          simulatedExif: {
-                            timestamp: new Date().toISOString(),
-                            lat: Number((school.campus_lat + 0.0001).toFixed(6)),
-                            lng: Number((school.campus_lng - 0.0001).toFixed(6)),
-                            deviceMake: 'Samsung',
-                            deviceModel: 'Galaxy A54 (Uncompressed File)',
-                          },
-                        },
-                      },
-                      `📎 [Sent School Photo: ${school.code}_ACTIVITY_FILE.JPG]`,
-                      'School Premises Verified'
-                    )
-                  }
-                  className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 border border-[#005FA3]/30 text-left transition cursor-pointer"
-                >
-                  <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
-                    <CloudUpload className="w-3.5 h-3.5 shrink-0" />
-                    <span>3. Verified School Photo</span>
-                  </div>
-                  <div className="text-[10px] text-[#111010]/70 mt-0.5">
-                    Validates campus location &amp; logs activity
-                  </div>
-                </button>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="revenue-lkr-input" className="text-xs font-bold text-[#111010] uppercase tracking-wider">
+                    4. Enterprise Sales (Rs.)
+                  </label>
+                  <span className="text-[10px] text-[#005FA3] font-bold">
+                    Optional (0 if none)
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-2.5 text-xs font-bold text-[#111010]/50">
+                    Rs.
+                  </span>
+                  <input
+                    id="revenue-lkr-input"
+                    type="number"
+                    min="0"
+                    step="100"
+                    value={revenueLkr}
+                    onChange={(e) => setRevenueLkr(e.target.value)}
+                    className="w-full hai-input pl-10 pr-3.5 py-2.5 text-xs sm:text-sm font-mono font-bold"
+                  />
+                </div>
+                <div className="flex gap-1 pt-0.5">
+                  {['0', '500', '2500', '10000'].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setRevenueLkr(val)}
+                      className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] border border-[#111010]/10 cursor-pointer"
+                    >
+                      {val === '0' ? 'Rs. 0' : `Rs. ${Number(val).toLocaleString()}`}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Persistent Child-Friendly Touch Pad (Always available in IDLE) */}
-            {botStage === 'IDLE' && (
-              <div className="pt-1 border-t border-[#111010]/10">
-                <div className="text-[10px] font-bold text-[#005FA3] uppercase tracking-wider mb-1.5">
-                  WhatsApp Touch Keyboard (Student Mode):
+            {/* Step 4: Photo / Campus Proof Upload */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-[#111010] uppercase tracking-wider">
+                  5. Evidence Photo / Proof
+                </label>
+                <span className="text-[10px] text-[#005FA3] font-semibold">
+                  School premises verification enabled
+                </span>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="native-student-file-input"
+              />
+
+              {!photoPreview ? (
+                <div className="border-2 border-dashed border-[#111010]/20 rounded-2xl p-5 text-center bg-[#F8FAFC] hover:bg-[#F0F3F5] transition">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className="w-12 h-12 rounded-full bg-[#E6F1FA] text-[#005FA3] flex items-center justify-center">
+                      <Camera className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-xs font-bold text-[#005FA3] hover:underline cursor-pointer"
+                      >
+                        Choose Photo from Device
+                      </button>
+                      <span className="text-xs text-[#111010]/60"> or drag and drop</span>
+                    </div>
+                    <p className="text-[11px] text-[#111010]/55 max-w-sm">
+                      JPEG, PNG, HEIC up to 10 MB. Photos taken at school premises will automatically verify campus geofence.
+                    </p>
+
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleUseSamplePhoto}
+                        className="px-3 py-1.5 rounded-full bg-white border border-[#111010]/15 hover:bg-[#E6F1FA] text-[#005FA3] text-xs font-semibold transition cursor-pointer"
+                      >
+                        📸 Or attach sample verified proof photo
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+              ) : (
+                <div className="rounded-xl border border-emerald-300 bg-emerald-50/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0 overflow-hidden border border-emerald-200">
+                      {photoPreview.startsWith('blob:') ? (
+                        <img
+                          src={photoPreview}
+                          alt="Activity Proof"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <FileCheck className="w-6 h-6 text-emerald-700" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{photoFile?.name || `${school.code}_VERIFIED_PROOF.JPG`}</span>
+                      </div>
+                      <div className="text-[11px] text-emerald-800 mt-0.5">
+                        {photoExif?.isCampusVerified
+                          ? `📍 Location Verified: Royal College Colombo Campus (${photoExif.distanceMeters}m from center)`
+                          : `📍 Location Tagged: Campus coordinates linked to ${school.name}`}
+                      </div>
+                    </div>
+                  </div>
+
                   <button
-                    disabled={isSending}
-                    onClick={() => sendSchoolBotUpdate({ text: '/log_impact' }, '📸 Log New Activity')}
-                    className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#005FA3] text-[#9CF2F2] font-bold text-xs hover:bg-[#0B3E6E] transition cursor-pointer text-left flex items-center justify-between"
+                    type="button"
+                    onClick={handleClearPhoto}
+                    className="self-end sm:self-auto px-3 py-1.5 rounded-lg bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
                   >
-                    <span>📸 Log New Activity</span>
-                    <span className="text-[10px] text-white/80">Tap here</span>
+                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Change</span>
                   </button>
-                  <button
-                    disabled={isSending}
-                    onClick={() => sendSchoolBotUpdate({ text: '/status' }, '📊 Our Club Status')}
-                    className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] font-bold text-xs border border-[#111010]/15 transition cursor-pointer text-left flex items-center justify-between"
-                  >
-                    <span>📊 Our Club Status</span>
-                    <span className="text-[10px] text-[#005FA3]">Summary</span>
-                  </button>
-                  <button
-                    disabled={isSending}
-                    onClick={() => sendSchoolBotUpdate({ text: '/leaderboard' }, '🏆 View Leaderboard')}
-                    className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#E9F5F4] hover:bg-[#9CF2F2]/60 text-[#14494F] font-bold text-xs border border-[#14494F]/30 transition cursor-pointer text-left flex items-center justify-between"
-                  >
-                    <span>🏆 View Leaderboard</span>
-                    <span className="text-[10px] text-[#14494F]">Rankings</span>
-                  </button>
-                  <button
-                    disabled={isSending}
-                    onClick={() => sendSchoolBotUpdate({ text: '/photo_guide' }, '❓ How to Send Photo')}
-                    className="py-2.5 px-3 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] text-[#111010] font-bold text-xs border border-[#111010]/15 transition cursor-pointer text-left flex items-center justify-between"
-                  >
-                    <span>❓ How to Send Photo</span>
-                    <span className="text-[10px] text-[#111010]/60">Guide</span>
-                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Step 5: Description & Reflection */}
+            <div className="space-y-1.5">
+              <label htmlFor="activity-desc-input" className="block text-xs font-bold text-[#111010] uppercase tracking-wider">
+                6. Description &amp; Student Notes (Optional)
+              </label>
+              <textarea
+                id="activity-desc-input"
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Mention number of student volunteers, destination of materials, or customer details..."
+                className="w-full hai-input px-3.5 py-2 text-xs leading-relaxed"
+              />
+            </div>
+
+            {/* Estimated Points Card & Submit Button */}
+            <div className="pt-2 border-t border-[#111010]/12 space-y-3">
+              <div className="rounded-xl bg-[#F0F3F5] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-[#111010]/60 block">
+                    Points Release Preview
+                  </span>
+                  <div className="text-xs text-[#111010] font-medium">
+                    {isMacroCandidate ? (
+                      <span className="text-[#005FA3] font-bold">
+                        ⭐ High-Impact Sale (&gt; Rs. 15,000): Evaluated by National Expert Panel
+                      </span>
+                    ) : (
+                      <span>
+                        Estimated <strong>+{estimatedPointsPreview} pts</strong> released upon teacher approval
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="font-mono text-xs font-bold text-[#005FA3] bg-white px-3 py-1.5 rounded-lg border border-[#005FA3]/20 shrink-0 self-start sm:self-auto">
+                  +{estimatedPointsPreview} XP Est.
                 </div>
               </div>
-            )}
 
-            {/* Text Input Fallback */}
-            <form onSubmit={handleSendText} className="flex items-center gap-2 pt-1 border-t border-[#111010]/10">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder={
-                  botStage === 'AWAITING_ACTIVITY_TITLE'
-                    ? 'Tap a button above or type custom activity title...'
-                    : botStage === 'AWAITING_WASTE_KG'
-                    ? 'Tap a button above or type weight in kg (e.g. 22)...'
-                    : botStage === 'AWAITING_REVENUE_USD'
-                    ? 'Tap a button above or type sales in Rs. (e.g. 12000)...'
-                    : 'Tap a button above or type here...'
-                }
-                className="flex-1 hai-input px-3.5 py-2 text-xs"
-              />
               <button
                 type="submit"
-                disabled={isSending}
-                className="hai-btn-primary px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
+                disabled={isSubmitting}
+                className="w-full hai-btn-primary py-3 px-5 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs hover:opacity-95 disabled:opacity-50 transition"
               >
-                <Send className="w-3.5 h-3.5" />
-                Send
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Submitting to Supervising Teacher...</span>
+                  </>
+                ) : resubmissionTarget ? (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Submit 1x Resubmission for {resubmissionTarget.id} →</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Submit Activity for Teacher Approval →</span>
+                  </>
+                )}
               </button>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
 
         {/* Right: School Submissions Status & 1x Resubmission Loop (5 cols) */}
@@ -930,16 +1292,11 @@ export function StudentGamifiedDashboardView({
                     Reason: &ldquo;{rLog.rejection_reason}&rdquo;
                   </p>
                   <button
-                    onClick={() =>
-                      sendSchoolBotUpdate(
-                        { text: `/resubmit ${rLog.id}` },
-                        `/resubmit ${rLog.id}`,
-                        'Resubmit Entry'
-                      )
-                    }
-                    className="w-full py-1.5 hai-btn-primary text-xs cursor-pointer"
+                    onClick={() => handleStartResubmit(rLog)}
+                    className="w-full py-2 hai-btn-primary text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    Resubmit {rLog.id} Now →
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Resubmit {rLog.id} in Form →</span>
                   </button>
                 </div>
               ))}

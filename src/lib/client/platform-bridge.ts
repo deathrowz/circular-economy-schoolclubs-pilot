@@ -1,10 +1,12 @@
 import {
+  createStudentImpactSubmission,
   getFullPlatformSnapshot,
   getPlatformStore,
   performExpertAdjudication,
   performTeacherReview,
   updateGamificationConfig,
 } from '@/lib/store/platform-store';
+import { ActivityCategory } from '@/types/domain';
 import {
   handleWhatsAppCloudUpdate,
   IncomingWhatsAppUpdate,
@@ -200,3 +202,57 @@ export async function postWhatsAppWebhookClient(body: Record<string, any>) {
  * @deprecated Use `postWhatsAppWebhookClient`
  */
 export const postTelegramWebhookClient = postWhatsAppWebhookClient;
+
+export async function postStudentImpactSubmissionClient(body: {
+  actorId: string;
+  clubId: string;
+  fileName: string;
+  mimeType: string;
+  isUncompressedDocument: boolean;
+  s3Url?: string;
+  s3Key?: string;
+  exifTimestamp: string;
+  exifLat: number;
+  exifLng: number;
+  exifDeviceMake?: string;
+  exifDeviceModel?: string;
+  activityTitle: string;
+  activityCategory: ActivityCategory;
+  description: string;
+  wasteKg: number;
+  revenueUsd: number;
+  isFinalPitch?: boolean;
+  parentLogId?: string;
+}): Promise<{ resOk: boolean; data: any }> {
+  try {
+    const res = await fetch('/api/impact-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.headers.get('content-type')?.includes('application/json')) {
+      const data = await res.json();
+      return { resOk: res.ok, data };
+    }
+  } catch {
+    // Static export mode fallback
+  }
+
+  try {
+    const created = await createStudentImpactSubmission(body as any);
+    const freshSnapshot = await fetchPlatformSnapshotClient();
+    return {
+      resOk: true,
+      data: { ok: true, log: created, snapshot: freshSnapshot },
+    };
+  } catch (err) {
+    return {
+      resOk: false,
+      data: {
+        ok: false,
+        error: err instanceof Error ? err.message : 'Failed to submit impact log',
+      },
+    };
+  }
+}
+

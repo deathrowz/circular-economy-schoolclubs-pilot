@@ -878,7 +878,7 @@ export function StudentGamifiedDashboardView({
               <div className="flex items-center gap-2">
                 <Leaf className="w-5 h-5 text-[#9CF2F2]" />
                 <h3 className="text-base font-bold text-white font-[var(--font-jakarta)]">
-                  Log Campus Green Activity
+                  Log School Green Activity
                 </h3>
               </div>
               <p className="text-xs text-[#9CF2F2] mt-0.5">

@@ -168,99 +168,84 @@ export function StudentGamificationHero({
     };
   })();
 
-  // Badges calculation
+  // Badges calculation (Figma Glassmorphism Design System)
   const badges = [
     {
       id: 'gps-guardian',
       name: 'EXIF GPS Guardian',
-      category: 'Geofence Integrity',
+      category: 'Geofence',
       unlocked: true,
       icon: Compass,
-      glow: 'shadow-[0_0_18px_rgba(156,242,242,0.45)]',
-      border: 'border-[#9CF2F2]/60 bg-gradient-to-br from-[#005FA3]/90 to-[#0A3D66]',
-      iconColor: 'text-[#9CF2F2]',
+      radialGlow: 'from-cyan-400/30 to-transparent',
+      accentColor: '#9CF2F2',
       tag: '100% On-Campus',
-      desc: 'All photos taken inside school GPS radius with uncompressed EXIF metadata.',
+      desc: 'All photos submitted as uncompressed files inside school GPS geofence radius.',
+      xp: '+50 XP',
     },
     {
       id: 'zero-waste',
       name: '100 kg Zero-Waste',
-      category: 'Material Circularity',
+      category: 'Circularity',
       unlocked: schoolEntry.verified_waste_kg >= 100,
       icon: Leaf,
-      glow: 'shadow-[0_0_18px_rgba(52,211,153,0.4)]',
-      border:
-        schoolEntry.verified_waste_kg >= 100
-          ? 'border-emerald-400/60 bg-gradient-to-br from-emerald-800 to-teal-950'
-          : 'border-white/15 bg-white/5 opacity-60',
-      iconColor: schoolEntry.verified_waste_kg >= 100 ? 'text-emerald-300' : 'text-white/40',
-      tag: `${schoolEntry.verified_waste_kg}/100 kg`,
-      desc: 'Recycled over 100 kg of campus PET bottles, food waste, or paper feedstock.',
+      radialGlow: 'from-emerald-400/30 to-transparent',
+      accentColor: '#34D399',
+      tag: `${schoolEntry.verified_waste_kg} / 100 kg`,
+      desc: 'Recycled over 100 kg of campus PET bottles, organic compost, or paper feedstock.',
+      xp: '+100 XP',
     },
     {
       id: 'pola-entrepreneur',
       name: 'Haritha Pola Pioneer',
-      category: 'Enterprise Revenue',
+      category: 'Enterprise',
       unlocked: schoolEntry.verified_revenue_usd >= 100,
       icon: Coins,
-      glow: 'shadow-[0_0_18px_rgba(251,191,36,0.4)]',
-      border:
-        schoolEntry.verified_revenue_usd >= 100
-          ? 'border-amber-400/60 bg-gradient-to-br from-amber-800 to-yellow-950'
-          : 'border-white/15 bg-white/5 opacity-60',
-      iconColor: schoolEntry.verified_revenue_usd >= 100 ? 'text-amber-300' : 'text-white/40',
+      radialGlow: 'from-amber-400/30 to-transparent',
+      accentColor: '#FBBF24',
       tag: formatLkr(schoolEntry.verified_revenue_usd),
-      desc: 'Generated over Rs. 30,000 from school circular enterprise products.',
+      desc: 'Generated over Rs. 30,000 from verified student enterprise product sales.',
+      xp: '+100 XP',
     },
     {
       id: 'expert-pitch-star',
       name: 'National Pitch Star',
-      category: 'Macro Adjudication',
+      category: 'Adjudication',
       unlocked: schoolEntry.macro_points_total > 0,
       icon: Trophy,
-      glow: 'shadow-[0_0_18px_rgba(244,114,182,0.4)]',
-      border:
-        schoolEntry.macro_points_total > 0
-          ? 'border-rose-400/60 bg-gradient-to-br from-purple-900 to-indigo-950'
-          : 'border-white/15 bg-white/5 opacity-60',
-      iconColor: schoolEntry.macro_points_total > 0 ? 'text-pink-300' : 'text-white/40',
+      radialGlow: 'from-fuchsia-400/30 to-transparent',
+      accentColor: '#F472B6',
       tag: schoolEntry.macro_points_total > 0 ? 'Panel Scored' : 'Pending Macro',
-      desc: 'Successfully scored by the National Expert Panel across 6 criteria.',
+      desc: 'High-value enterprise sale (> Rs. 15,000) scored by the National Expert Panel.',
+      xp: '+150 XP',
     },
     {
       id: 'clean-audit-shield',
       name: 'Clean Audit Shield',
-      category: 'Integrity Rating',
+      category: 'Integrity',
       unlocked: schoolEntry.penalty_points_deducted === 0,
       icon: ShieldCheck,
-      glow: 'shadow-[0_0_18px_rgba(96,165,250,0.4)]',
-      border:
-        schoolEntry.penalty_points_deducted === 0
-          ? 'border-blue-400/60 bg-gradient-to-br from-blue-900 to-slate-900'
-          : 'border-rose-500/60 bg-rose-950/60',
-      iconColor:
-        schoolEntry.penalty_points_deducted === 0 ? 'text-blue-300' : 'text-rose-400',
+      radialGlow: 'from-sky-400/30 to-transparent',
+      accentColor: '#60A5FA',
       tag: schoolEntry.penalty_points_deducted === 0 ? '0 Deductions' : `-${schoolEntry.penalty_points_deducted} pts`,
       desc: 'Passed the 10% random micro audit with zero fraud flags or location penalties.',
+      xp: 'Active Shield',
     },
     {
       id: 'active-crew',
       name: 'Circular Committee',
-      category: 'Youth Leadership',
+      category: 'Leadership',
       unlocked: club.active_members_count >= 10,
       icon: Users,
-      glow: 'shadow-[0_0_18px_rgba(167,139,250,0.4)]',
-      border:
-        club.active_members_count >= 10
-          ? 'border-indigo-400/60 bg-gradient-to-br from-indigo-900 to-slate-900'
-          : 'border-white/15 bg-white/5 opacity-60',
-      iconColor: club.active_members_count >= 10 ? 'text-indigo-300' : 'text-white/40',
-      tag: `${club.active_members_count} Students`,
-      desc: 'Active student committee driving collection, sales, and ledger reporting.',
+      radialGlow: 'from-purple-400/30 to-transparent',
+      accentColor: '#A78BFA',
+      tag: `${club.active_members_count} Active`,
+      desc: 'Active student committee driving circular collection, sales, and ledger reporting.',
+      xp: '+75 XP',
     },
   ];
 
   const unlockedCount = badges.filter((b) => b.unlocked).length;
+
 
   return (
     <div className="space-y-6">
@@ -406,68 +391,114 @@ export function StudentGamificationHero({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
             {badges.map((b) => {
               const Icon = b.icon;
               return (
                 <div
                   key={b.id}
-                  className={`group relative p-3.5 rounded-2xl border transition-all duration-300 cursor-pointer flex flex-col justify-between items-center text-center ${
-                    b.border
-                  } ${
+                  className={`group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 cursor-pointer flex flex-col justify-between items-center text-center backdrop-blur-xl ${
                     b.unlocked
-                      ? `${b.glow} hover:scale-110 hover:-translate-y-1`
-                      : 'hover:opacity-80'
+                      ? 'bg-white/[0.08] hover:bg-white/[0.15] border border-white/20 hover:border-[#9CF2F2]/60 shadow-[0_8px_32px_0_rgba(0,0,0,0.2),inset_0_1px_1px_0_rgba(255,255,255,0.35)] hover:scale-105 hover:-translate-y-1'
+                      : 'bg-black/15 hover:bg-black/25 border border-white/10 opacity-50 hover:opacity-75'
                   }`}
                   title={`${b.name}: ${b.desc}`}
                 >
-                  {/* Badge Unlocked Check / Lock Icon */}
-                  <div className="absolute top-2 right-2">
+                  {/* Glass Specular Top Highlight */}
+                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent pointer-events-none" />
+
+                  {/* Ambient Colored Radial Glass Glow */}
+                  {b.unlocked && (
+                    <div
+                      className={`absolute -top-6 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full bg-gradient-to-br ${b.radialGlow} blur-2xl pointer-events-none opacity-70 group-hover:opacity-100 transition-opacity`}
+                    />
+                  )}
+
+                  {/* Top Row: Category Label & Unlocked Status Chip */}
+                  <div className="relative z-10 w-full flex items-center justify-between gap-1 mb-2">
+                    <span className="text-[9px] font-extrabold uppercase tracking-widest text-white/60 font-mono">
+                      {b.category}
+                    </span>
                     {b.unlocked ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#9CF2F2]" />
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-400/20 border border-emerald-300/40 text-[#9CF2F2] text-[10px] font-bold shadow-xs">
+                        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-300" />
+                        <span className="text-[9px]">Earned</span>
+                      </span>
                     ) : (
-                      <Lock className="w-3.5 h-3.5 text-white/40" />
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-white/40 text-[9px] font-medium">
+                        <Lock className="w-2.5 h-2.5" />
+                        <span>Locked</span>
+                      </span>
                     )}
                   </div>
 
-                  {/* Animated Badge Icon Container */}
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center my-1.5 transition-transform duration-300 ${
-                      b.unlocked
-                        ? 'bg-white/15 group-hover:rotate-12'
-                        : 'bg-white/5'
-                    }`}
-                  >
-                    <Icon
-                      className={`w-6 h-6 ${b.iconColor} ${
-                        b.id === 'gps-guardian' && b.unlocked ? 'animate-spin-slow' : ''
-                      } ${
-                        b.id === 'zero-waste' && b.unlocked ? 'animate-pulse-subtle' : ''
+                  {/* Concentric Double-Ring Glass Jewel Medallion */}
+                  <div className="relative z-10 my-1.5">
+                    <div
+                      className={`w-14 h-14 rounded-2xl p-0.5 transition-all duration-300 group-hover:scale-110 ${
+                        b.unlocked
+                          ? 'bg-gradient-to-b from-white/40 via-white/15 to-white/5 shadow-[0_4px_16px_rgba(0,0,0,0.25)]'
+                          : 'bg-white/10'
                       }`}
-                    />
+                    >
+                      <div
+                        className={`w-full h-full rounded-[14px] flex items-center justify-center backdrop-blur-md border ${
+                          b.unlocked
+                            ? 'bg-white/[0.14] border-white/30 group-hover:bg-white/[0.22]'
+                            : 'bg-black/20 border-white/10'
+                        }`}
+                      >
+                        <Icon
+                          className={`w-6 h-6 transition-all duration-300 ${
+                            b.unlocked ? 'group-hover:rotate-12' : 'text-white/30'
+                          } ${
+                            b.id === 'gps-guardian' && b.unlocked ? 'animate-spin-slow' : ''
+                          } ${
+                            b.id === 'zero-waste' && b.unlocked ? 'animate-pulse-subtle' : ''
+                          }`}
+                          style={{ color: b.unlocked ? b.accentColor : undefined }}
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="w-full">
-                    <div className="text-xs font-bold text-white truncate">
+                  {/* Title & Frosted Glass Metric Pill */}
+                  <div className="relative z-10 w-full space-y-1">
+                    <div className="text-xs font-bold text-white tracking-tight truncate font-[var(--font-jakarta)]">
                       {b.name}
                     </div>
-                    <div className="text-[10px] font-mono text-[#9CF2F2] mt-0.5 truncate">
+                    <div className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-white/10 border border-white/15 text-[#9CF2F2] font-mono text-[10px] font-bold shadow-2xs max-w-full truncate">
                       {b.tag}
                     </div>
                   </div>
 
-                  {/* Hover Tooltip / Detail Overlay */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 rounded-xl bg-slate-950 text-white text-[11px] leading-snug shadow-xl border border-white/20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                    <div className="font-bold text-[#9CF2F2]">{b.name}</div>
-                    <div className="text-[10px] text-white/70 mt-0.5">{b.desc}</div>
-                    <div className="mt-1 text-[10px] font-semibold text-emerald-400">
-                      {b.unlocked ? '✓ Unlocked & Active' : '🔒 Locked Milestone'}
+                  {/* Hover Shimmer Sweep */}
+                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
+
+                  {/* Tooltip on Hover */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-3 rounded-xl bg-slate-950/95 backdrop-blur-md text-white text-[11px] leading-snug shadow-2xl border border-white/20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50 text-left">
+                    <div className="flex items-center justify-between font-bold text-[#9CF2F2]">
+                      <span>{b.name}</span>
+                      <span className="font-mono text-[10px] text-amber-300">{b.xp}</span>
+                    </div>
+                    <div className="text-[10px] text-white/75 mt-1">{b.desc}</div>
+                    <div className="mt-2 text-[10px] font-semibold flex items-center gap-1">
+                      {b.unlocked ? (
+                        <span className="text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Milestone Active &amp; Verified
+                        </span>
+                      ) : (
+                        <span className="text-amber-400/80 flex items-center gap-1">
+                          <Lock className="w-3 h-3" /> Locked • Complete milestone to unlock
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
               );
             })}
           </div>
+
         </div>
       </section>
 

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Building2,
+  LogOut,
   Phone,
   Recycle,
   Sparkles,
@@ -43,6 +44,19 @@ type StudentTab = 'student_gamified' | 'whatsapp_ingestion' | 'clubs' | 'leaderb
 export default function StudentDashboardPage() {
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
   const [activeTab, setActiveTab] = useState<StudentTab>('student_gamified');
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('haritha_auth_user_id');
+      if (stored) {
+        setSessionUserId(stored);
+      } else {
+        const match = document.cookie.match(/haritha_auth_user_id=([^;]+)/);
+        if (match) setSessionUserId(match[1]);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -77,22 +91,34 @@ export default function StudentDashboardPage() {
     );
   }
 
-  // Active student user: +94771234501 (Royal College Colombo)
+  // Active student user: dynamically resolved from session cookie / localStorage
   const studentUser =
-    snapshot.users.find(
-      (u) => u.phone_number === '94771234501' || u.id === 'usr-student-01'
-    ) ||
+    (sessionUserId
+      ? snapshot.users.find(
+          (u) =>
+            (u.id === sessionUserId || u.auth_user_id === sessionUserId) &&
+            u.role === 'student'
+        ) ||
+        snapshot.users.find(
+          (u) => u.id === sessionUserId || u.auth_user_id === sessionUserId
+        )
+      : null) ||
     snapshot.users.find((u) => u.role === 'student') ||
     snapshot.users[0];
 
   const studentClub =
     snapshot.clubs.find(
-      (c) => c.id === studentUser.club_id || c.school_id === studentUser.school_id
+      (c) =>
+        (studentUser.club_id && c.id === studentUser.club_id) ||
+        (studentUser.school_id && c.school_id === studentUser.school_id)
     ) || snapshot.clubs[0];
 
   const studentSchool =
-    snapshot.schools.find((s) => s.id === studentUser.school_id) ||
-    snapshot.schools[0];
+    snapshot.schools.find(
+      (s) =>
+        (studentUser.school_id && s.id === studentUser.school_id) ||
+        (studentClub && s.id === studentClub.school_id)
+    ) || snapshot.schools[0];
 
   const navItems = [
     {
@@ -116,6 +142,16 @@ export default function StudentDashboardPage() {
       icon: Trophy,
     },
   ];
+
+  const handleLogout = () => {
+    if (typeof document !== 'undefined') {
+      document.cookie = 'haritha_auth_user_id=; path=/; max-age=0; SameSite=Lax';
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('haritha_auth_user_id');
+    }
+    window.location.href = '/login';
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col text-[#111010]">
@@ -178,12 +214,22 @@ export default function StudentDashboardPage() {
             })}
           </nav>
 
-          <Link
-            href="/"
-            className="text-xs text-[#005FA3] font-bold hover:underline"
-          >
-            ← Portal
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="text-xs text-[#005FA3] font-bold hover:underline"
+            >
+              ← Portal
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer flex items-center gap-1.5 transition shrink-0"
+              title="Sign Out of Session"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-600" />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Nav Strip */}

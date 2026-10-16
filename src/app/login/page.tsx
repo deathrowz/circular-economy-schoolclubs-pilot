@@ -54,7 +54,7 @@ function LoginContent() {
   }
 
   const handleSelectUserAndNavigate = (userId: string) => {
-    const matched = snapshot.users.find((u) => u.id === userId);
+    const matched = snapshot.users.find((u) => u.id === userId || u.auth_user_id === userId);
     if (!matched) return;
 
     if (typeof document !== 'undefined') {
@@ -74,9 +74,10 @@ function LoginContent() {
       router.push('/dashboard/student');
     } else if (matched.role === 'teacher') {
       router.push('/dashboard/teacher');
-    } else if (matched.role === 'expert_admin') {
+    } else if (matched.role === 'expert_admin' || matched.role === 'expert') {
       router.push('/dashboard/expert');
     } else {
+      // super_admin / admin -> Platform GIZ Oversight
       router.push('/');
     }
   };

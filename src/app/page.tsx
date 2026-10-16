@@ -82,20 +82,28 @@ export default function PlatformDashboardPage() {
       if (!isMounted) return;
       setSnapshot(data);
       if (typeof window !== 'undefined') {
-        const savedUserId = localStorage.getItem('haritha_auth_user_id');
-        if (savedUserId && data.users.some((u: UserProfile) => u.id === savedUserId)) {
-          const user = data.users.find((u: UserProfile) => u.id === savedUserId)!;
-          setActiveUserId(user.id);
-          setIsAuthenticated(true);
-          if (user.role === 'super_admin') setActiveTab('health_risk');
-          else if (user.role === 'expert_admin') setActiveTab('verification');
-          else if (user.role === 'teacher') setActiveTab('verification');
-          else if (user.role === 'student') setActiveTab('student_gamified');
-        } else {
-          // Unauthenticated by default: direct user to login portal
-          setIsAuthenticated(false);
-          setActiveTab('login_portal');
+        let savedUserId = localStorage.getItem('haritha_auth_user_id');
+        if (!savedUserId) {
+          const match = document.cookie.match(/haritha_auth_user_id=([^;]+)/);
+          if (match) savedUserId = match[1];
         }
+        if (savedUserId) {
+          const user = data.users.find(
+            (u: UserProfile) => u.id === savedUserId || u.auth_user_id === savedUserId
+          );
+          if (user) {
+            setActiveUserId(user.id);
+            setIsAuthenticated(true);
+            if (user.role === 'super_admin' || user.role === 'admin') setActiveTab('health_risk');
+            else if (user.role === 'expert_admin' || user.role === 'expert') setActiveTab('verification');
+            else if (user.role === 'teacher') setActiveTab('verification');
+            else if (user.role === 'student') setActiveTab('student_gamified');
+            return;
+          }
+        }
+        // Unauthenticated by default: direct user to login portal
+        setIsAuthenticated(false);
+        setActiveTab('login_portal');
       }
     });
 
@@ -114,7 +122,7 @@ export default function PlatformDashboardPage() {
   }, []);
 
   const activeUser = snapshot
-    ? snapshot.users.find((u) => u.id === activeUserId) || snapshot.users[0]
+    ? snapshot.users.find((u) => u.id === activeUserId || u.auth_user_id === activeUserId) || snapshot.users[0]
     : null;
 
   const handleSwitchUser = (newUserId: string, targetTab?: NavTab) => {
@@ -126,15 +134,15 @@ export default function PlatformDashboardPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('haritha_auth_user_id', newUserId);
     }
-    const found = snapshot?.users.find((u) => u.id === newUserId);
+    const found = snapshot?.users.find((u) => u.id === newUserId || u.auth_user_id === newUserId);
     if (found?.club_id) {
       setSelectedClubId(found.club_id);
     }
     if (targetTab) {
       setActiveTab(targetTab);
-    } else if (found?.role === 'super_admin') {
+    } else if (found?.role === 'super_admin' || found?.role === 'admin') {
       setActiveTab('health_risk');
-    } else if (found?.role === 'expert_admin') {
+    } else if (found?.role === 'expert_admin' || found?.role === 'expert') {
       setActiveTab('verification');
     } else if (found?.role === 'teacher') {
       setActiveTab('verification');
@@ -197,7 +205,7 @@ export default function PlatformDashboardPage() {
     }
 
     // Category 1: GIZ Super Admin Dashboard
-    if (activeUser.role === 'super_admin') {
+    if (activeUser.role === 'super_admin' || activeUser.role === 'admin') {
       return [
         {
           id: 'health_risk' as NavTab,
@@ -224,7 +232,7 @@ export default function PlatformDashboardPage() {
     }
 
     // Category 2: National Expert Panel Evaluator Dashboard
-    if (activeUser.role === 'expert_admin') {
+    if (activeUser.role === 'expert_admin' || activeUser.role === 'expert') {
       return [
         {
           id: 'verification' as NavTab,
@@ -278,17 +286,27 @@ export default function PlatformDashboardPage() {
     }
 
     // Category 4: School Student Club Dashboard (15 Single-User School Logins)
+    if (activeUser.role === 'student') {
+      return [
+        {
+          id: 'student_gamified' as NavTab,
+          label: `${activeUser.school_code || 'Our School'} Gamified Club`,
+          icon: Sparkles,
+        },
+        {
+          id: 'whatsapp_ingestion' as NavTab,
+          label: '📱 WhatsApp Activity Hub',
+          icon: Phone,
+        },
+        {
+          id: 'leaderboard' as NavTab,
+          label: 'National School Leaderboard',
+          icon: Trophy,
+        },
+      ];
+    }
+
     return [
-      {
-        id: 'student_gamified' as NavTab,
-        label: `${activeUser.school_code || 'Our School'} Gamified Club`,
-        icon: Sparkles,
-      },
-      {
-        id: 'whatsapp_ingestion' as NavTab,
-        label: '📱 WhatsApp Activity Hub',
-        icon: Phone,
-      },
       {
         id: 'leaderboard' as NavTab,
         label: 'National School Leaderboard',
@@ -330,10 +348,10 @@ export default function PlatformDashboardPage() {
     }
 
 
-    if (activeUser.role === 'super_admin') {
+    if (activeUser.role === 'super_admin' || activeUser.role === 'admin') {
       if (activeTab === 'verification') {
         return {
-          eyebrow: 'Category 1 • GIZ Sri Lanka National Office (Super Admin)',
+          eyebrow: 'Category 1 • GIZ Sri Lanka National Office (Program Oversight)',
           title: 'Scoring Algorithm & Policy Weights',
           subtitle:
             'Configure the environmental-to-financial normalization ratio, macro revenue threshold (> Rs. 15,000), and 6 criteria weights for national grants.',
@@ -359,7 +377,7 @@ export default function PlatformDashboardPage() {
         };
       }
       return {
-        eyebrow: 'Category 1 • GIZ Sri Lanka National Program Office (Super Admin)',
+        eyebrow: 'Category 1 • GIZ Sri Lanka National Program Office (Program Lead)',
         title: 'GIZ Program Governance & Integrity Engine',
         subtitle:
           'National monitoring of 15 participating Sri Lankan school enterprises, inactive club alerts (>14 days), GPS campus perimeter violations, and fraud audit ledger.',
@@ -367,7 +385,7 @@ export default function PlatformDashboardPage() {
       };
     }
 
-    if (activeUser.role === 'expert_admin') {
+    if (activeUser.role === 'expert_admin' || activeUser.role === 'expert') {
       if (activeTab === 'whatsapp_ingestion' || activeTab === 'telegram_bot') {
         return {
           eyebrow: 'Category 2 • National Expert Evaluation Panel',
@@ -485,22 +503,22 @@ export default function PlatformDashboardPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                 <span className="font-bold text-[#111010] text-[11px] sm:text-xs">
-                  {activeUser.role === 'super_admin'
+                  {activeUser.role === 'super_admin' || activeUser.role === 'admin'
                     ? 'GIZ Sri Lanka • National Program Management Office'
-                    : activeUser.role === 'expert_admin'
+                    : activeUser.role === 'expert_admin' || activeUser.role === 'expert'
                     ? 'National Expert Evaluation Panel • CEA / University Adjudication'
                     : activeUser.role === 'teacher'
                     ? `${activeUser.school_name || 'School'} • Supervising Teacher Dashboard`
                     : `${activeUser.school_name || 'School'} Eco Club • Student Enterprise Portal`}
                 </span>
                 <span className="hidden sm:inline px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-[#005FA3]/10 text-[#005FA3] border border-[#005FA3]/20">
-                  {activeUser.role === 'super_admin'
-                    ? 'Super Admin'
-                    : activeUser.role === 'expert_admin'
+                  {activeUser.role === 'super_admin' || activeUser.role === 'admin'
+                    ? 'Program Lead'
+                    : activeUser.role === 'expert_admin' || activeUser.role === 'expert'
                     ? 'Expert Panel'
                     : activeUser.role === 'teacher'
                     ? `Teacher Validator • ${activeUser.school_code}`
-                    : `Generic School Login • ${activeUser.school_code}`}
+                    : `Student Enterprise • ${activeUser.school_code}`}
                 </span>
               </div>
             ) : (
@@ -553,8 +571,8 @@ export default function PlatformDashboardPage() {
           {/* Left: Clean Brand Lockup */}
           <button
             onClick={() => {
-              if (activeUser.role === 'super_admin') setActiveTab('health_risk');
-              else if (activeUser.role === 'expert_admin') setActiveTab('verification');
+              if (activeUser.role === 'super_admin' || activeUser.role === 'admin') setActiveTab('health_risk');
+              else if (activeUser.role === 'expert_admin' || activeUser.role === 'expert') setActiveTab('verification');
               else if (activeUser.role === 'teacher') setActiveTab('verification');
               else if (activeUser.role === 'student') setActiveTab('student_gamified');
               else setActiveTab('leaderboard');
@@ -568,9 +586,9 @@ export default function PlatformDashboardPage() {
               <div>
                 <div className="text-base sm:text-lg font-bold tracking-tight text-[#111010] leading-none">
                   {isAuthenticated
-                    ? activeUser.role === 'super_admin'
+                    ? activeUser.role === 'super_admin' || activeUser.role === 'admin'
                       ? 'Haritha Pasal • GIZ Governance'
-                      : activeUser.role === 'expert_admin'
+                      : activeUser.role === 'expert_admin' || activeUser.role === 'expert'
                       ? 'Haritha Pasal • Expert Panel'
                       : activeUser.role === 'teacher'
                       ? `Haritha Pasal • ${activeUser.school_code || 'School'}`
@@ -579,9 +597,9 @@ export default function PlatformDashboardPage() {
                 </div>
                 <div className="text-[11px] font-medium text-[#111010]/65 mt-0.5">
                   {isAuthenticated
-                    ? activeUser.role === 'super_admin'
-                      ? 'Super Admin • National Project Office'
-                      : activeUser.role === 'expert_admin'
+                    ? activeUser.role === 'super_admin' || activeUser.role === 'admin'
+                      ? 'Program Lead • National Project Office'
+                      : activeUser.role === 'expert_admin' || activeUser.role === 'expert'
                       ? 'Adjudication & Criteria Evaluation'
                       : activeUser.role === 'teacher'
                       ? `Supervising Teacher • ${activeUser.school_name || 'Campus'}`
@@ -738,7 +756,7 @@ export default function PlatformDashboardPage() {
             config={snapshot.gamificationConfig}
             leaderboard={snapshot.leaderboard}
             initialSubTab={
-              activeUser.role === 'super_admin'
+              activeUser.role === 'super_admin' || activeUser.role === 'admin'
                 ? 'algorithm_config'
                 : 'macro_scoring'
             }
@@ -756,10 +774,10 @@ export default function PlatformDashboardPage() {
             impactLogs={snapshot.impactLogs}
             whatsappMessages={snapshot.telegramMessages}
             activeUser={activeUser}
-            isAdmin={activeUser.role === 'super_admin'}
+            isAdmin={activeUser.role === 'super_admin' || activeUser.role === 'admin'}
             isDev={false}
             initialRole={
-              activeUser.role === 'expert_admin'
+              activeUser.role === 'expert_admin' || activeUser.role === 'expert'
                 ? 'expert'
                 : activeUser.role === 'teacher'
                 ? 'teacher'

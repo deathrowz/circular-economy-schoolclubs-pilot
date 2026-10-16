@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   Building2,
   FileCheck2,
+  LogOut,
   Phone,
   Recycle,
   ShieldCheck,
@@ -44,6 +45,19 @@ type TeacherTab = 'verification' | 'whatsapp_ingestion' | 'clubs' | 'leaderboard
 export default function TeacherDashboardPage() {
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
   const [activeTab, setActiveTab] = useState<TeacherTab>('verification');
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('haritha_auth_user_id');
+      if (stored) {
+        setSessionUserId(stored);
+      } else {
+        const match = document.cookie.match(/haritha_auth_user_id=([^;]+)/);
+        if (match) setSessionUserId(match[1]);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -78,22 +92,34 @@ export default function TeacherDashboardPage() {
     );
   }
 
-  // Active teacher: +94772234501 (Royal College Colombo)
+  // Active teacher user: dynamically resolved from session cookie / localStorage
   const teacherUser =
-    snapshot.users.find(
-      (u) => u.phone_number === '94772234501' || u.id === 'usr-teacher-01'
-    ) ||
+    (sessionUserId
+      ? snapshot.users.find(
+          (u) =>
+            (u.id === sessionUserId || u.auth_user_id === sessionUserId) &&
+            u.role === 'teacher'
+        ) ||
+        snapshot.users.find(
+          (u) => u.id === sessionUserId || u.auth_user_id === sessionUserId
+        )
+      : null) ||
     snapshot.users.find((u) => u.role === 'teacher') ||
     snapshot.users[0];
 
   const teacherClub =
     snapshot.clubs.find(
-      (c) => c.id === teacherUser.club_id || c.school_id === teacherUser.school_id
+      (c) =>
+        (teacherUser.club_id && c.id === teacherUser.club_id) ||
+        (teacherUser.school_id && c.school_id === teacherUser.school_id)
     ) || snapshot.clubs[0];
 
   const teacherSchool =
-    snapshot.schools.find((s) => s.id === teacherUser.school_id) ||
-    snapshot.schools[0];
+    snapshot.schools.find(
+      (s) =>
+        (teacherUser.school_id && s.id === teacherUser.school_id) ||
+        (teacherClub && s.id === teacherClub.school_id)
+    ) || snapshot.schools[0];
 
   const pendingCount = snapshot.impactLogs.filter(
     (l) =>
@@ -124,6 +150,16 @@ export default function TeacherDashboardPage() {
       icon: Trophy,
     },
   ];
+
+  const handleLogout = () => {
+    if (typeof document !== 'undefined') {
+      document.cookie = 'haritha_auth_user_id=; path=/; max-age=0; SameSite=Lax';
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('haritha_auth_user_id');
+    }
+    window.location.href = '/login';
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col text-[#111010]">
@@ -197,12 +233,22 @@ export default function TeacherDashboardPage() {
             })}
           </nav>
 
-          <Link
-            href="/"
-            className="text-xs text-[#005FA3] font-bold hover:underline"
-          >
-            ← Portal
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="text-xs text-[#005FA3] font-bold hover:underline"
+            >
+              ← Portal
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer flex items-center gap-1.5 transition shrink-0"
+              title="Sign Out of Session"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-600" />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Nav Strip */}

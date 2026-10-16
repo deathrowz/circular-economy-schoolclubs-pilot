@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   Building2,
   Gavel,
+  LogOut,
   Phone,
   Recycle,
   ShieldCheck,
@@ -46,6 +47,19 @@ export default function ExpertDashboardPage() {
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
   const [activeTab, setActiveTab] = useState<ExpertTab>('verification');
   const [selectedClubId, setSelectedClubId] = useState<string>('club-01');
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('haritha_auth_user_id');
+      if (stored) {
+        setSessionUserId(stored);
+      } else {
+        const match = document.cookie.match(/haritha_auth_user_id=([^;]+)/);
+        if (match) setSessionUserId(match[1]);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -80,12 +94,19 @@ export default function ExpertDashboardPage() {
     );
   }
 
-  // Active expert user: +94771000001 (Dr. Nuwan Gunasekara)
+  // Active expert user: dynamically resolved from session cookie / localStorage
   const expertUser =
-    snapshot.users.find(
-      (u) => u.phone_number === '94771000001' || u.id === 'usr-expert-01'
-    ) ||
-    snapshot.users.find((u) => u.role === 'expert_admin') ||
+    (sessionUserId
+      ? snapshot.users.find(
+          (u) =>
+            (u.id === sessionUserId || u.auth_user_id === sessionUserId) &&
+            (u.role === 'expert' || u.role === 'expert_admin' || u.role === 'admin' || u.role === 'super_admin')
+        ) ||
+        snapshot.users.find(
+          (u) => u.id === sessionUserId || u.auth_user_id === sessionUserId
+        )
+      : null) ||
+    snapshot.users.find((u) => u.role === 'expert' || u.role === 'expert_admin') ||
     snapshot.users[0];
 
   const pendingExpertCount = snapshot.impactLogs.filter(
@@ -117,6 +138,16 @@ export default function ExpertDashboardPage() {
       icon: Building2,
     },
   ];
+
+  const handleLogout = () => {
+    if (typeof document !== 'undefined') {
+      document.cookie = 'haritha_auth_user_id=; path=/; max-age=0; SameSite=Lax';
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('haritha_auth_user_id');
+    }
+    window.location.href = '/login';
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col text-[#111010]">
@@ -190,12 +221,22 @@ export default function ExpertDashboardPage() {
             })}
           </nav>
 
-          <Link
-            href="/"
-            className="text-xs text-[#005FA3] font-bold hover:underline"
-          >
-            ← Portal
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="text-xs text-[#005FA3] font-bold hover:underline"
+            >
+              ← Portal
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer flex items-center gap-1.5 transition shrink-0"
+              title="Sign Out of Session"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-600" />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Nav Strip */}

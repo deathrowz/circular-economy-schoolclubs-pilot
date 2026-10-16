@@ -153,7 +153,7 @@ export default function ExpertDashboardPage() {
               <span>Full 15-School Evaluator Access</span>
             </div>
             <span className="text-xs font-mono font-semibold text-[#005FA3] bg-[#E6F1FA] px-2.5 py-1 rounded-md">
-              +94771000001
+              {expertUser.login_code || 'EXPERT'}
             </span>
           </div>
 

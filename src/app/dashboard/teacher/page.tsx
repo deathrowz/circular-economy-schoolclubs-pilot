@@ -160,7 +160,7 @@ export default function TeacherDashboardPage() {
               <span>{teacherSchool.name} — {teacherClub.name}</span>
             </div>
             <span className="text-xs font-mono font-semibold text-[#005FA3] bg-[#E6F1FA] px-2.5 py-1 rounded-md">
-              +94772234501
+              {teacherUser.login_code || 'TEACHER'}
             </span>
           </div>
 

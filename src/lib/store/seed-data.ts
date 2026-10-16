@@ -726,30 +726,71 @@ export const SCHOOL_TEACHER_LOGINS: UserProfile[] = CLUB_DEFINITIONS.map((def, i
 });
 
 export const DEMO_USERS: UserProfile[] = [
-  // Category 1: Super Admin (GIZ)
+  // ------------------------------------------------------------------------
+  // Realistic Operational Pilot Personas (Supabase Cloud eu-central-1 Authenticated)
+  // Default test password across accounts: Haritha2026!Secure
+  // ------------------------------------------------------------------------
+  // Persona 1: GIZ Project Lead / National Auditor (Admin Role)
   {
     id: 'usr-giz-admin-01',
-    email: 'circular-pilot@giz.de',
-    login_code: 'GIZ-SUPER-ADMIN',
-    phone_number: '94779000001',
-    organization: 'GIZ Sri Lanka',
-    full_name: 'GIZ Sri Lanka Program Secretariat (Super Admin)',
-    role: 'super_admin',
+    auth_user_id: 'a1111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    email: 'auditor.giz@harithapasal.lk',
+    login_code: 'GIZ-LEAD',
+    phone_number: '94770001100',
+    organization: 'GIZ Sri Lanka / Circular Economy Project',
+    full_name: 'Elena Schmidt (GIZ Lead)',
+    role: 'admin',
     school_id: null,
     club_id: null,
   },
-  // Category 2: Expert Panel (National Adjudicators)
+  // Persona 2: National Technical Expert (Expert Role)
   {
     id: 'usr-expert-01',
-    email: 'nuwan.gunasekara@cea-panel.lk',
-    login_code: 'EXPERT-PANEL-01',
+    auth_user_id: 'b2222222-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    email: 'expert.evaluator@harithapasal.lk',
+    login_code: 'EXP-PANEL',
     phone_number: '94771000001',
-    organization: 'National Expert Panel (CEA / Univ. of Moratuwa)',
-    full_name: 'Dr. Nuwan Gunasekara (National Expert Panel)',
-    role: 'expert_admin',
+    organization: 'National Technical Evaluation Committee',
+    full_name: 'Dr. Rohan Wickramasinghe (National Expert)',
+    role: 'expert',
     school_id: null,
     club_id: null,
   },
+  // Persona 3: Supervising Teacher (Teacher Role) - Royal College Colombo
+  {
+    id: 'usr-teacher-01',
+    auth_user_id: 'c3333333-cccc-cccc-cccc-cccccccccccc',
+    email: 'teacher.royal@harithapasal.lk',
+    login_code: 'SCH-01-TEACHER',
+    phone_number: '94772234501',
+    organization: 'Royal College Colombo',
+    full_name: 'K. L. Jayasinghe (Lead Teacher)',
+    role: 'teacher',
+    school_id: 'sch-01',
+    school_name: 'Royal College Colombo',
+    school_code: 'SCH-01',
+    club_id: 'club-01',
+    club_name: 'Royal Eco-Plast Upcyclers',
+  },
+  // Persona 4: Student Enterprise Lead (Student Role) - Royal College Colombo
+  {
+    id: 'usr-student-01',
+    auth_user_id: 'd4444444-dddd-dddd-dddd-dddddddddddd',
+    email: 'student.lead@harithapasal.lk',
+    login_code: 'SCH-01-STUDENT',
+    phone_number: '94771234501',
+    organization: 'Royal College Colombo',
+    full_name: 'Senura Perera (Eco Club Lead)',
+    role: 'student',
+    school_id: 'sch-01',
+    school_name: 'Royal College Colombo',
+    school_code: 'SCH-01',
+    club_id: 'club-01',
+    club_name: 'Royal Eco-Plast Upcyclers',
+    telegram_user_id: 800101,
+    telegram_username: '@senura_rc',
+  },
+  // Additional National Expert
   {
     id: 'usr-expert-02',
     email: 'priyanthi.fernando@cea-panel.lk',
@@ -761,10 +802,10 @@ export const DEMO_USERS: UserProfile[] = [
     school_id: null,
     club_id: null,
   },
-  // Category 3: School Teachers (15 Schools)
-  ...SCHOOL_TEACHER_LOGINS,
-  // Category 4: 15 Single-User Gamified School Student Logins (1 per School)
-  ...SCHOOL_STUDENT_LOGINS,
+  // Remaining School Teachers (Schools 2-15)
+  ...SCHOOL_TEACHER_LOGINS.slice(1),
+  // Remaining School Student Logins (Schools 2-15)
+  ...SCHOOL_STUDENT_LOGINS.slice(1),
   // Read-Only Industry Mentor
   {
     id: 'usr-mentor-01',

@@ -152,7 +152,7 @@ export default function StudentDashboardPage() {
               <span>{studentSchool.name} — {studentClub.name}</span>
             </div>
             <span className="text-xs font-mono font-semibold text-[#005FA3] bg-[#E6F1FA] px-2.5 py-1 rounded-md">
-              +94771234501
+              {studentUser.login_code || 'STUDENT'}
             </span>
           </div>
 

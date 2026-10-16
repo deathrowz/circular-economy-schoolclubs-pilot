@@ -1,6 +1,8 @@
 export type UserRole =
   | 'super_admin'
+  | 'admin'
   | 'expert_admin'
+  | 'expert'
   | 'teacher'
   | 'student'
   | 'mentor';
@@ -114,6 +116,7 @@ export interface Club {
 
 export interface UserProfile {
   id: string;
+  auth_user_id?: string;
   email: string;
   login_code?: string;
   phone_number?: string; // E.164 MSISDN format (e.g., 94771234501)

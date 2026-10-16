@@ -215,8 +215,9 @@ export async function createStudentImpactSubmission(params: {
   }
 
   const student =
-    store.users.find((u) => u.id === params.actorId) ||
+    store.users.find((u) => u.id === params.actorId || u.auth_user_id === params.actorId) ||
     store.users.find((u) => u.role === 'student' && u.school_id === school.id) ||
+    store.users.find((u) => u.role === 'student') ||
     store.users[0];
 
   // Anti-tamper constraint: Students can only submit activities for their assigned school
@@ -425,7 +426,7 @@ export async function performTeacherReview(params: {
   forceRandomAuditSelection?: boolean; // Optional override for deterministic testing
 }): Promise<{ log: ImpactLog; auditEntry: AuditLogEntry }> {
   const store = getPlatformStore();
-  const actor = store.users.find((u) => u.id === params.actorId);
+  const actor = store.users.find((u) => u.id === params.actorId || u.auth_user_id === params.actorId);
 
   if (!actor || actor.role !== 'teacher') {
     throw new Error(
@@ -594,9 +595,15 @@ export async function performExpertAdjudication(params: {
   notesOrReason?: string;
 }): Promise<{ log: ImpactLog; auditEntry: AuditLogEntry }> {
   const store = getPlatformStore();
-  const actor = store.users.find((u) => u.id === params.actorId);
+  const actor = store.users.find((u) => u.id === params.actorId || u.auth_user_id === params.actorId);
 
-  if (!actor || (actor.role !== 'expert_admin' && actor.role !== 'super_admin')) {
+  if (
+    !actor ||
+    (actor.role !== 'expert_admin' &&
+      actor.role !== 'expert' &&
+      actor.role !== 'super_admin' &&
+      actor.role !== 'admin')
+  ) {
     throw new Error(
       'RBAC_ROLE_VIOLATION: Only an Expert Panel or GIZ Super Admin can perform final scoring or random audits.'
     );
@@ -806,9 +813,9 @@ export async function attachTeacherVerifiedDocumentToLog(params: {
   uploadedViaTelegram?: boolean;
 }): Promise<{ log: ImpactLog; document: VerifiedDocument; auditEntry: AuditLogEntry }> {
   const store = getPlatformStore();
-  const actor = store.users.find((u) => u.id === params.actorId);
+  const actor = store.users.find((u) => u.id === params.actorId || u.auth_user_id === params.actorId);
 
-  if (!actor || (actor.role !== 'teacher' && actor.role !== 'super_admin')) {
+  if (!actor || (actor.role !== 'teacher' && actor.role !== 'super_admin' && actor.role !== 'admin')) {
     throw new Error(
       'RBAC_ROLE_VIOLATION: Only a Supervising Teacher or GIZ Admin can upload verified school invoices/receipts.'
     );
@@ -934,9 +941,15 @@ export async function submitExpertScoresViaTelegram(params: {
   notesOrReason?: string;
 }): Promise<{ log: ImpactLog; auditEntry: AuditLogEntry; pointsAwarded: number }> {
   const store = getPlatformStore();
-  const actor = store.users.find((u) => u.id === params.actorId);
+  const actor = store.users.find((u) => u.id === params.actorId || u.auth_user_id === params.actorId);
 
-  if (!actor || (actor.role !== 'expert_admin' && actor.role !== 'super_admin')) {
+  if (
+    !actor ||
+    (actor.role !== 'expert_admin' &&
+      actor.role !== 'expert' &&
+      actor.role !== 'super_admin' &&
+      actor.role !== 'admin')
+  ) {
     throw new Error(
       'RBAC_ROLE_VIOLATION: Only an Expert Panel member or GIZ Super Admin can submit selection criteria scores via Telegram.'
     );
@@ -1041,9 +1054,15 @@ export function updateGamificationConfig(params: {
   updates: Partial<GamificationConfig>;
 }): GamificationConfig {
   const store = getPlatformStore();
-  const actor = store.users.find((u) => u.id === params.actorId);
+  const actor = store.users.find((u) => u.id === params.actorId || u.auth_user_id === params.actorId);
 
-  if (!actor || (actor.role !== 'expert_admin' && actor.role !== 'super_admin')) {
+  if (
+    !actor ||
+    (actor.role !== 'expert_admin' &&
+      actor.role !== 'expert' &&
+      actor.role !== 'super_admin' &&
+      actor.role !== 'admin')
+  ) {
     throw new Error(
       'RBAC_ROLE_VIOLATION: Only GIZ Super Admin or Expert Panel can modify the gamification algorithm.'
     );

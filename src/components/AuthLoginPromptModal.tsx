@@ -379,14 +379,16 @@ export function AuthLoginPromptModal({
             <span>Supabase Project: <strong>dqrdhvrunmnufxpcxnuq</strong> (ap-south-1)</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="hai-btn-secondary px-4 py-1.5 text-xs cursor-pointer"
-            >
-              Browse as Guest (Public Index)
-            </button>
-          </div>
+          {activeUser && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onClose}
+                className="hai-btn-secondary px-4 py-1.5 text-xs cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

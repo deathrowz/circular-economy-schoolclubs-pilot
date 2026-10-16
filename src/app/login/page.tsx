@@ -32,7 +32,7 @@ interface SnapshotData {
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams?.get('redirectTo');
+  const redirectTo = searchParams?.get('returnUrl') || searchParams?.get('redirectTo');
 
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
 

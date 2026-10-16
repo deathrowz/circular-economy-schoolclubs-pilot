@@ -60,9 +60,9 @@ interface SnapshotData {
 
 export default function PlatformDashboardPage() {
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
-  const [activeTab, setActiveTab] = useState<NavTab>('leaderboard');
+  const [activeTab, setActiveTab] = useState<NavTab>('login_portal');
   const [activeUserId, setActiveUserId] = useState<string>('usr-giz-admin-01');
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginPromptReason, setLoginPromptReason] = useState<string | null>(null);
   const [selectedClubId, setSelectedClubId] = useState<string>('club-01');
@@ -848,7 +848,7 @@ export default function PlatformDashboardPage() {
                   4. Student Clubs (15)
                 </div>
                 <p className="text-[#111010]/80 mt-1">
-                  15 single-user school logins with XP level bars, 6 quests &amp; Telegram bot.
+                  15 single-user school logins with XP level bars, 6 quests &amp; WhatsApp activity logging.
                 </p>
               </div>
             </div>

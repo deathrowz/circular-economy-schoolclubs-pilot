@@ -56,10 +56,12 @@ export async function middleware(request: NextRequest) {
   const isProtectedPath =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/admin') ||
+    pathname.startsWith('/analytics') ||
     pathname.startsWith('/index');
 
   if (isProtectedPath && !isAuthenticated) {
     const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('returnUrl', pathname);
     loginUrl.searchParams.set('redirectTo', pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -71,6 +73,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/admin/:path*',
+    '/analytics/:path*',
     '/index/:path*',
   ],
 };

@@ -350,13 +350,15 @@ export function WhatsAppCloudWorkbench({
               </select>
             )}
 
-            <button
-              onClick={() => setShowJsonInspector(!showJsonInspector)}
-              className="hai-btn-secondary px-3 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
-            >
-              <Code2 className="w-3.5 h-3.5 text-[#128C7E]" />
-              <span>{showJsonInspector ? 'Hide Details' : 'View Submission Details'}</span>
-            </button>
+            {(isSuperAdmin || isDev) && (
+              <button
+                onClick={() => setShowJsonInspector(!showJsonInspector)}
+                className="hai-btn-secondary px-3 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Code2 className="w-3.5 h-3.5 text-[#128C7E]" />
+                <span>{showJsonInspector ? 'Hide Details' : 'View Submission Details'}</span>
+              </button>
+            )}
 
             <button
               onClick={onNavigateToVerification}
@@ -716,29 +718,31 @@ export function WhatsAppCloudWorkbench({
                 <FileCheck className="w-4 h-4 text-[#25D366]" />
               </button>
 
-              <button
-                disabled={isSending}
-                onClick={() =>
-                  sendWebhookUpdate(
-                    {
-                      photoCompressed: { fakePayload: 'compressed_jpeg_no_exif' },
-                    },
-                    '📷 [Sent as Compressed Photo via WhatsApp Camera icon]',
-                    'NEGATIVE TEST'
-                  )
-                }
-                className="w-full text-left p-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 transition cursor-pointer flex items-center justify-between"
-              >
-                <div>
-                  <div className="text-xs font-bold text-amber-900">
-                    ⚠️ Photo Missing School Location
+              {(isSuperAdmin || isDev) && (
+                <button
+                  disabled={isSending}
+                  onClick={() =>
+                    sendWebhookUpdate(
+                      {
+                        photoCompressed: { fakePayload: 'compressed_jpeg_no_exif' },
+                      },
+                      '📷 [Sent as Compressed Photo via WhatsApp Camera icon]',
+                      'NEGATIVE TEST'
+                    )
+                  }
+                  className="w-full text-left p-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 transition cursor-pointer flex items-center justify-between"
+                >
+                  <div>
+                    <div className="text-xs font-bold text-amber-900">
+                      ⚠️ Photo Missing School Location
+                    </div>
+                    <div className="text-[11px] text-amber-800/80">
+                      Photo must be taken directly at the school premises with location services enabled.
+                    </div>
                   </div>
-                  <div className="text-[11px] text-amber-800/80">
-                    Photo must be taken directly at the school premises with location services enabled.
-                  </div>
-                </div>
-                <CameraOff className="w-4 h-4 text-amber-600" />
-              </button>
+                  <CameraOff className="w-4 h-4 text-amber-600" />
+                </button>
+              )}
 
               {(isSuperAdmin || isDev) && (
                 <button

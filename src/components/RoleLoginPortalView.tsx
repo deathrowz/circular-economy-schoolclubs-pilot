@@ -190,8 +190,8 @@ export function RoleLoginPortalView({
       } else if (activePersona.role === 'expert_admin' || (activePersona.role as string) === 'expert') {
         onSelectUserAndNavigate(activePersona.id, 'verification');
       } else {
-        // super_admin / admin
-        onSelectUserAndNavigate(activePersona.id, 'health_risk');
+        // super_admin / admin -> Lands on 15-School National Index
+        onSelectUserAndNavigate(activePersona.id, 'leaderboard');
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Authentication error occurred. Please try again.');

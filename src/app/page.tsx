@@ -94,7 +94,7 @@ export default function PlatformDashboardPage() {
           if (user) {
             setActiveUserId(user.id);
             setIsAuthenticated(true);
-            if (user.role === 'super_admin' || user.role === 'admin') setActiveTab('health_risk');
+            if (user.role === 'super_admin' || user.role === 'admin') setActiveTab('leaderboard');
             else if (user.role === 'expert_admin' || user.role === 'expert') setActiveTab('verification');
             else if (user.role === 'teacher') setActiveTab('verification');
             else if (user.role === 'student') setActiveTab('student_gamified');
@@ -102,7 +102,7 @@ export default function PlatformDashboardPage() {
           } else if (savedUserId === 'e6535656-badd-447f-bf31-dbf208e68871' || savedUserId === 'usr-giz-superadmin-budhikka') {
             setActiveUserId(savedUserId);
             setIsAuthenticated(true);
-            setActiveTab('health_risk');
+            setActiveTab('leaderboard');
             return;
           }
         }
@@ -146,7 +146,7 @@ export default function PlatformDashboardPage() {
     if (targetTab) {
       setActiveTab(targetTab);
     } else if (found?.role === 'super_admin' || found?.role === 'admin') {
-      setActiveTab('health_risk');
+      setActiveTab('leaderboard');
     } else if (found?.role === 'expert_admin' || found?.role === 'expert') {
       setActiveTab('verification');
     } else if (found?.role === 'teacher') {
@@ -213,10 +213,9 @@ export default function PlatformDashboardPage() {
     if (activeUser.role === 'super_admin' || activeUser.role === 'admin') {
       return [
         {
-          id: 'health_risk' as NavTab,
-          label: 'GIZ Risk Alerts & Health',
-          icon: Activity,
-          count: snapshot.healthAlerts.length,
+          id: 'leaderboard' as NavTab,
+          label: '15-School National Index',
+          icon: Trophy,
         },
         {
           id: 'verification' as NavTab,
@@ -224,9 +223,10 @@ export default function PlatformDashboardPage() {
           icon: ShieldCheck,
         },
         {
-          id: 'leaderboard' as NavTab,
-          label: '15-School National Index',
-          icon: Trophy,
+          id: 'health_risk' as NavTab,
+          label: 'GIZ Risk Alerts & Health',
+          icon: Activity,
+          count: snapshot.healthAlerts.length,
         },
         {
           id: 'clubs' as NavTab,
@@ -363,13 +363,13 @@ export default function PlatformDashboardPage() {
           badge: 'GIZ Governance',
         };
       }
-      if (activeTab === 'leaderboard') {
+      if (activeTab === 'health_risk') {
         return {
-          eyebrow: 'Category 1 • GIZ Sri Lanka National Oversight',
-          title: 'National School Circular Index (GIZ View)',
+          eyebrow: 'Category 1 • GIZ Sri Lanka National Program Office (Program Lead)',
+          title: 'GIZ Program Governance & Integrity Engine',
           subtitle:
-            'Program-wide ranking of all 15 schools with verified waste diverted, enterprise sales generated, and seed grant allocations.',
-          badge: '15 Schools',
+            'National monitoring of 15 participating Sri Lankan school enterprises, inactive club alerts (>14 days), GPS campus perimeter violations, and fraud audit ledger.',
+          badge: `${snapshot.healthAlerts.length} Active Alerts`,
         };
       }
       if (activeTab === 'clubs') {
@@ -382,11 +382,11 @@ export default function PlatformDashboardPage() {
         };
       }
       return {
-        eyebrow: 'Category 1 • GIZ Sri Lanka National Program Office (Program Lead)',
-        title: 'GIZ Program Governance & Integrity Engine',
+        eyebrow: 'Category 1 • GIZ Sri Lanka National Oversight',
+        title: 'National School Circular Index (GIZ View)',
         subtitle:
-          'National monitoring of 15 participating Sri Lankan school enterprises, inactive club alerts (>14 days), GPS campus perimeter violations, and fraud audit ledger.',
-        badge: `${snapshot.healthAlerts.length} Active Alerts`,
+          'Program-wide ranking of all 15 schools with verified waste diverted, enterprise sales generated, and seed grant allocations.',
+        badge: '15 Schools',
       };
     }
 
@@ -576,7 +576,7 @@ export default function PlatformDashboardPage() {
           {/* Left: Clean Brand Lockup */}
           <button
             onClick={() => {
-              if (activeUser.role === 'super_admin' || activeUser.role === 'admin') setActiveTab('health_risk');
+              if (activeUser.role === 'super_admin' || activeUser.role === 'admin') setActiveTab('leaderboard');
               else if (activeUser.role === 'expert_admin' || activeUser.role === 'expert') setActiveTab('verification');
               else if (activeUser.role === 'teacher') setActiveTab('verification');
               else if (activeUser.role === 'student') setActiveTab('student_gamified');

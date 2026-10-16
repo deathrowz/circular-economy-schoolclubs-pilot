@@ -99,7 +99,7 @@ export function VerificationEngineView({
     }
   }, [initialSubTab]);
 
-  const [showCrossSchoolRlsTest, setShowCrossSchoolRlsTest] = useState(false);
+  const [expertSchoolFilter, setExpertSchoolFilter] = useState<string>('all');
   const [forceRandomAuditOnApprove, setForceRandomAuditOnApprove] = useState(false);
   const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
@@ -302,7 +302,6 @@ export function VerificationEngineView({
 
   const teacherPendingLogs = impactLogs.filter((l) => {
     if (l.status !== 'pending' && l.status !== 'flagged') return false;
-    if (showCrossSchoolRlsTest) return true;
     return l.school_id === activeUser.school_id;
   });
 
@@ -312,6 +311,14 @@ export function VerificationEngineView({
 
   const expertRandomAuditQueue = impactLogs.filter(
     (l) => l.random_audit_selected && l.audit_status === 'pending_audit'
+  );
+
+  const filteredExpertMacroQueue = expertMacroQueue.filter(
+    (l) => expertSchoolFilter === 'all' || l.school_id === expertSchoolFilter
+  );
+
+  const filteredExpertRandomAuditQueue = expertRandomAuditQueue.filter(
+    (l) => expertSchoolFilter === 'all' || l.school_id === expertSchoolFilter
   );
 
   return (
@@ -340,21 +347,25 @@ export function VerificationEngineView({
             </h2>
             <p className="text-xs text-[#111010]/70 mt-0.5">
               {activeUser.role === 'teacher' &&
-                `School Validator for ${activeUser.school_name}. Small logs (≤ ${formatLkr(
-                  config.macro_revenue_threshold_usd
-                )}) award points immediately; larger sales (> ${formatLkr(
-                  config.macro_revenue_threshold_usd
-                )}) go to the National Panel.`}
+                `School Validator for ${activeUser.school_name}. Review student activity submissions, approve verified recycling & sales, or upload official bookshop/pola receipts.`}
               {(activeUser.role === 'expert_admin' || activeUser.role === 'super_admin') &&
                 `National Panel & GIZ Admin: Score school sales > ${formatLkr(
                   config.macro_revenue_threshold_usd
                 )} across the 6 criteria, check the 10% random audit sample, and configure scoring weights.`}
               {(activeUser.role === 'student' || activeUser.role === 'mentor') &&
-                'Read-only view. Switch to a School Teacher, Expert Panel, or GIZ Super Admin account on the right to validate submissions.'}
+                'Read-only view. Reviewing permissions are restricted to registered School Teachers and National Expert Panel members.'}
             </p>
+
+            {/* Non-interactive Locked School Badge for Teacher */}
+            {activeUser.role === 'teacher' && (
+              <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#005FA3] text-[#9CF2F2] text-xs font-bold tracking-tight shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span>{activeUser.school_name} — {myTeacherSchoolEntry?.club.name || activeUser.club_name || 'Eco Enterprise'}</span>
+              </div>
+            )}
           </div>
 
-          {!hideRoleSwitcher && (
+          {!hideRoleSwitcher && (activeUser.role === 'super_admin' || activeUser.role === 'expert_admin') && (
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 onClick={() => {
@@ -383,29 +394,6 @@ export function VerificationEngineView({
               >
                 Expert Panel (Dr. Nuwan)
               </button>
-
-              <select
-                aria-label="Select School Teacher Validator"
-                value={activeUser.role === 'teacher' ? activeUser.id : ''}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    onSwitchUser(e.target.value);
-                    setFeedbackBanner(null);
-                  }
-                }}
-                className="hai-input px-3 py-2 text-xs font-semibold text-[#111010] cursor-pointer"
-              >
-                <option value="" disabled>
-                  Switch School Teacher (15 Schools)...
-                </option>
-                {users
-                  .filter((u) => u.role === 'teacher')
-                  .map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.login_code} • {t.full_name}
-                    </option>
-                  ))}
-              </select>
             </div>
           )}
         </div>
@@ -583,16 +571,6 @@ export function VerificationEngineView({
                   className="rounded accent-[#005FA3]"
                 />
                 <span>Include in 10% Audit Sample</span>
-              </label>
-
-              <label className="inline-flex items-center gap-1.5 text-rose-700 font-medium cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showCrossSchoolRlsTest}
-                  onChange={(e) => setShowCrossSchoolRlsTest(e.target.checked)}
-                  className="rounded accent-rose-600"
-                />
-                <span>Test Other School Block (RLS)</span>
               </label>
             </div>
           </div>
@@ -979,14 +957,50 @@ export function VerificationEngineView({
             </button>
           </div>
 
+          {/* 15-School Filter Dropdown for National Expert Panel & Admin */}
+          <div className="hai-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F8FAFC]">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#111010]">
+                Filter by School:
+              </span>
+              <span className="text-[11px] text-[#005FA3] font-semibold">
+                {expertSchoolFilter === 'all'
+                  ? 'All 15 Pilot Schools (Aggregate View)'
+                  : schools.find((s) => s.id === expertSchoolFilter)?.name || expertSchoolFilter}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label htmlFor="expert-school-filter" className="text-xs text-[#111010]/70 font-medium">
+                Scope:
+              </label>
+              <select
+                id="expert-school-filter"
+                aria-label="Filter submissions by school"
+                value={expertSchoolFilter}
+                onChange={(e) => setExpertSchoolFilter(e.target.value)}
+                className="hai-input px-3 py-1.5 text-xs font-semibold text-[#111010] cursor-pointer"
+              >
+                <option value="all">All 15 Pilot Schools (Aggregate)</option>
+                {schools.map((school) => (
+                  <option key={school.id} value={school.id}>
+                    {school.name} ({school.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {expertSubTab === 'macro_scoring' && (
             <div className="space-y-4">
-              {expertMacroQueue.length === 0 ? (
+              {filteredExpertMacroQueue.length === 0 ? (
                 <div className="hai-card p-8 text-center text-[#111010]/70 text-sm">
-                  All Teacher-endorsed Macro submissions have been scored!
+                  {expertSchoolFilter === 'all'
+                    ? 'All Teacher-endorsed Macro submissions have been scored!'
+                    : `No pending Macro submissions found for the selected school.`}
                 </div>
               ) : (
-                expertMacroQueue.map((log) => {
+                filteredExpertMacroQueue.map((log) => {
                   const scores = getCriteriaForLog(log);
                   const previewPoints = calculateMacroTransactionPoints({
                     criteriaScores: scores,
@@ -1206,12 +1220,14 @@ export function VerificationEngineView({
 
           {expertSubTab === 'random_audit' && (
             <div className="space-y-4">
-              {expertRandomAuditQueue.length === 0 ? (
+              {filteredExpertRandomAuditQueue.length === 0 ? (
                 <div className="hai-card p-8 text-center text-[#111010]/70 text-sm">
-                  No micro-transactions waiting in the 10% random audit queue.
+                  {expertSchoolFilter === 'all'
+                    ? 'No micro-transactions waiting in the 10% random audit queue.'
+                    : 'No random audit micro-transactions found for the selected school.'}
                 </div>
               ) : (
-                expertRandomAuditQueue.map((log) => (
+                filteredExpertRandomAuditQueue.map((log) => (
                   <div
                     key={log.id}
                     className="hai-card p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4"

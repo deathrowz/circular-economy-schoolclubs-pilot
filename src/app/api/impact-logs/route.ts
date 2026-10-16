@@ -5,6 +5,8 @@ import {
   getPlatformStore,
 } from '@/lib/store/platform-store';
 
+export const dynamic = 'force-static';
+
 export async function GET(req: NextRequest) {
   const store = getPlatformStore();
   const { searchParams } = new URL(req.url);
@@ -14,10 +16,14 @@ export async function GET(req: NextRequest) {
 
   let logs = store.impactLogs;
 
-  // Enforce RBAC Scoping on GET
-  if (role === 'teacher' && schoolId) {
-    logs = logs.filter((l) => l.school_id === schoolId);
-  } else if (role === 'mentor' && actorId) {
+  // Enforce strict anti-tamper RBAC Scoping on GET
+  const actor = actorId ? store.users.find((u) => u.id === actorId) : null;
+  const effectiveRole = actor ? actor.role : role;
+  const effectiveSchoolId = actor && (actor.role === 'teacher' || actor.role === 'student') ? actor.school_id : schoolId;
+
+  if ((effectiveRole === 'teacher' || effectiveRole === 'student') && effectiveSchoolId) {
+    logs = logs.filter((l) => l.school_id === effectiveSchoolId);
+  } else if (effectiveRole === 'mentor' && actorId) {
     const mentor = store.users.find((u) => u.id === actorId);
     const assigned = mentor?.assigned_club_ids || [];
     logs = logs.filter((l) => assigned.includes(l.club_id));

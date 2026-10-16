@@ -33,12 +33,20 @@ export function ClubProfilesView({
     activeUser.role === 'mentor'
   );
 
+  const isSchoolLocked = activeUser.role === 'teacher' || activeUser.role === 'student';
+  const schoolLockedClub = isSchoolLocked
+    ? clubs.find((c) => c.id === activeUser.club_id || c.school_id === activeUser.school_id) || clubs[0]
+    : null;
+
   const visibleClubs =
-    activeUser.role === 'mentor' && filterMentorAssignedOnly
+    isSchoolLocked
+      ? [schoolLockedClub!]
+      : activeUser.role === 'mentor' && filterMentorAssignedOnly
       ? clubs.filter((c) => activeUser.assigned_club_ids?.includes(c.id))
       : clubs;
 
   const activeClub =
+    schoolLockedClub ||
     visibleClubs.find((c) => c.id === selectedClubId) ||
     visibleClubs[0] ||
     clubs[0];
@@ -75,32 +83,41 @@ export function ClubProfilesView({
         </div>
       )}
 
-      {/* Simple School Selector Bar */}
+      {/* School Context Header / Non-interactive Badge for Teachers & Students */}
       <div className="hai-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <label
-            htmlFor="club-selector"
-            className="text-xs font-bold uppercase tracking-wider text-[#005FA3] block"
-          >
-            Choose Participating School ({visibleClubs.length} Schools)
-          </label>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#005FA3] block">
+            {isSchoolLocked
+              ? 'Assigned School Enterprise'
+              : `Participating School Explorer (${visibleClubs.length} Schools)`}
+          </span>
           <p className="text-xs text-[#111010]/70 mt-0.5">
-            Select any school to view its circular business model, student committee, and verified sales
+            {isSchoolLocked
+              ? `Your session is permanently locked to your registered campus enterprise.`
+              : 'Select any school to view its circular business model, student committee, and verified sales.'}
           </p>
         </div>
 
-        <select
-          id="club-selector"
-          value={activeClub.id}
-          onChange={(e) => onSelectClub(e.target.value)}
-          className="hai-input px-3.5 py-2 text-xs sm:text-sm font-semibold text-[#111010] cursor-pointer"
-        >
-          {visibleClubs.map((club) => (
-            <option key={club.id} value={club.id}>
-              {club.school_name} — {club.name}
-            </option>
-          ))}
-        </select>
+        {isSchoolLocked ? (
+          <div className="px-4 py-2 rounded-full bg-[#005FA3] text-[#9CF2F2] text-xs font-bold tracking-tight shadow-xs flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span>{activeClub.school_name} — {activeClub.name}</span>
+          </div>
+        ) : (
+          <select
+            id="club-selector"
+            aria-label="Select School Club"
+            value={activeClub.id}
+            onChange={(e) => onSelectClub(e.target.value)}
+            className="hai-input px-3.5 py-2 text-xs sm:text-sm font-semibold text-[#111010] cursor-pointer"
+          >
+            {visibleClubs.map((club) => (
+              <option key={club.id} value={club.id}>
+                {club.school_name} — {club.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Selected School Club Header (Stanford HAI Zeal Callout Style) */}

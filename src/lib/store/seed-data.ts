@@ -743,7 +743,7 @@ export const DEMO_USERS: UserProfile[] = [
     id: 'usr-expert-01',
     email: 'nuwan.gunasekara@cea-panel.lk',
     login_code: 'EXPERT-PANEL-01',
-    phone_number: '94779000002',
+    phone_number: '94771000001',
     organization: 'National Expert Panel (CEA / Univ. of Moratuwa)',
     full_name: 'Dr. Nuwan Gunasekara (National Expert Panel)',
     role: 'expert_admin',

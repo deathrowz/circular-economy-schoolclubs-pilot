@@ -219,6 +219,13 @@ export async function createStudentImpactSubmission(params: {
     store.users.find((u) => u.role === 'student' && u.school_id === school.id) ||
     store.users[0];
 
+  // Anti-tamper constraint: Students can only submit activities for their assigned school
+  if (student && student.role === 'student' && student.school_id && student.school_id !== school.id) {
+    throw new Error(
+      `RBAC_SCHOOL_SCOPE_VIOLATION: Student ${student.full_name} (${student.school_id}) cannot submit activities for a different school (${school.name} - ${school.id}).`
+    );
+  }
+
   // Check if this is a Step 5 Resolution Loop Resubmission
   let resubmissionCount = 0;
   if (params.parentLogId) {

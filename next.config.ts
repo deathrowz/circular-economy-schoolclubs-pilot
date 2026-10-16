@@ -1,3 +1,4 @@
+import './patch-fs.js';
 import type { NextConfig } from 'next';
 
 const isGithubPages = process.env.GITHUB_PAGES === 'true';

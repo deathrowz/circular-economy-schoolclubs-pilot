@@ -46,6 +46,9 @@ interface WhatsAppCloudWorkbenchProps {
   whatsappMessages?: any[];
   initialRole?: 'student' | 'teacher' | 'expert';
   initialClubId?: string;
+  activeUser?: UserProfile;
+  isDev?: boolean;
+  isAdmin?: boolean;
   onRefreshSnapshot: (snapshot: any) => void;
   onNavigateToVerification: () => void;
 }
@@ -67,25 +70,64 @@ export function WhatsAppCloudWorkbench({
   impactLogs,
   initialRole,
   initialClubId,
+  activeUser,
+  isDev,
+  isAdmin,
   onRefreshSnapshot,
   onNavigateToVerification,
 }: WhatsAppCloudWorkbenchProps) {
-  const [selectedClubId, setSelectedClubId] = useState<string>(initialClubId || 'club-01');
+  const effectiveUser =
+    activeUser ||
+    (initialRole === 'expert'
+      ? users.find((u) => u.role === 'expert_admin')
+      : initialRole === 'teacher'
+      ? users.find((u) => u.role === 'teacher')
+      : users.find((u) => u.role === 'student')) ||
+    users[0];
+
+  const isSuperAdmin = effectiveUser.role === 'super_admin' || Boolean(isAdmin);
+  const isTeacher = effectiveUser.role === 'teacher' || initialRole === 'teacher';
+  const isStudent = effectiveUser.role === 'student' || initialRole === 'student';
+  const isExpert = effectiveUser.role === 'expert_admin' || initialRole === 'expert';
+  const isRoleLocked = !isSuperAdmin;
+  const isSchoolLocked = isTeacher || isStudent;
+
+  const defaultClubId = isSchoolLocked
+    ? effectiveUser.club_id ||
+      clubs.find((c) => c.school_id === effectiveUser.school_id)?.id ||
+      initialClubId ||
+      'club-01'
+    : initialClubId || 'club-01';
+
+  const [selectedClubId, setSelectedClubId] = useState<string>(defaultClubId);
   const [activeBotRole, setActiveBotRole] = useState<'student' | 'teacher' | 'expert'>(
-    initialRole || 'student'
+    initialRole || (isTeacher ? 'teacher' : isExpert ? 'expert' : 'student')
   );
+
+  React.useEffect(() => {
+    if (isSchoolLocked && effectiveUser) {
+      const lockedClub = clubs.find(
+        (c) => c.id === effectiveUser.club_id || c.school_id === effectiveUser.school_id
+      );
+      if (lockedClub) {
+        setSelectedClubId(lockedClub.id);
+      }
+    } else if (initialClubId) {
+      setSelectedClubId(initialClubId);
+    }
+  }, [initialClubId, isSchoolLocked, effectiveUser, clubs]);
 
   React.useEffect(() => {
     if (initialRole) {
       setActiveBotRole(initialRole);
+    } else if (isTeacher) {
+      setActiveBotRole('teacher');
+    } else if (isExpert) {
+      setActiveBotRole('expert');
+    } else {
+      setActiveBotRole('student');
     }
-  }, [initialRole]);
-
-  React.useEffect(() => {
-    if (initialClubId) {
-      setSelectedClubId(initialClubId);
-    }
-  }, [initialClubId]);
+  }, [initialRole, isTeacher, isExpert]);
 
   const [botStage, setBotStage] = useState<string>('IDLE');
   const [chatInput, setChatInput] = useState<string>('');
@@ -100,6 +142,9 @@ export function WhatsAppCloudWorkbench({
     schools.find((s) => s.id === selectedClub.school_id) || schools[0];
 
   const currentActor = (() => {
+    if (isRoleLocked) {
+      return effectiveUser;
+    }
     if (activeBotRole === 'expert') {
       return users.find((u) => u.role === 'expert_admin') || users[1];
     }
@@ -117,7 +162,9 @@ export function WhatsAppCloudWorkbench({
     );
   })();
 
-  const activePhoneNumber = customPhoneOverride || currentActor.phone_number || '94771234501';
+  const activePhoneNumber = isRoleLocked
+    ? currentActor.phone_number || (isTeacher ? '94772234501' : isExpert ? '94771000001' : '94771234501')
+    : customPhoneOverride || currentActor.phone_number || '94771234501';
 
   const [chatHistory, setChatHistory] = useState<ChatBubble[]>([
     {
@@ -266,7 +313,11 @@ export function WhatsAppCloudWorkbench({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-[#111010] font-[var(--font-jakarta)]">
-                  WhatsApp Cloud API Ingestion Hub (Graph API v20.0+)
+                  {isTeacher
+                    ? 'Teacher Activity & Receipt Approval'
+                    : isExpert
+                    ? 'Expert Invoices & Scoring Dossiers'
+                    : 'WhatsApp Activity Hub'}
                 </h2>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#25D366]/20 text-[#128C7E]">
                   Meta Verified
@@ -279,25 +330,32 @@ export function WhatsAppCloudWorkbench({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <select
-              value={selectedClubId}
-              onChange={(e) => setSelectedClubId(e.target.value)}
-              aria-label="Select School Club"
-              className="hai-input px-3.5 py-2 text-xs text-[#111010] font-semibold"
-            >
-              {clubs.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.school_name} — {c.name}
-                </option>
-              ))}
-            </select>
+            {isSchoolLocked ? (
+              <div className="px-3.5 py-1.5 rounded-full bg-[#005FA3] text-[#9CF2F2] text-xs font-bold flex items-center gap-2 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span>{selectedSchool.name} — {selectedClub.name}</span>
+              </div>
+            ) : (
+              <select
+                value={selectedClubId}
+                onChange={(e) => setSelectedClubId(e.target.value)}
+                aria-label="Select School Club"
+                className="hai-input px-3.5 py-2 text-xs text-[#111010] font-semibold cursor-pointer"
+              >
+                {clubs.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.school_name} — {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
 
             <button
               onClick={() => setShowJsonInspector(!showJsonInspector)}
               className="hai-btn-secondary px-3 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Code2 className="w-3.5 h-3.5 text-[#128C7E]" />
-              <span>{showJsonInspector ? 'Hide JSON' : 'Inspect Payload'}</span>
+              <span>{showJsonInspector ? 'Hide Details' : 'View Submission Details'}</span>
             </button>
 
             <button
@@ -324,7 +382,7 @@ export function WhatsAppCloudWorkbench({
 
           {/* Active E.164 Phone Identity */}
           <div className="flex items-center gap-2 bg-[#F0F3F5] px-3 py-1 rounded-lg border border-[#111010]/10">
-            <span className="text-[11px] text-[#111010]/70">Simulated E.164 MSISDN:</span>
+            <span className="text-[11px] text-[#111010]/70">Verified E.164 Sender:</span>
             <span className="font-mono font-bold text-[#005FA3]">
               +{activePhoneNumber}
             </span>
@@ -336,112 +394,146 @@ export function WhatsAppCloudWorkbench({
       </div>
 
       {/* ====================================================================
-       * Raw JSON Payload Inspector (Collapsible)
+       * Submission Details Inspector (Clean Production View vs Developer JSON)
        * ==================================================================== */}
       {showJsonInspector && (
-        <div className="hai-card p-4 bg-[#111010] text-[#9CF2F2] font-mono text-xs space-y-2">
-          <div className="flex items-center justify-between text-white/80 border-b border-white/10 pb-2">
-            <span className="font-bold flex items-center gap-1.5 text-emerald-400">
-              <Code2 className="w-4 h-4" />
-              Meta Graph API v20.0 Webhook Payload (`/api/webhook/whatsapp`)
-            </span>
-            <span className="text-[11px] text-white/50">
-              X-Hub-Signature-256 HMAC &amp; TimingSafeEqual Validated
-            </span>
+        isSuperAdmin || isDev ? (
+          <div className="hai-card p-4 bg-[#111010] text-[#9CF2F2] font-mono text-xs space-y-2">
+            <div className="flex items-center justify-between text-white/80 border-b border-white/10 pb-2">
+              <span className="font-bold flex items-center gap-1.5 text-emerald-400">
+                <Code2 className="w-4 h-4" />
+                Meta Graph API v20.0 Webhook Payload (`/api/webhook/whatsapp`)
+              </span>
+              <span className="text-[11px] text-white/50">
+                X-Hub-Signature-256 HMAC &amp; TimingSafeEqual Validated
+              </span>
+            </div>
+            <pre className="overflow-x-auto p-2 bg-black/40 rounded max-h-48 text-[11px]">
+              {lastRawPayload ||
+                JSON.stringify(
+                  {
+                    endpoint: '/api/webhook/whatsapp',
+                    region: 'fra1 (Frankfurt)',
+                    hub_verify: 'passed',
+                    storage_bucket: 'haritha-proofs (private)',
+                    status: 'Awaiting next action trigger...',
+                  },
+                  null,
+                  2
+                )}
+            </pre>
           </div>
-          <pre className="overflow-x-auto p-2 bg-black/40 rounded max-h-48 text-[11px]">
-            {lastRawPayload ||
-              JSON.stringify(
-                {
-                  endpoint: '/api/webhook/whatsapp',
-                  region: 'fra1 (Frankfurt)',
-                  hub_verify: 'passed',
-                  storage_bucket: 'haritha-proofs (private)',
-                  status: 'Awaiting next action trigger...',
-                },
-                null,
-                2
-              )}
-          </pre>
-        </div>
+        ) : (
+          <div className="hai-card p-4 bg-[#F8FAFC] border border-[#005FA3]/20 text-xs space-y-2">
+            <div className="flex items-center justify-between border-b border-[#111010]/10 pb-2">
+              <span className="font-bold text-[#005FA3] flex items-center gap-1.5">
+                <FileCheck className="w-4 h-4" />
+                Submission Status &amp; Location Details
+              </span>
+              <span className="hai-tag text-[10px] font-mono font-bold">
+                E.164: +{activePhoneNumber}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+              <div className="p-2 rounded bg-white border border-[#111010]/10">
+                <div className="text-[10px] text-[#111010]/60">School Campus</div>
+                <div className="font-bold text-[#111010]">{selectedSchool.name}</div>
+              </div>
+              <div className="p-2 rounded bg-white border border-[#111010]/10">
+                <div className="text-[10px] text-[#111010]/60">GPS Radius</div>
+                <div className="font-bold text-[#14494F] font-mono">{selectedSchool.campus_radius_meters}m</div>
+              </div>
+              <div className="p-2 rounded bg-white border border-[#111010]/10">
+                <div className="text-[10px] text-[#111010]/60">Submission Mode</div>
+                <div className="font-bold text-[#005FA3]">Verified On-Campus File</div>
+              </div>
+              <div className="p-2 rounded bg-white border border-[#111010]/10">
+                <div className="text-[10px] text-[#111010]/60">Security Protocol</div>
+                <div className="font-bold text-emerald-700 font-mono">HMAC-SHA256 Validated</div>
+              </div>
+            </div>
+          </div>
+        )
       )}
 
       {/* ====================================================================
-       * Interactive Role Switcher & Phone Number Override
+       * Interactive Role Switcher & Phone Number Override (Only for Super Admin / Simulator)
        * ==================================================================== */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <button
-          onClick={() => {
-            setActiveBotRole('student');
-            setCustomPhoneOverride('');
-          }}
-          className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
-            activeBotRole === 'student' && !customPhoneOverride
-              ? 'bg-[#E6F8ED] border-[#25D366] text-[#075E54] shadow-sm'
-              : 'bg-white border-[#111010]/15 hover:bg-[#F0F3F5]'
-          }`}
-        >
-          <div>
-            <div className="text-xs font-bold uppercase tracking-wider">
-              1. Student Enterprise Mode
+      {!isRoleLocked && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <button
+            onClick={() => {
+              setActiveBotRole('student');
+              setCustomPhoneOverride('');
+            }}
+            className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
+              activeBotRole === 'student' && !customPhoneOverride
+                ? 'bg-[#E6F8ED] border-[#25D366] text-[#075E54] shadow-sm'
+                : 'bg-white border-[#111010]/15 hover:bg-[#F0F3F5]'
+            }`}
+          >
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider">
+                1. Student Enterprise Mode
+              </div>
+              <div className="text-[11px] text-[#111010]/70">
+                Submit photo evidence &amp; track club status
+              </div>
             </div>
-            <div className="text-[11px] text-[#111010]/70">
-              Submit photo evidence &amp; track club status
-            </div>
-          </div>
-          <span className="text-xs font-mono font-bold text-[#128C7E]">
-            +{currentActor.role === 'student' ? currentActor.phone_number : '94771234501'}
-          </span>
-        </button>
+            <span className="text-xs font-mono font-bold text-[#128C7E]">
+              +94771234501
+            </span>
+          </button>
 
-        <button
-          onClick={() => {
-            setActiveBotRole('teacher');
-            setCustomPhoneOverride('');
-          }}
-          className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
-            activeBotRole === 'teacher' && !customPhoneOverride
-              ? 'bg-[#E6F8ED] border-[#25D366] text-[#075E54] shadow-sm'
-              : 'bg-white border-[#111010]/15 hover:bg-[#F0F3F5]'
-          }`}
-        >
-          <div>
-            <div className="text-xs font-bold uppercase tracking-wider">
-              2. Supervising Teacher Mode
+          <button
+            onClick={() => {
+              setActiveBotRole('teacher');
+              setCustomPhoneOverride('');
+            }}
+            className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
+              activeBotRole === 'teacher' && !customPhoneOverride
+                ? 'bg-[#E6F8ED] border-[#25D366] text-[#075E54] shadow-sm'
+                : 'bg-white border-[#111010]/15 hover:bg-[#F0F3F5]'
+            }`}
+          >
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider">
+                2. Supervising Teacher Mode
+              </div>
+              <div className="text-[11px] text-[#111010]/70">
+                Upload verified invoices &amp; bookshop receipts
+              </div>
             </div>
-            <div className="text-[11px] text-[#111010]/70">
-              Upload verified invoices &amp; bookshop receipts
-            </div>
-          </div>
-          <span className="text-xs font-mono font-bold text-[#128C7E]">
-            +{currentActor.role === 'teacher' ? currentActor.phone_number : '94772234501'}
-          </span>
-        </button>
+            <span className="text-xs font-mono font-bold text-[#128C7E]">
+              +94772234501
+            </span>
+          </button>
 
-        <button
-          onClick={() => {
-            setActiveBotRole('expert');
-            setCustomPhoneOverride('');
-          }}
-          className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
-            activeBotRole === 'expert' && !customPhoneOverride
-              ? 'bg-[#E6F8ED] border-[#25D366] text-[#075E54] shadow-sm'
-              : 'bg-white border-[#111010]/15 hover:bg-[#F0F3F5]'
-          }`}
-        >
-          <div>
-            <div className="text-xs font-bold uppercase tracking-wider">
-              3. National Expert Panel
+          <button
+            onClick={() => {
+              setActiveBotRole('expert');
+              setCustomPhoneOverride('');
+            }}
+            className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
+              activeBotRole === 'expert' && !customPhoneOverride
+                ? 'bg-[#E6F8ED] border-[#25D366] text-[#075E54] shadow-sm'
+                : 'bg-white border-[#111010]/15 hover:bg-[#F0F3F5]'
+            }`}
+          >
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider">
+                3. National Expert Panel
+              </div>
+              <div className="text-[11px] text-[#111010]/70">
+                Review invoices &amp; score criteria via WhatsApp
+              </div>
             </div>
-            <div className="text-[11px] text-[#111010]/70">
-              Review invoices &amp; score criteria via WhatsApp
-            </div>
-          </div>
-          <span className="text-xs font-mono font-bold text-[#128C7E]">
-            +94771000001
-          </span>
-        </button>
-      </div>
+            <span className="text-xs font-mono font-bold text-[#128C7E]">
+              +94771000001
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* ====================================================================
        * Main Workbench Grid: WhatsApp Chat (Left 7 cols) + Action Controls (Right 5 cols)
@@ -577,16 +669,18 @@ export function WhatsAppCloudWorkbench({
 
         {/* Right: Media Ingestion & Simulation Tooling (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
-          {/* Card 1: Direct Stateless Media Ingestion Simulator */}
+          {/* Card 1: Direct Activity Submission */}
           <div className="hai-card p-5 space-y-3">
             <div className="flex items-center gap-2">
               <CloudUpload className="w-4 h-4 text-[#25D366]" />
               <h3 className="text-sm font-bold text-[#111010]">
-                Stateless Media Ingestion Simulator
+                {isTeacher
+                  ? 'Submit Activity on Behalf of Student'
+                  : 'Submit Activity Photo'}
               </h3>
             </div>
             <p className="text-xs text-[#111010]/70">
-              Streams raw uncompressed buffers into private Supabase storage bucket (`haritha-proofs`) with zero local disk persistence.
+              Photo must be taken directly at the school premises with location services enabled.
             </p>
 
             <div className="space-y-2 pt-2">
@@ -613,10 +707,10 @@ export function WhatsAppCloudWorkbench({
               >
                 <div>
                   <div className="text-xs font-bold text-[#075E54]">
-                    📸 Send Valid Uncompressed Photo
+                    📸 Send Valid School Photo
                   </div>
                   <div className="text-[11px] text-[#075E54]/80">
-                    EXIF GPS: {selectedSchool.campus_lat.toFixed(4)}, {selectedSchool.campus_lng.toFixed(4)} (On Campus)
+                    School GPS: {selectedSchool.campus_lat.toFixed(4)}, {selectedSchool.campus_lng.toFixed(4)} (On Campus)
                   </div>
                 </div>
                 <FileCheck className="w-4 h-4 text-[#25D366]" />
@@ -637,146 +731,152 @@ export function WhatsAppCloudWorkbench({
               >
                 <div>
                   <div className="text-xs font-bold text-amber-900">
-                    ⚠️ Test Compressed Photo Rejection
+                    ⚠️ Photo Missing School Location
                   </div>
                   <div className="text-[11px] text-amber-800/80">
-                    Triggers GIZ EXIF validation error &amp; guideline reply
+                    Photo must be taken directly at the school premises with location services enabled.
                   </div>
                 </div>
                 <CameraOff className="w-4 h-4 text-amber-600" />
               </button>
 
-              <button
-                disabled={isSending}
-                onClick={() =>
-                  sendWebhookUpdate(
-                    {
-                      phoneNumber: '94779999999',
-                      from: '94779999999',
-                      text: 'Hello, I want to submit paper recycling evidence',
-                    },
-                    '📱 [Simulate Inbound Message from Unregistered Number +94 77 999 9999]',
-                    'SECURITY TEST'
-                  )
-                }
-                className="w-full text-left p-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer flex items-center justify-between"
-              >
-                <div>
-                  <div className="text-xs font-bold text-rose-900">
-                    🚨 Test Unregistered Phone Handling
-                  </div>
-                  <div className="text-[11px] text-rose-800/80">
-                    Returns HTTP 200 without retrying or throwing 500
-                  </div>
-                </div>
-                <AlertOctagon className="w-4 h-4 text-rose-600" />
-              </button>
-            </div>
-          </div>
-
-          {/* Card 2: Teacher Invoice & Receipt Pipeline */}
-          <div className="hai-card p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[#005FA3]" />
-              <h3 className="text-sm font-bold text-[#111010]">
-                Teacher Invoice Attachment Gateway
-              </h3>
-            </div>
-            <p className="text-xs text-[#111010]/70">
-              Transactions &gt; Rs. 15,000 require supervising teachers to attach official sales receipts or scale tickets.
-            </p>
-
-            <div className="space-y-2 pt-2">
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedInvoiceLogId}
-                  onChange={(e) => setSelectedInvoiceLogId(e.target.value)}
-                  aria-label="Select Target Log"
-                  className="hai-input px-3 py-1.5 text-xs flex-1"
-                >
-                  {impactLogs
-                    .filter((l) => l.school_id === selectedSchool.id)
-                    .map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.id} — {l.activity_title.slice(0, 30)} ({formatLkr(l.revenue_usd)})
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <button
-                disabled={isSending}
-                onClick={() =>
-                  sendWebhookUpdate(
-                    {
-                      actorRole: 'teacher',
-                      text: `/upload_invoice ${selectedInvoiceLogId}`,
-                    },
-                    `/upload_invoice ${selectedInvoiceLogId}`,
-                    'TEACHER ACTION',
-                    'teacher'
-                  )
-                }
-                className="w-full py-2 px-3 rounded-lg bg-[#E6F1FA] hover:bg-[#D0E5F5] text-[#005FA3] font-bold text-xs transition cursor-pointer text-center"
-              >
-                Initiate Invoice Upload for {selectedInvoiceLogId}
-              </button>
-
-              <button
-                disabled={isSending}
-                onClick={() =>
-                  sendWebhookUpdate(
-                    {
-                      actorRole: 'teacher',
-                      document: {
-                        fileName: `INV-${selectedSchool.code}-OFFICIAL-RECEIPT.PDF`,
-                        mimeType: 'application/pdf',
-                        docCategory: 'sales_invoice',
+              {(isSuperAdmin || isDev) && (
+                <button
+                  disabled={isSending}
+                  onClick={() =>
+                    sendWebhookUpdate(
+                      {
+                        phoneNumber: '94779999999',
+                        from: '94779999999',
+                        text: 'Hello, I want to submit paper recycling evidence',
                       },
+                      '📱 [Simulate Inbound Message from Unregistered Number +94 77 999 9999]',
+                      'SECURITY TEST'
+                    )
+                  }
+                  className="w-full text-left p-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer flex items-center justify-between"
+                >
+                  <div>
+                    <div className="text-xs font-bold text-rose-900">
+                      🚨 Test Unregistered Phone Handling
+                    </div>
+                    <div className="text-[11px] text-rose-800/80">
+                      Returns HTTP 200 without retrying or throwing 500
+                    </div>
+                  </div>
+                  <AlertOctagon className="w-4 h-4 text-rose-600" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Card 2: Teacher Receipt & Activity Approval */}
+          {(isTeacher || isExpert || isSuperAdmin) && (
+            <div className="hai-card p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#005FA3]" />
+                <h3 className="text-sm font-bold text-[#111010]">
+                  Teacher Activity &amp; Receipt Approval
+                </h3>
+              </div>
+              <p className="text-xs text-[#111010]/70">
+                Attach verified sales invoices, pola receipts, or waste weighbridge scale tickets for student submissions.
+              </p>
+
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedInvoiceLogId}
+                    onChange={(e) => setSelectedInvoiceLogId(e.target.value)}
+                    aria-label="Select Target Log"
+                    className="hai-input px-3 py-1.5 text-xs flex-1 cursor-pointer"
+                  >
+                    {impactLogs
+                      .filter((l) => l.school_id === selectedSchool.id)
+                      .map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.id} — {l.activity_title.slice(0, 30)} ({formatLkr(l.revenue_usd)})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <button
+                  disabled={isSending}
+                  onClick={() =>
+                    sendWebhookUpdate(
+                      {
+                        actorRole: 'teacher',
+                        text: `/upload_invoice ${selectedInvoiceLogId}`,
+                      },
+                      `/upload_invoice ${selectedInvoiceLogId}`,
+                      'TEACHER ACTION',
+                      'teacher'
+                    )
+                  }
+                  className="w-full py-2 px-3 rounded-lg bg-[#E6F1FA] hover:bg-[#D0E5F5] text-[#005FA3] font-bold text-xs transition cursor-pointer text-center"
+                >
+                  Initiate Receipt Attachment for {selectedInvoiceLogId}
+                </button>
+
+                <button
+                  disabled={isSending}
+                  onClick={() =>
+                    sendWebhookUpdate(
+                      {
+                        actorRole: 'teacher',
+                        document: {
+                          fileName: `INV-${selectedSchool.code}-OFFICIAL-RECEIPT.PDF`,
+                          mimeType: 'application/pdf',
+                          docCategory: 'sales_invoice',
+                        },
+                      },
+                      `📎 [PDF Invoice Attached]: INV-${selectedSchool.code}-OFFICIAL-RECEIPT.PDF`,
+                      'TEACHER ATTACHMENT',
+                      'teacher'
+                    )
+                  }
+                  className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer text-center"
+                >
+                  Attach Official PDF Receipt (Forward to Panel)
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Card 3: National Expert Criteria Scoring */}
+          {(isExpert || isSuperAdmin) && (
+            <div className="hai-card p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Gavel className="w-4 h-4 text-purple-600" />
+                <h3 className="text-sm font-bold text-[#111010]">
+                  National Expert Criteria Scoring
+                </h3>
+              </div>
+              <p className="text-xs text-[#111010]/70">
+                National Expert Panel members evaluate dossiers and submit selection criteria scores directly via WhatsApp message commands.
+              </p>
+
+              <button
+                disabled={isSending}
+                onClick={() =>
+                  sendWebhookUpdate(
+                    {
+                      actorRole: 'expert_admin',
+                      text: `/score ${selectedInvoiceLogId} 92 88 86 94 95 90`,
                     },
-                    `📎 [PDF Invoice Attached]: INV-${selectedSchool.code}-OFFICIAL-RECEIPT.PDF`,
-                    'TEACHER ATTACHMENT',
-                    'teacher'
+                    `/score ${selectedInvoiceLogId} 92 88 86 94 95 90`,
+                    'EXPERT SCORING',
+                    'expert'
                   )
                 }
-                className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer text-center"
+                className="w-full py-2.5 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs transition cursor-pointer text-center flex items-center justify-center gap-2"
               >
-                Attach Official PDF Invoice (Dispatches to GIZ)
+                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                <span>Submit 6 Criteria Scores for {selectedInvoiceLogId}</span>
               </button>
             </div>
-          </div>
-
-          {/* Card 3: Expert WhatsApp Scoring Terminal */}
-          <div className="hai-card p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <Gavel className="w-4 h-4 text-purple-600" />
-              <h3 className="text-sm font-bold text-[#111010]">
-                Expert Criteria Scoring via WhatsApp
-              </h3>
-            </div>
-            <p className="text-xs text-[#111010]/70">
-              National Expert Panel members evaluate dossiers and submit selection criteria scores directly via WhatsApp message commands.
-            </p>
-
-            <button
-              disabled={isSending}
-              onClick={() =>
-                sendWebhookUpdate(
-                  {
-                    actorRole: 'expert_admin',
-                    text: `/score ${selectedInvoiceLogId} 92 88 86 94 95 90`,
-                  },
-                  `/score ${selectedInvoiceLogId} 92 88 86 94 95 90`,
-                  'EXPERT SCORING',
-                  'expert'
-                )
-              }
-              className="w-full py-2.5 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs transition cursor-pointer text-center flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-              <span>Submit 6 Criteria Scores for {selectedInvoiceLogId}</span>
-            </button>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -845,18 +845,18 @@ export function StudentGamifiedDashboardView({
                   onClick={() =>
                     sendSchoolBotUpdate(
                       { sentAsCompressedPhoto: true },
-                      '📷 [Sent Compressed Photo]',
-                      'Compressed Photo (Rejected)'
+                      '📷 [Photo without location data]',
+                      'Location Off (Rejected)'
                     )
                   }
                   className="p-2.5 rounded-[10px_10px_10px_2px] bg-rose-50 hover:bg-rose-100 border border-rose-300 text-left transition cursor-pointer"
                 >
                   <div className="flex items-center gap-1.5 text-rose-800 font-bold text-xs">
                     <CameraOff className="w-3.5 h-3.5 shrink-0" />
-                    <span>1. Normal Photo</span>
+                    <span>1. Location Off</span>
                   </div>
                   <div className="text-[10px] text-rose-700/80 mt-0.5">
-                    Rejected (EXIF stripped)
+                    Photo must be taken directly at the school premises with location services enabled.
                   </div>
                 </button>
 
@@ -875,18 +875,18 @@ export function StudentGamifiedDashboardView({
                           },
                         },
                       },
-                      '📎 [Sent File without GPS]',
-                      'Missing GPS (Rejected)'
+                      '📎 [Photo missing school coordinates]',
+                      'Missing School Location'
                     )
                   }
                   className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#F0F3F5] hover:bg-[#E6F1FA] border border-[#111010]/20 text-left transition cursor-pointer"
                 >
                   <div className="flex items-center gap-1.5 text-[#111010] font-bold text-xs">
                     <AlertOctagon className="w-3.5 h-3.5 shrink-0 text-[#005FA3]" />
-                    <span>2. Missing GPS</span>
+                    <span>2. Off-Campus Photo</span>
                   </div>
                   <div className="text-[10px] text-[#111010]/65 mt-0.5">
-                    Rejected (No coordinates)
+                    Photo must be taken directly at the school premises with location services enabled.
                   </div>
                 </button>
 
@@ -907,18 +907,18 @@ export function StudentGamifiedDashboardView({
                           },
                         },
                       },
-                      `📎 [Sent Valid File: ${school.code}_ACTIVITY_FILE.JPG]`,
-                      'Valid On-Campus EXIF'
+                      `📎 [Sent School Photo: ${school.code}_ACTIVITY_FILE.JPG]`,
+                      'School Premises Verified'
                     )
                   }
                   className="p-2.5 rounded-[10px_10px_10px_2px] bg-[#E6F1FA] hover:bg-[#9CF2F2]/60 border border-[#005FA3]/30 text-left transition cursor-pointer"
                 >
                   <div className="flex items-center gap-1.5 text-[#005FA3] font-bold text-xs">
                     <CloudUpload className="w-3.5 h-3.5 shrink-0" />
-                    <span>3. Valid School File</span>
+                    <span>3. Verified School Photo</span>
                   </div>
                   <div className="text-[10px] text-[#111010]/70 mt-0.5">
-                    Verifies GPS &amp; logs data
+                    Validates campus location &amp; logs activity
                   </div>
                 </button>
               </div>

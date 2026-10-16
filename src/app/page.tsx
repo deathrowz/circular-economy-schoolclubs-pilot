@@ -264,7 +264,7 @@ export default function PlatformDashboardPage() {
         },
         {
           id: 'whatsapp_ingestion' as NavTab,
-          label: 'Upload WhatsApp Invoices',
+          label: 'Activity & Receipt Approval',
           icon: Phone,
         },
         {
@@ -428,10 +428,10 @@ export default function PlatformDashboardPage() {
       if (activeTab === 'whatsapp_ingestion' || activeTab === 'telegram_bot') {
         return {
           eyebrow: `Category 3 • Supervising Teacher • ${activeUser.school_name} (${activeUser.school_code})`,
-          title: 'Teacher WhatsApp Ingestion & Invoice Gateway',
+          title: 'Teacher Activity & Receipt Approval',
           subtitle:
             'Attach verified sales invoices, pola receipts, or waste weighbridge scale tickets for transactions > Rs. 15,000 to forward to GIZ & Expert Panel.',
-          badge: `${activeUser.school_code} WhatsApp Gateway`,
+          badge: `${activeUser.school_code} Activity Approval`,
         };
       }
       if (activeTab === 'clubs') {
@@ -737,8 +737,15 @@ export default function PlatformDashboardPage() {
             clubs={snapshot.clubs}
             impactLogs={snapshot.impactLogs}
             activeUser={activeUser}
-            selectedClubId={activeUser.club_id || selectedClubId}
-            onSelectClub={setSelectedClubId}
+            selectedClubId={
+              activeUser.role === 'teacher' || activeUser.role === 'student'
+                ? activeUser.club_id || selectedClubId
+                : selectedClubId
+            }
+            onSelectClub={(clubId) => {
+              if (activeUser.role === 'teacher' || activeUser.role === 'student') return;
+              setSelectedClubId(clubId);
+            }}
           />
         )}
 
@@ -768,6 +775,9 @@ export default function PlatformDashboardPage() {
             users={snapshot.users}
             impactLogs={snapshot.impactLogs}
             whatsappMessages={snapshot.telegramMessages}
+            activeUser={activeUser}
+            isAdmin={activeUser.role === 'super_admin'}
+            isDev={false}
             initialRole={
               activeUser.role === 'expert_admin'
                 ? 'expert'
@@ -775,7 +785,11 @@ export default function PlatformDashboardPage() {
                 ? 'teacher'
                 : 'student'
             }
-            initialClubId={activeUser.club_id || selectedClubId}
+            initialClubId={
+              activeUser.role === 'teacher' || activeUser.role === 'student'
+                ? activeUser.club_id || 'club-01'
+                : selectedClubId
+            }
             onRefreshSnapshot={setSnapshot}
             onNavigateToVerification={() => setActiveTab('verification')}
           />

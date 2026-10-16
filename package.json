@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node -r ./patch-fs.js ./node_modules/next/dist/bin/next build",
     "start": "next start",
     "lint": "next lint",
     "test": "npx tsx src/lib/__tests__/validation-engine.test.ts && npx tsx src/lib/__tests__/whatsapp-webhook.test.ts",

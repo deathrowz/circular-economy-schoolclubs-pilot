@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   ArrowRight,
   Building2,
@@ -296,6 +297,36 @@ export function RoleLoginPortalView({
             >
               View 15-School Public Index →
             </button>
+          </div>
+
+          {/* Direct Role Route Shortcuts */}
+          <div className="pt-3 border-t border-[#111010]/10 space-y-2">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-[#005FA3] text-center">
+              Direct Role Route Shortcuts:
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] sm:text-[11px]">
+              <Link
+                href="/dashboard/student"
+                className="p-2 rounded-lg bg-[#E6F1FA] text-[#005FA3] font-bold hover:bg-[#005FA3] hover:text-white transition flex flex-col items-center justify-center gap-0.5"
+              >
+                <span>Student</span>
+                <span className="font-mono text-[9px] opacity-75">+94771234501</span>
+              </Link>
+              <Link
+                href="/dashboard/teacher"
+                className="p-2 rounded-lg bg-[#E6F1FA] text-[#005FA3] font-bold hover:bg-[#005FA3] hover:text-white transition flex flex-col items-center justify-center gap-0.5"
+              >
+                <span>Teacher</span>
+                <span className="font-mono text-[9px] opacity-75">+94772234501</span>
+              </Link>
+              <Link
+                href="/dashboard/expert"
+                className="p-2 rounded-lg bg-[#E6F1FA] text-[#005FA3] font-bold hover:bg-[#005FA3] hover:text-white transition flex flex-col items-center justify-center gap-0.5"
+              >
+                <span>Expert</span>
+                <span className="font-mono text-[9px] opacity-75">+94771000001</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

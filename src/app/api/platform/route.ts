@@ -6,6 +6,8 @@ import {
   updateGamificationConfig,
 } from '@/lib/store/platform-store';
 
+export const dynamic = 'force-static';
+
 export async function GET() {
   const snapshot = getFullPlatformSnapshot();
   return NextResponse.json(snapshot);

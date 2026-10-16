@@ -34,6 +34,14 @@ import {
 import { formatLkr } from '@/lib/gamification/engine';
 import { postWhatsAppWebhookClient } from '@/lib/client/platform-bridge';
 import { StudentGamificationHero } from '@/components/StudentGamificationHero';
+import {
+  BadgeWasteToValue,
+  BadgeSchoolEnterprise,
+  BadgeActionReady,
+  BadgeStudentLeader,
+  BadgeCleanCommunity,
+  BadgeGreenCharter,
+} from '@/components/BadgeIllustrations';
 
 interface StudentGamifiedDashboardViewProps {
   activeUser: UserProfile;
@@ -172,67 +180,73 @@ export function StudentGamifiedDashboardView({
       id: 'track-waste',
       title: 'Waste-to-Value Champion',
       track: 'waste_to_value',
-      levelName: schoolEntry.verified_waste_kg >= 100 ? 'Level 2: Compost Maker' : 'Level 1: Green Sorter',
+      levelName: schoolEntry.verified_waste_kg >= 100 ? 'Tier 2: Active' : 'Tier 1: Novice',
       desc: 'Sort recyclables, harvest organic compost batches, and divert PET plastic from campus dumps.',
       xp: schoolEntry.verified_waste_kg >= 100 ? '+100 XP' : '+50 XP',
       unlocked: true,
-      progressText: `${schoolEntry.verified_waste_kg} / 100 kg (Next: Upcycle Pro at 301 pts)`,
+      progressText: `${schoolEntry.verified_waste_kg} / 100 kg Diverted (Next: Tier 3: Advanced at 301 pts)`,
       pct: wastePct,
+      renderIllustration: (size: number) => <BadgeWasteToValue size={size} unlocked={true} />,
     },
     {
       id: 'track-enterprise',
       title: 'School Enterprise Star',
       track: 'school_enterprise',
-      levelName: schoolEntry.verified_revenue_usd >= 100 ? 'Level 2: Market Grower' : 'Level 1: First Sale',
+      levelName: schoolEntry.verified_revenue_usd >= 100 ? 'Tier 2: Active' : 'Tier 1: Novice',
       desc: 'Generate circular sales revenue through school fairs, plant seedling nursery, and upcycled crafts.',
       xp: schoolEntry.verified_revenue_usd >= 100 ? '+100 XP' : '+50 XP',
       unlocked: true,
-      progressText: `${formatLkr(schoolEntry.verified_revenue_usd)} / Rs. 30,000 (Next: Green Shop Lead at 351 pts)`,
+      progressText: `${formatLkr(schoolEntry.verified_revenue_usd)} / Rs. 30,000 (Next: Tier 3: Advanced at 301 pts)`,
       pct: salesPct,
+      renderIllustration: (size: number) => <BadgeSchoolEnterprise size={size} unlocked={true} />,
     },
     {
       id: 'track-action',
       title: 'Action Ready Club',
       track: 'action_ready',
-      levelName: 'Level 2: Steady Keeper',
+      levelName: 'Tier 2: Active',
       desc: 'Maintain campus sorting bins, clean shredders/tools, and log 4+ consecutive weeks of activity.',
       xp: '+76 XP',
       unlocked: true,
-      progressText: '4 Weeks Active Streak (Next: Tool Care Specialist at 251 pts)',
+      progressText: '4 Weeks Active Streak (Next: Tier 3: Advanced at 301 pts)',
       pct: 85,
+      renderIllustration: (size: number) => <BadgeActionReady size={size} unlocked={true} />,
     },
     {
       id: 'track-leader',
       title: 'Student Eco-Leader',
       track: 'student_leader',
-      levelName: club.active_members_count >= 10 ? 'Level 2: Team Organizer' : 'Level 1: Active Member',
+      levelName: club.active_members_count >= 10 ? 'Tier 2: Active' : 'Tier 1: Novice',
       desc: 'Student committee leading after-school shifts, daily composting, and training junior student peers.',
       xp: club.active_members_count >= 10 ? '+100 XP' : '+50 XP',
       unlocked: true,
-      progressText: `${club.active_members_count} Active Leaders (Next: Green Mentor at 301 pts)`,
+      progressText: `${club.active_members_count} Active Leaders (Next: Tier 3: Advanced at 301 pts)`,
       pct: Math.min(100, Math.round((club.active_members_count / 15) * 100)),
+      renderIllustration: (size: number) => <BadgeStudentLeader size={size} unlocked={true} />,
     },
     {
       id: 'track-community',
       title: 'Clean Green Community',
       track: 'clean_community',
-      levelName: 'Level 2: Neighborhood Helper',
+      levelName: 'Tier 2: Active',
       desc: 'Lead campus tree planting, boundary shramadana cleanups, and off-campus canal & roadside drives.',
       xp: '+101 XP',
       unlocked: true,
-      progressText: 'Shramadana Complete (Next: Nature Guardian at 351 pts)',
+      progressText: 'Shramadana Complete (Next: Tier 3: Advanced at 301 pts)',
       pct: 75,
+      renderIllustration: (size: number) => <BadgeCleanCommunity size={size} unlocked={true} />,
     },
     {
       id: 'track-charter',
       title: 'Green Charter School',
       track: 'green_charter',
-      levelName: 'Level 2: Clean Canteen',
+      levelName: 'Tier 2: Active',
       desc: 'Principal-authorized green club registration, weekly activity slot, and campus ban on lunch sheets.',
       xp: '+101 XP',
       unlocked: true,
-      progressText: 'Clean Canteen Policy Active (Next: Eco Campus at 251 pts)',
+      progressText: 'Green Charter Active (Next: Tier 3: Advanced at 301 pts)',
       pct: 90,
+      renderIllustration: (size: number) => <BadgeGreenCharter size={size} unlocked={true} />,
     },
   ];
 
@@ -391,25 +405,32 @@ export function StudentGamifiedDashboardView({
               }`}
             >
               <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                      q.unlocked
-                        ? 'bg-[#005FA3] text-[#9CF2F2]'
-                        : 'bg-[#F0F3F5] text-[#111010]/65'
-                    }`}
-                  >
-                    {q.levelName || (q.unlocked ? '✓ Badge Unlocked' : 'In Progress')}
-                  </span>
-                  <span className="font-mono text-xs font-bold text-[#005FA3]">
-                    {q.xp}
-                  </span>
-                </div>
+                <div className="flex items-center gap-3">
+                  <div className="shrink-0 drop-shadow-xs">
+                    {q.renderIllustration(44)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                          q.unlocked
+                            ? 'bg-[#005FA3] text-[#9CF2F2]'
+                            : 'bg-[#F0F3F5] text-[#111010]/65'
+                        }`}
+                      >
+                        {q.levelName || (q.unlocked ? '✓ Badge Unlocked' : 'In Progress')}
+                      </span>
+                      <span className="font-mono text-xs font-bold text-[#005FA3]">
+                        {q.xp}
+                      </span>
+                    </div>
 
-                <h4 className="mt-3 text-base font-bold text-[#111010] font-[var(--font-jakarta)]">
-                  {q.title}
-                </h4>
-                <p className="text-xs text-[#111010]/70 mt-1 leading-relaxed">
+                    <h4 className="mt-1 text-base font-bold text-[#111010] font-[var(--font-jakarta)] truncate">
+                      {q.title}
+                    </h4>
+                  </div>
+                </div>
+                <p className="text-xs text-[#111010]/70 mt-2.5 leading-relaxed">
                   {q.desc}
                 </p>
               </div>

@@ -37,6 +37,10 @@ import {
   BadgeStudentLeader,
   BadgeCleanCommunity,
   BadgeGreenCharter,
+  BadgeFirstFootprint,
+  BadgeGreenSeedling,
+  BadgeCenturyGrove,
+  BadgePilotVanguard,
 } from '@/components/BadgeIllustrations';
 
 export interface StudentGamificationHeroProps {
@@ -59,7 +63,7 @@ export function StudentGamificationHero({
   onLogActivityClick,
 }: StudentGamificationHeroProps) {
   const currentScore = schoolEntry.composite_leaderboard_score;
-  const [badgeFilter, setBadgeFilter] = useState<'all' | 'tracks' | 'milestones' | 'levels'>('all');
+  const [badgeFilter, setBadgeFilter] = useState<'all' | 'tracks' | 'milestones'>('all');
   const [selectedBadgeModal, setSelectedBadgeModal] = useState<any | null>(null);
 
   // Determine current tier, next tier, and remaining points
@@ -179,93 +183,271 @@ export function StudentGamificationHero({
     };
   })();
 
-  // 10 School Achievement Badges & Medals matching user reference image
+  // Track Tier Progression Helper (Tier 1: 0-100 Novice, Tier 2: 101-300 Active, Tier 3: 301-700 Advanced, Tier 4: 701+ Master)
+  const getTrackTier = (pts: number) => {
+    if (pts >= 701) {
+      return {
+        tier: 4,
+        tierName: 'Tier 4: Master',
+        thresholdLabel: '701+ pts',
+        nextTierName: 'Max Master Tier',
+        pointsToNextTier: 0,
+        progressPct: 100,
+      };
+    }
+    if (pts >= 301) {
+      return {
+        tier: 3,
+        tierName: 'Tier 3: Advanced',
+        thresholdLabel: '301 - 700 pts',
+        nextTierName: 'Tier 4: Master',
+        pointsToNextTier: 701 - pts,
+        progressPct: Math.min(100, Math.round(((pts - 301) / (701 - 301)) * 100)),
+      };
+    }
+    if (pts >= 101) {
+      return {
+        tier: 2,
+        tierName: 'Tier 2: Active',
+        thresholdLabel: '101 - 300 pts',
+        nextTierName: 'Tier 3: Advanced',
+        pointsToNextTier: 301 - pts,
+        progressPct: Math.min(100, Math.round(((pts - 101) / (301 - 101)) * 100)),
+      };
+    }
+    return {
+      tier: 1,
+      tierName: 'Tier 1: Novice',
+      thresholdLabel: '0 - 100 pts',
+      nextTierName: 'Tier 2: Active',
+      pointsToNextTier: 101 - pts,
+      progressPct: Math.min(100, Math.round((pts / 101) * 100)),
+    };
+  };
+
+  // Compute points for each of the 6 evaluation tracks
+  const wasteTrackPts = Math.round((schoolEntry.criteria_scores?.relevance ?? 60) * 2.2 + schoolEntry.verified_waste_kg);
+  const wasteTier = getTrackTier(wasteTrackPts);
+
+  const enterpriseTrackPts = Math.round((schoolEntry.criteria_scores?.business ?? 50) * 2.2 + (schoolEntry.verified_revenue_usd * 0.7));
+  const enterpriseTier = getTrackTier(enterpriseTrackPts);
+
+  const actionTrackPts = Math.round((schoolEntry.criteria_scores?.feasibility ?? 70) * 2.4);
+  const actionTier = getTrackTier(actionTrackPts);
+
+  const leaderTrackPts = Math.round((schoolEntry.criteria_scores?.student_ownership ?? 65) * 2.2 + (club.active_members_count * 3));
+  const leaderTier = getTrackTier(leaderTrackPts);
+
+  const communityTrackPts = Math.round((schoolEntry.criteria_scores?.sustainability ?? 60) * 2.4);
+  const communityTier = getTrackTier(communityTrackPts);
+
+  const charterTrackPts = Math.round((schoolEntry.criteria_scores?.institutional_commitment ?? 80) * 2.4);
+  const charterTier = getTrackTier(charterTrackPts);
+
+  // Simplified Gamification Model: 6 Core Track Badges + Milestone Badges
   const allBadgesList = [
-    // 4 Level Medals (Hanging Ribbon Medallions)
+    // --- 6 CORE TRACK BADGES (Evolving Lvl 1 -> Lvl 4) ---
     {
-      id: 'lvl-4',
-      name: 'LEVEL 4',
-      fullName: 'Level 4 • Platinum Eco-Enterprise',
-      type: 'level' as const,
-      category: 'Top Tier',
-      date: currentScore >= 420 ? 'Apr 09, 2026' : 'Locked Tier',
-      metric: '420+ pts',
-      unlocked: currentScore >= 420,
-      xp: '+500 XP',
-      desc: 'Achieved the highest circular enterprise rank in Sri Lanka with Rs. 1,050,000 top-off grant eligibility.',
-      renderIllustration: (size: number) => (
-        <BadgeLevelMedal levelNumber={4} theme="orange" size={size} unlocked={currentScore >= 420} />
-      ),
-    },
-    {
-      id: 'lvl-3',
-      name: 'LEVEL 3',
-      fullName: 'Level 3 • Gold Eco-Warrior',
-      type: 'level' as const,
-      category: 'Tier Unlock',
-      date: currentScore >= 340 ? 'Dec 17, 2025' : 'Locked Tier',
-      metric: '340 - 419 pts',
-      unlocked: currentScore >= 340,
-      xp: '+300 XP',
-      desc: 'Gold Eco-Warrior tier unlocked with Rs. 750,000 top-off grant eligibility.',
-      renderIllustration: (size: number) => (
-        <BadgeLevelMedal levelNumber={3} theme="yellow" size={size} unlocked={currentScore >= 340} />
-      ),
-    },
-    {
-      id: 'lvl-2',
-      name: 'LEVEL 2',
-      fullName: 'Level 2 • Silver School Club',
-      type: 'level' as const,
-      category: 'Tier Unlock',
-      date: currentScore >= 260 ? 'Sep 25, 2025' : 'Locked Tier',
-      metric: '260 - 339 pts',
-      unlocked: currentScore >= 260,
-      xp: '+200 XP',
-      desc: 'Silver Upcycler tier unlocked with Rs. 450,000 top-off grant eligibility.',
-      renderIllustration: (size: number) => (
-        <BadgeLevelMedal levelNumber={2} theme="navy" size={size} unlocked={currentScore >= 260} />
-      ),
-    },
-    {
-      id: 'lvl-1',
-      name: 'LEVEL 1',
-      fullName: 'Level 1 • Rising Green Club',
-      type: 'level' as const,
-      category: 'Baseline',
-      date: 'Aug 26, 2025',
-      metric: 'Baseline Tier',
+      id: 'track_waste_to_value',
+      name: 'WASTE TO VALUE',
+      fullName: 'Waste-to-Value Champion',
+      type: 'track' as const,
+      trackKey: 'waste_to_value',
+      category: '6 Core Tracks',
+      date: `${wasteTier.tierName} (${wasteTrackPts} pts)`,
+      metric: `${wasteTier.tierName} • ${wasteTrackPts} pts`,
       unlocked: true,
-      xp: '+100 XP',
-      desc: 'Participating Sri Lankan School Eco Club registered for official 2026 GIZ national pilot.',
+      xp: `+${wasteTrackPts} XP`,
+      currentPoints: wasteTrackPts,
+      tierLevel: wasteTier.tier,
+      tierName: wasteTier.tierName,
+      nextTierName: wasteTier.nextTierName,
+      pointsToNextTier: wasteTier.pointsToNextTier,
+      progressPct: wasteTier.progressPct,
+      desc: 'Sorting routines, campus composting batches, and upcycled products diverted from landfills.',
       renderIllustration: (size: number) => (
-        <BadgeLevelMedal levelNumber={1} theme="teal" size={size} unlocked={true} />
+        <BadgeWasteToValue size={size} unlocked={true} />
+      ),
+    },
+    {
+      id: 'track_school_enterprise',
+      name: 'ENTERPRISE STAR',
+      fullName: 'School Enterprise Star',
+      type: 'track' as const,
+      trackKey: 'school_enterprise',
+      category: '6 Core Tracks',
+      date: `${enterpriseTier.tierName} (${enterpriseTrackPts} pts)`,
+      metric: `${enterpriseTier.tierName} • ${enterpriseTrackPts} pts`,
+      unlocked: true,
+      xp: `+${enterpriseTrackPts} XP`,
+      currentPoints: enterpriseTrackPts,
+      tierLevel: enterpriseTier.tier,
+      tierName: enterpriseTier.tierName,
+      nextTierName: enterpriseTier.nextTierName,
+      pointsToNextTier: enterpriseTier.pointsToNextTier,
+      progressPct: enterpriseTier.progressPct,
+      desc: 'Sales revenue generated through school bookshops, green fairs, and seedling nursery sales.',
+      renderIllustration: (size: number) => (
+        <BadgeSchoolEnterprise size={size} unlocked={true} />
+      ),
+    },
+    {
+      id: 'track_action_ready',
+      name: 'ACTION READY',
+      fullName: 'Action Ready Club',
+      type: 'track' as const,
+      trackKey: 'action_ready',
+      category: '6 Core Tracks',
+      date: `${actionTier.tierName} (${actionTrackPts} pts)`,
+      metric: `${actionTier.tierName} • ${actionTrackPts} pts`,
+      unlocked: true,
+      xp: `+${actionTrackPts} XP`,
+      currentPoints: actionTrackPts,
+      tierLevel: actionTier.tier,
+      tierName: actionTier.tierName,
+      nextTierName: actionTier.nextTierName,
+      pointsToNextTier: actionTier.pointsToNextTier,
+      progressPct: actionTier.progressPct,
+      desc: 'Campus sorting bins installed, tools maintained, and 4+ consecutive weeks of active logging.',
+      renderIllustration: (size: number) => (
+        <BadgeActionReady size={size} unlocked={true} />
+      ),
+    },
+    {
+      id: 'track_student_leader',
+      name: 'STUDENT LEADER',
+      fullName: 'Student Eco-Leader',
+      type: 'track' as const,
+      trackKey: 'student_leader',
+      category: '6 Core Tracks',
+      date: `${leaderTier.tierName} (${leaderTrackPts} pts)`,
+      metric: `${leaderTier.tierName} • ${leaderTrackPts} pts`,
+      unlocked: true,
+      xp: `+${leaderTrackPts} XP`,
+      currentPoints: leaderTrackPts,
+      tierLevel: leaderTier.tier,
+      tierName: leaderTier.tierName,
+      nextTierName: leaderTier.nextTierName,
+      pointsToNextTier: leaderTier.pointsToNextTier,
+      progressPct: leaderTier.progressPct,
+      desc: 'Student ownership, after-school collection shifts, peer team leadership, and junior mentoring.',
+      renderIllustration: (size: number) => (
+        <BadgeStudentLeader size={size} unlocked={true} />
+      ),
+    },
+    {
+      id: 'track_clean_community',
+      name: 'CLEAN COMMUNITY',
+      fullName: 'Clean Green Community',
+      type: 'track' as const,
+      trackKey: 'clean_community',
+      category: '6 Core Tracks',
+      date: `${communityTier.tierName} (${communityTrackPts} pts)`,
+      metric: `${communityTier.tierName} • ${communityTrackPts} pts`,
+      unlocked: true,
+      xp: `+${communityTrackPts} XP`,
+      currentPoints: communityTrackPts,
+      tierLevel: communityTier.tier,
+      tierName: communityTier.tierName,
+      nextTierName: communityTier.nextTierName,
+      pointsToNextTier: communityTier.pointsToNextTier,
+      progressPct: communityTier.progressPct,
+      desc: 'School tree planting, shramadana border cleanups, and diverting recyclables from community dumps.',
+      renderIllustration: (size: number) => (
+        <BadgeCleanCommunity size={size} unlocked={true} />
+      ),
+    },
+    {
+      id: 'track_green_charter',
+      name: 'GREEN CHARTER',
+      fullName: 'Green Charter School',
+      type: 'track' as const,
+      trackKey: 'green_charter',
+      category: '6 Core Tracks',
+      date: `${charterTier.tierName} (${charterTrackPts} pts)`,
+      metric: `${charterTier.tierName} • ${charterTrackPts} pts`,
+      unlocked: true,
+      xp: `+${charterTrackPts} XP`,
+      currentPoints: charterTrackPts,
+      tierLevel: charterTier.tier,
+      tierName: charterTier.tierName,
+      nextTierName: charterTier.nextTierName,
+      pointsToNextTier: charterTier.pointsToNextTier,
+      progressPct: charterTier.progressPct,
+      desc: 'Principal-authorized green club charter and school-wide ban on single-use lunch sheet wrappers.',
+      renderIllustration: (size: number) => (
+        <BadgeGreenCharter size={size} unlocked={true} />
       ),
     },
 
-    // 6 Core Enterprise & Milestone Badges (Illustrated Medallions matching reference image)
+    // --- PLATFORM MILESTONE BADGES (Cumulative Benchmarks & Feats) ---
     {
-      id: 'gps-guardian',
-      name: 'GPS GUARDIAN',
-      fullName: 'EXIF GPS Guardian',
+      id: 'milestone_first_action',
+      name: 'FIRST FOOTPRINT',
+      fullName: 'First Footprint',
       type: 'milestone' as const,
-      category: 'Geofence',
-      date: 'Oct 02, 2025',
-      metric: '100% On-Campus',
-      unlocked: true,
-      xp: '+50 XP',
-      desc: 'All photos submitted as uncompressed files inside school GPS geofence radius.',
+      category: 'Milestones',
+      date: currentScore >= 25 ? 'Earned' : 'Locked Milestone',
+      metric: '25+ pts Cumulative',
+      unlocked: currentScore >= 25,
+      xp: '+25 XP',
+      desc: 'Earned your first 25 cumulative points across any sustainability tracks.',
       renderIllustration: (size: number) => (
-        <BadgeGpsGuardian size={size} unlocked={true} />
+        <BadgeFirstFootprint size={size} unlocked={currentScore >= 25} />
       ),
     },
     {
-      id: 'zero-waste',
+      id: 'milestone_500_club',
+      name: 'GREEN SEEDLING',
+      fullName: 'Green Seedling',
+      type: 'milestone' as const,
+      category: 'Milestones',
+      date: currentScore >= 500 ? 'Earned' : 'Locked Milestone',
+      metric: '500+ pts Cumulative',
+      unlocked: currentScore >= 500,
+      xp: '+50 XP',
+      desc: 'Crossed 500 cumulative points across school circular activities.',
+      renderIllustration: (size: number) => (
+        <BadgeGreenSeedling size={size} unlocked={currentScore >= 500} />
+      ),
+    },
+    {
+      id: 'milestone_1000_club',
+      name: 'CENTURY GROVE',
+      fullName: 'Century Grove',
+      type: 'milestone' as const,
+      category: 'Milestones',
+      date: currentScore >= 1000 ? 'Earned' : 'Locked Milestone',
+      metric: '1,000+ pts Cumulative',
+      unlocked: currentScore >= 1000,
+      xp: '+150 XP',
+      desc: 'Exceeded 1,000 cumulative points demonstrating sustained circular enterprise leadership.',
+      renderIllustration: (size: number) => (
+        <BadgeCenturyGrove size={size} unlocked={currentScore >= 1000} />
+      ),
+    },
+    {
+      id: 'milestone_2500_club',
+      name: 'PILOT VANGUARD',
+      fullName: 'National Pilot Vanguard',
+      type: 'milestone' as const,
+      category: 'Milestones',
+      date: currentScore >= 2500 ? 'Earned' : 'Locked Milestone',
+      metric: '2,500+ pts Cumulative',
+      unlocked: currentScore >= 2500,
+      xp: '+500 XP',
+      desc: 'National pilot vanguard exceeding 2,500 aggregate points across all six pillars.',
+      renderIllustration: (size: number) => (
+        <BadgePilotVanguard size={size} unlocked={currentScore >= 2500} />
+      ),
+    },
+    {
+      id: 'milestone_zero_waste_100kg',
       name: 'ZERO-WASTE 100KG',
       fullName: '100 kg Zero-Waste Milestone',
       type: 'milestone' as const,
-      category: 'Circularity',
-      date: schoolEntry.verified_waste_kg >= 100 ? 'Oct 10, 2025' : 'In Progress',
+      category: 'Milestones',
+      date: schoolEntry.verified_waste_kg >= 100 ? 'Earned' : 'In Progress',
       metric: `${schoolEntry.verified_waste_kg} / 100 kg`,
       unlocked: schoolEntry.verified_waste_kg >= 100,
       xp: '+100 XP',
@@ -275,155 +457,18 @@ export function StudentGamificationHero({
       ),
     },
     {
-      id: 'pola-pioneer',
-      name: 'POLA PIONEER',
-      fullName: 'Haritha Pola Pioneer',
-      type: 'milestone' as const,
-      category: 'Enterprise',
-      date: schoolEntry.verified_revenue_usd >= 100 ? 'Nov 14, 2025' : 'In Progress',
-      metric: formatLkr(schoolEntry.verified_revenue_usd),
-      unlocked: schoolEntry.verified_revenue_usd >= 100,
-      xp: '+100 XP',
-      desc: 'Generated over Rs. 30,000 from verified student enterprise circular product sales.',
-      renderIllustration: (size: number) => (
-        <BadgePolaPioneer size={size} unlocked={schoolEntry.verified_revenue_usd >= 100} />
-      ),
-    },
-    {
-      id: 'pitch-star',
-      name: 'PITCH STAR',
-      fullName: 'National Pitch Star',
-      type: 'milestone' as const,
-      category: 'Adjudication',
-      date: schoolEntry.macro_points_total > 0 ? 'Dec 02, 2025' : 'Awaiting Pitch',
-      metric: schoolEntry.macro_points_total > 0 ? 'Panel Scored' : 'Macro Sale',
-      unlocked: schoolEntry.macro_points_total > 0,
-      xp: '+150 XP',
-      desc: 'High-value enterprise sale (> Rs. 15,000) scored by the National Expert Panel across 6 criteria.',
-      renderIllustration: (size: number) => (
-        <BadgePitchStar size={size} unlocked={schoolEntry.macro_points_total > 0} />
-      ),
-    },
-    {
-      id: 'audit-shield',
+      id: 'milestone_clean_audit',
       name: 'AUDIT SHIELD',
       fullName: 'Clean Audit Shield',
       type: 'milestone' as const,
-      category: 'Integrity',
-      date: schoolEntry.penalty_points_deducted === 0 ? 'Jan 15, 2026' : 'Penalty Flag',
+      category: 'Milestones',
+      date: schoolEntry.penalty_points_deducted === 0 ? 'Active Shield' : 'Penalty Flag',
       metric: schoolEntry.penalty_points_deducted === 0 ? '0 Deductions' : `-${schoolEntry.penalty_points_deducted} pts`,
       unlocked: schoolEntry.penalty_points_deducted === 0,
       xp: 'Active Shield',
-      desc: 'Passed the 10% random micro transaction audit with zero fraud flags or location penalties.',
+      desc: 'Passed the random micro transaction audit with zero fraud flags or location penalties.',
       renderIllustration: (size: number) => (
         <BadgeAuditShield size={size} unlocked={schoolEntry.penalty_points_deducted === 0} />
-      ),
-    },
-    {
-      id: 'committee',
-      name: 'COMMITTEE',
-      fullName: 'Circular Student Committee',
-      type: 'milestone' as const,
-      category: 'Leadership',
-      date: club.active_members_count >= 10 ? 'Feb 01, 2026' : 'Recruiting',
-      metric: `${club.active_members_count} Students`,
-      unlocked: club.active_members_count >= 10,
-      xp: '+75 XP',
-      desc: 'Active student committee driving circular collection, sales, and ledger reporting.',
-      renderIllustration: (size: number) => (
-        <BadgeCommittee size={size} unlocked={club.active_members_count >= 10} />
-      ),
-    },
-
-    // 6 Localized Sri Lankan National Tracks (Seeded from Supabase eu-central-1)
-    {
-      id: 'track-waste',
-      name: 'WASTE TO VALUE',
-      fullName: 'Waste-to-Value Champion',
-      type: 'track' as const,
-      category: 'Circular Economy',
-      date: schoolEntry.verified_waste_kg >= 100 ? 'Level 2 Unlocked' : 'Level 1 Active',
-      metric: schoolEntry.verified_waste_kg >= 100 ? 'L2 • Compost Maker' : 'L1 • Green Sorter',
-      unlocked: true,
-      xp: schoolEntry.verified_waste_kg >= 100 ? '+100 XP' : '+50 XP',
-      desc: 'Sorting routines, campus composting batches, and upcycled products diverted from landfills.',
-      renderIllustration: (size: number) => (
-        <BadgeWasteToValue size={size} unlocked={true} />
-      ),
-    },
-    {
-      id: 'track-enterprise',
-      name: 'ENTERPRISE STAR',
-      fullName: 'School Enterprise Star',
-      type: 'track' as const,
-      category: 'Business & Revenue',
-      date: schoolEntry.verified_revenue_usd >= 100 ? 'Level 2 Unlocked' : 'Level 1 Active',
-      metric: schoolEntry.verified_revenue_usd >= 100 ? 'L2 • Market Grower' : 'L1 • First Sale',
-      unlocked: true,
-      xp: schoolEntry.verified_revenue_usd >= 100 ? '+100 XP' : '+50 XP',
-      desc: 'Sales revenue generated through school bookshops, green fairs, and seedling nursery sales.',
-      renderIllustration: (size: number) => (
-        <BadgeSchoolEnterprise size={size} unlocked={true} />
-      ),
-    },
-    {
-      id: 'track-action',
-      name: 'ACTION READY',
-      fullName: 'Action Ready Club',
-      type: 'track' as const,
-      category: 'Feasibility & Readiness',
-      date: 'Level 2 Unlocked',
-      metric: 'L2 • Steady Keeper',
-      unlocked: true,
-      xp: '+76 XP',
-      desc: 'Campus sorting bins installed, tools maintained, and 4+ consecutive weeks of active logging.',
-      renderIllustration: (size: number) => (
-        <BadgeActionReady size={size} unlocked={true} />
-      ),
-    },
-    {
-      id: 'track-leader',
-      name: 'STUDENT LEADER',
-      fullName: 'Student Eco-Leader',
-      type: 'track' as const,
-      category: 'Ownership & Leadership',
-      date: club.active_members_count >= 10 ? 'Level 2 Unlocked' : 'Level 1 Active',
-      metric: club.active_members_count >= 10 ? 'L2 • Team Organizer' : 'L1 • Active Member',
-      unlocked: true,
-      xp: club.active_members_count >= 10 ? '+100 XP' : '+50 XP',
-      desc: 'Student ownership, after-school collection shifts, peer team leadership, and junior mentoring.',
-      renderIllustration: (size: number) => (
-        <BadgeStudentLeader size={size} unlocked={true} />
-      ),
-    },
-    {
-      id: 'track-community',
-      name: 'CLEAN COMMUNITY',
-      fullName: 'Clean Green Community',
-      type: 'track' as const,
-      category: 'Sustainability & Impact',
-      date: 'Level 2 Unlocked',
-      metric: 'L2 • Neighborhood Helper',
-      unlocked: true,
-      xp: '+100 XP',
-      desc: 'School tree planting, shramadana border cleanups, and diverting recyclables from community dumps.',
-      renderIllustration: (size: number) => (
-        <BadgeCleanCommunity size={size} unlocked={true} />
-      ),
-    },
-    {
-      id: 'track-charter',
-      name: 'GREEN CHARTER',
-      fullName: 'Green Charter School',
-      type: 'track' as const,
-      category: 'Institutional Commitment',
-      date: 'Level 2 Unlocked',
-      metric: 'L2 • Clean Canteen',
-      unlocked: true,
-      xp: '+100 XP',
-      desc: 'Principal-authorized green club charter and school-wide ban on single-use lunch sheet wrappers.',
-      renderIllustration: (size: number) => (
-        <BadgeGreenCharter size={size} unlocked={true} />
       ),
     },
   ];
@@ -431,7 +476,6 @@ export function StudentGamificationHero({
   const displayedBadges = allBadgesList.filter((b) => {
     if (badgeFilter === 'tracks') return b.type === 'track';
     if (badgeFilter === 'milestones') return b.type === 'milestone';
-    if (badgeFilter === 'levels') return b.type === 'level';
     return true;
   });
 
@@ -604,7 +648,7 @@ export function StudentGamificationHero({
                   : 'text-[#111010]/70 hover:text-[#111010]'
               }`}
             >
-              6 Tracks (6)
+              6 Core Tracks ({allBadgesList.filter((b) => b.type === 'track').length})
             </button>
             <button
               onClick={() => setBadgeFilter('milestones')}
@@ -614,17 +658,7 @@ export function StudentGamificationHero({
                   : 'text-[#111010]/70 hover:text-[#111010]'
               }`}
             >
-              Milestones (6)
-            </button>
-            <button
-              onClick={() => setBadgeFilter('levels')}
-              className={`px-3 py-1 rounded-full font-semibold transition cursor-pointer ${
-                badgeFilter === 'levels'
-                  ? 'bg-[#005FA3] text-[#9CF2F2] shadow-xs'
-                  : 'text-[#111010]/70 hover:text-[#111010]'
-              }`}
-            >
-              Levels (4)
+              Milestones ({allBadgesList.filter((b) => b.type === 'milestone').length})
             </button>
           </div>
         </div>
@@ -793,18 +827,55 @@ export function StudentGamificationHero({
               </p>
             </div>
 
-            <div className="p-3 bg-[#F8FAFC] rounded-2xl border border-[#111010]/10 flex items-center justify-between text-xs font-semibold">
-              <span className="text-[#111010]/70">Status:</span>
-              {selectedBadgeModal.unlocked ? (
-                <span className="text-emerald-700 font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Unlocked ({selectedBadgeModal.date})
-                </span>
-              ) : (
-                <span className="text-slate-500 flex items-center gap-1">
-                  <Lock className="w-3.5 h-3.5" /> Locked Milestone
-                </span>
-              )}
-            </div>
+            {/* Track Tier Progression Ladder or Milestone Status */}
+            {selectedBadgeModal.type === 'track' ? (
+              <div className="p-3.5 bg-[#F8FAFC] rounded-2xl border border-[#111010]/10 space-y-2.5 text-left">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="text-[#111010]/70">Track Status:</span>
+                  <span className="text-[#005FA3] font-bold">
+                    {selectedBadgeModal.tierName} ({selectedBadgeModal.currentPoints} pts)
+                  </span>
+                </div>
+                <div className="text-[11px] text-[#111010]/75">
+                  {selectedBadgeModal.pointsToNextTier > 0 ? (
+                    <span>
+                      Next: <strong className="text-[#111010]">{selectedBadgeModal.nextTierName}</strong> — {selectedBadgeModal.pointsToNextTier} pts remaining
+                    </span>
+                  ) : (
+                    <span className="text-emerald-700 font-bold">
+                      ★ Maximum Master Tier Achieved!
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-4 gap-1 text-[9px] font-mono text-center pt-1">
+                  <div className={`p-1.5 rounded ${selectedBadgeModal.tierLevel >= 1 ? 'bg-[#005FA3] text-[#9CF2F2] font-bold shadow-xs' : 'bg-slate-100 text-slate-400'}`}>
+                    Tier 1 Novice
+                  </div>
+                  <div className={`p-1.5 rounded ${selectedBadgeModal.tierLevel >= 2 ? 'bg-[#005FA3] text-[#9CF2F2] font-bold shadow-xs' : 'bg-slate-100 text-slate-400'}`}>
+                    Tier 2 Active
+                  </div>
+                  <div className={`p-1.5 rounded ${selectedBadgeModal.tierLevel >= 3 ? 'bg-[#005FA3] text-[#9CF2F2] font-bold shadow-xs' : 'bg-slate-100 text-slate-400'}`}>
+                    Tier 3 Adv.
+                  </div>
+                  <div className={`p-1.5 rounded ${selectedBadgeModal.tierLevel >= 4 ? 'bg-[#005FA3] text-[#9CF2F2] font-bold shadow-xs' : 'bg-slate-100 text-slate-400'}`}>
+                    Tier 4 Master
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-[#F8FAFC] rounded-2xl border border-[#111010]/10 flex items-center justify-between text-xs font-semibold">
+                <span className="text-[#111010]/70">Milestone Status:</span>
+                {selectedBadgeModal.unlocked ? (
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Unlocked ({selectedBadgeModal.date})
+                  </span>
+                ) : (
+                  <span className="text-slate-500 flex items-center gap-1">
+                    <Lock className="w-3.5 h-3.5" /> Locked Milestone ({selectedBadgeModal.metric})
+                  </span>
+                )}
+              </div>
+            )}
 
             <button
               onClick={() => setSelectedBadgeModal(null)}

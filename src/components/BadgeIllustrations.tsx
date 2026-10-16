@@ -430,7 +430,7 @@ export function BadgeLevelMedal({
 }
 
 /**
- * 8. Waste-to-Value Champion Track Badge (Circular Economy & Compost Maker)
+ * 8. Waste-to-Value Champion Track Badge (Circular Economy & Composting)
  */
 export function BadgeWasteToValue({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
   if (!unlocked) {
@@ -464,7 +464,7 @@ export function BadgeWasteToValue({ size = 88, className = '', unlocked = true }
 }
 
 /**
- * 9. School Enterprise Star Track Badge (Sales, First Sale, Market Grower)
+ * 9. School Enterprise Star Track Badge (Sales, Revenue & Green Pola)
  */
 export function BadgeSchoolEnterprise({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
   if (!unlocked) {
@@ -530,7 +530,7 @@ export function BadgeActionReady({ size = 88, className = '', unlocked = true }:
 }
 
 /**
- * 11. Student Eco-Leader Track Badge (Ownership, Team Organizer, Senior Leader)
+ * 11. Student Eco-Leader Track Badge (Student Ownership & Peer Leadership)
  */
 export function BadgeStudentLeader({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
   if (!unlocked) {
@@ -560,7 +560,7 @@ export function BadgeStudentLeader({ size = 88, className = '', unlocked = true 
 }
 
 /**
- * 12. Clean Green Community Track Badge (Campus Cleaner, Shramadana, Nature Guardian)
+ * 12. Clean Green Community Track Badge (Campus Beautification, Shramadana & Community Impact)
  */
 export function BadgeCleanCommunity({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
   if (!unlocked) {
@@ -592,7 +592,7 @@ export function BadgeCleanCommunity({ size = 88, className = '', unlocked = true
 }
 
 /**
- * 13. Green Charter School Track Badge (Principal Support, Clean Canteen, Model School)
+ * 13. Green Charter School Track Badge (Principal Commitment, Institutional Policy & Charter)
  */
 export function BadgeGreenCharter({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
   if (!unlocked) {
@@ -621,6 +621,146 @@ export function BadgeGreenCharter({ size = 88, className = '', unlocked = true }
       <path d="M45 54L47 56L51 52" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       {/* Seal Hanging Ribbons */}
       <path d="M45 60L42 70L48 66L54 70L51 60" fill="#047857" />
+    </svg>
+  );
+}
+
+/**
+ * 14. First Footprint Milestone Badge (25 pts)
+ */
+export function BadgeFirstFootprint({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
+  if (!unlocked) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+        <circle cx="48" cy="48" r="46" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="2" />
+        <rect x="42" y="44" width="12" height="10" rx="2" fill="#94A3B8" />
+        <path d="M45 44V40C45 38.3431 46.3431 37 48 37C49.6569 37 51 38.3431 51 40V44" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+      <circle cx="48" cy="48" r="46" fill="#0369A1" />
+      <circle cx="48" cy="48" r="43" fill="#0EA5E9" />
+      <circle cx="48" cy="48" r="40" fill="#0284C7" />
+      {/* Sandy Footprint Pathway */}
+      <ellipse cx="48" cy="56" rx="14" ry="18" fill="#F8FAFC" opacity="0.95" />
+      <circle cx="40" cy="32" r="3.5" fill="#F8FAFC" />
+      <circle cx="46" cy="30" r="3.8" fill="#F8FAFC" />
+      <circle cx="53" cy="31" r="3.5" fill="#F8FAFC" />
+      <circle cx="59" cy="34" r="3" fill="#F8FAFC" />
+      {/* Sprouting Green Leaf on Footprint */}
+      <path d="M48 60C48 48 42 42 42 42C42 42 40 52 48 60Z" fill="#10B981" />
+      <path d="M48 60C48 48 54 42 54 42C54 42 56 52 48 60Z" fill="#34D399" />
+      <path d="M48 46V62" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/**
+ * 15. Green Seedling (500 pts) Milestone Badge
+ */
+export function BadgeGreenSeedling({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
+  if (!unlocked) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+        <circle cx="48" cy="48" r="46" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="2" />
+        <rect x="42" y="44" width="12" height="10" rx="2" fill="#94A3B8" />
+        <path d="M45 44V40C45 38.3431 46.3431 37 48 37C49.6569 37 51 38.3431 51 40V44" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+      <circle cx="48" cy="48" r="46" fill="#15803D" />
+      <circle cx="48" cy="48" r="43" fill="#22C55E" />
+      <circle cx="48" cy="48" r="40" fill="#16A34A" />
+      {/* Golden 500 Pts Ribbon */}
+      <circle cx="48" cy="48" r="32" stroke="#FDE047" strokeWidth="2" strokeDasharray="18 4" opacity="0.8" />
+      {/* Sprout Stem and Soil Mound */}
+      <ellipse cx="48" cy="68" rx="20" ry="6" fill="#78350F" />
+      <path d="M48 68V42" stroke="#FDE047" strokeWidth="3" strokeLinecap="round" />
+      {/* Leaf Wings */}
+      <path d="M48 48C36 48 32 36 32 36C32 36 44 36 48 48Z" fill="#BBF7D0" />
+      <path d="M48 42C60 42 64 30 64 30C64 30 52 30 48 42Z" fill="#86EFAC" />
+      <circle cx="48" cy="38" r="3" fill="#FACC15" />
+      <text x="48" y="76" fontSize="7" fontWeight="bold" textAnchor="middle" fill="#FEF08A">500 PTS</text>
+    </svg>
+  );
+}
+
+/**
+ * 16. Century Grove (1,000 pts) Milestone Badge
+ */
+export function BadgeCenturyGrove({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
+  if (!unlocked) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+        <circle cx="48" cy="48" r="46" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="2" />
+        <rect x="42" y="44" width="12" height="10" rx="2" fill="#94A3B8" />
+        <path d="M45 44V40C45 38.3431 46.3431 37 48 37C49.6569 37 51 38.3431 51 40V44" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+      <circle cx="48" cy="48" r="46" fill="#14532D" />
+      <circle cx="48" cy="48" r="43" fill="#15803D" />
+      <circle cx="48" cy="48" r="40" fill="#166534" />
+      {/* Golden Canopy Halo */}
+      <circle cx="48" cy="38" r="28" fill="#FBBF24" opacity="0.25" />
+      {/* Mighty Tree Canopy */}
+      <circle cx="48" cy="36" r="16" fill="#4ADE80" />
+      <circle cx="36" cy="40" r="12" fill="#22C55E" />
+      <circle cx="60" cy="40" r="12" fill="#16A34A" />
+      {/* Tree Trunk */}
+      <rect x="44" y="48" width="8" height="20" rx="2" fill="#78350F" />
+      <ellipse cx="48" cy="68" rx="22" ry="5" fill="#451A03" />
+      {/* 1,000 PTS Banner */}
+      <rect x="26" y="66" width="44" height="11" rx="3" fill="#FBBF24" stroke="#B45309" strokeWidth="1" />
+      <text x="48" y="74.5" fontSize="7" fontWeight="800" textAnchor="middle" fill="#78350F" fontFamily="var(--font-jakarta)">1,000 PTS</text>
+    </svg>
+  );
+}
+
+/**
+ * 17. National Pilot Vanguard (2,500 pts) Milestone Badge
+ */
+export function BadgePilotVanguard({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
+  if (!unlocked) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+        <circle cx="48" cy="48" r="46" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="2" />
+        <rect x="42" y="44" width="12" height="10" rx="2" fill="#94A3B8" />
+        <path d="M45 44V40C45 38.3431 46.3431 37 48 37C49.6569 37 51 38.3431 51 40V44" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+      {/* Royal Amethyst & Gold */}
+      <circle cx="48" cy="48" r="46" fill="#581C87" />
+      <circle cx="48" cy="48" r="43" fill="#7E22CE" />
+      <circle cx="48" cy="48" r="40" fill="#6B21A8" />
+      {/* Golden Starburst Rays */}
+      <path d="M48 16L51 26L61 22L54 30L64 34L53 38L61 46L50 44L52 55L44 48L40 58L38 47L28 52L34 43L24 40L34 35L28 27L37 30L38 19L44 28L48 16Z" fill="#FDE047" opacity="0.3" />
+      {/* Vanguard Golden Crown */}
+      <path d="M26 54L32 34L42 44L48 26L54 44L64 34L70 54H26Z" fill="#FBBF24" stroke="#B45309" strokeWidth="1.5" />
+      <circle cx="32" cy="34" r="2.5" fill="#EF4444" />
+      <circle cx="48" cy="26" r="3" fill="#38BDF8" />
+      <circle cx="64" cy="34" r="2.5" fill="#EF4444" />
+      {/* Crown Inset Jewels */}
+      <rect x="30" y="52" width="36" height="6" rx="2" fill="#D97706" />
+      <circle cx="40" cy="55" r="1.5" fill="#FFFFFF" />
+      <circle cx="48" cy="55" r="1.5" fill="#FFFFFF" />
+      <circle cx="56" cy="55" r="1.5" fill="#FFFFFF" />
+      {/* 2,500 PTS Banner */}
+      <rect x="22" y="64" width="52" height="12" rx="3" fill="#FEF08A" stroke="#CA8A04" strokeWidth="1.2" />
+      <text x="48" y="73" fontSize="7.5" fontWeight="900" textAnchor="middle" fill="#713F12" fontFamily="var(--font-jakarta)">VANGUARD • 2.5K</text>
     </svg>
   );
 }

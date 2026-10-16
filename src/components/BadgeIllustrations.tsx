@@ -428,3 +428,199 @@ export function BadgeLevelMedal({
     </svg>
   );
 }
+
+/**
+ * 8. Waste-to-Value Champion Track Badge (Circular Economy & Compost Maker)
+ */
+export function BadgeWasteToValue({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
+  if (!unlocked) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+        <circle cx="48" cy="48" r="46" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="2" />
+        <rect x="42" y="44" width="12" height="10" rx="2" fill="#94A3B8" />
+        <path d="M45 44V40C45 38.3431 46.3431 37 48 37C49.6569 37 51 38.3431 51 40V44" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+      <circle cx="48" cy="48" r="46" fill="#065F46" />
+      <circle cx="48" cy="48" r="43" fill="#059669" />
+      <circle cx="48" cy="48" r="40" fill="#047857" />
+      <circle cx="48" cy="48" r="32" stroke="#6EE7B7" strokeWidth="2" strokeDasharray="6 4" opacity="0.6" />
+      {/* Compost Pot & Sprouting Leaves */}
+      <path d="M34 52C34 66 40 72 48 72C56 72 62 66 62 52H34Z" fill="#064E3B" />
+      <rect x="32" y="48" width="32" height="5" rx="2" fill="#34D399" />
+      {/* Twin Sprouting Leaves */}
+      <path d="M48 48C48 34 38 24 38 24C38 24 36 38 48 48Z" fill="#A7F3D0" />
+      <path d="M48 48C48 34 58 24 58 24C58 24 60 38 48 48Z" fill="#34D399" />
+      <path d="M48 28V48" stroke="#065F46" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Recycling Arc Arrow */}
+      <path d="M26 44C26 34 34 26 44 26" stroke="#FDE68A" strokeWidth="2" strokeLinecap="round" />
+      <polygon points="44,23 48,26 44,29" fill="#FDE68A" />
+    </svg>
+  );
+}
+
+/**
+ * 9. School Enterprise Star Track Badge (Sales, First Sale, Market Grower)
+ */
+export function BadgeSchoolEnterprise({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
+  if (!unlocked) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+        <circle cx="48" cy="48" r="46" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="2" />
+        <rect x="42" y="44" width="12" height="10" rx="2" fill="#94A3B8" />
+        <path d="M45 44V40C45 38.3431 46.3431 37 48 37C49.6569 37 51 38.3431 51 40V44" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+      <circle cx="48" cy="48" r="46" fill="#92400E" />
+      <circle cx="48" cy="48" r="43" fill="#D97706" />
+      <circle cx="48" cy="48" r="40" fill="#B45309" />
+      {/* Pola Market Stall Awning */}
+      <path d="M26 38L30 26H66L70 38H26Z" fill="#15803D" />
+      <path d="M34 26L32 38H40L42 26H34Z" fill="#FFFFFF" />
+      <path d="M50 26L48 38H56L58 26H50Z" fill="#FFFFFF" />
+      {/* Wooden Table Counter */}
+      <rect x="28" y="42" width="40" height="6" rx="1.5" fill="#78350F" />
+      <rect x="30" y="48" width="36" height="18" fill="#B45309" />
+      {/* Gold Price Tag with Rs */}
+      <circle cx="48" cy="58" r="10" fill="#FBBF24" stroke="#78350F" strokeWidth="1.5" />
+      <text x="48" y="62" fontSize="9" fontWeight="800" textAnchor="middle" fill="#78350F" fontFamily="var(--font-jakarta)">Rs</text>
+    </svg>
+  );
+}
+
+/**
+ * 10. Action Ready Club Track Badge (Readiness, Tools & Bins)
+ */
+export function BadgeActionReady({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
+  if (!unlocked) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+        <circle cx="48" cy="48" r="46" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="2" />
+        <rect x="42" y="44" width="12" height="10" rx="2" fill="#94A3B8" />
+        <path d="M45 44V40C45 38.3431 46.3431 37 48 37C49.6569 37 51 38.3431 51 40V44" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+      <circle cx="48" cy="48" r="46" fill="#0C4A6E" />
+      <circle cx="48" cy="48" r="43" fill="#0284C7" />
+      <circle cx="48" cy="48" r="40" fill="#0369A1" />
+      {/* Calibration Gear & Checkmark Disc */}
+      <circle cx="48" cy="48" r="26" fill="#0284C7" stroke="#38BDF8" strokeWidth="2" />
+      {/* Crossed Garden Trowel and Rake */}
+      <path d="M36 62L60 38" stroke="#F1F5F9" strokeWidth="3" strokeLinecap="round" />
+      <path d="M60 38L64 34L62 30L56 34L60 38Z" fill="#FBBF24" />
+      <path d="M60 62L36 38" stroke="#F1F5F9" strokeWidth="3" strokeLinecap="round" />
+      <path d="M36 38L32 34L34 30L40 34L36 38Z" fill="#38BDF8" />
+      {/* Center Ready Star Badge */}
+      <circle cx="48" cy="50" r="11" fill="#10B981" stroke="#FFFFFF" strokeWidth="2" />
+      <path d="M44 50L47 53L53 46" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/**
+ * 11. Student Eco-Leader Track Badge (Ownership, Team Organizer, Senior Leader)
+ */
+export function BadgeStudentLeader({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
+  if (!unlocked) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+        <circle cx="48" cy="48" r="46" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="2" />
+        <rect x="42" y="44" width="12" height="10" rx="2" fill="#94A3B8" />
+        <path d="M45 44V40C45 38.3431 46.3431 37 48 37C49.6569 37 51 38.3431 51 40V44" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+      <circle cx="48" cy="48" r="46" fill="#312E81" />
+      <circle cx="48" cy="48" r="43" fill="#4F46E5" />
+      <circle cx="48" cy="48" r="40" fill="#3730A3" />
+      {/* Student Leader Shield & Torch */}
+      <path d="M48 20L66 28C66 48 56 64 48 70C40 64 30 48 30 28L48 20Z" fill="#FBBF24" />
+      <path d="M48 20L30 28C30 48 40 64 48 70V20Z" fill="#F59E0B" />
+      {/* Inset Star */}
+      <polygon points="48,34 51,42 59,42 53,47 55,55 48,50 41,55 43,47 37,42 45,42" fill="#FFFFFF" />
+      {/* Torch Flame Above */}
+      <circle cx="48" cy="46" r="3" fill="#4F46E5" />
+    </svg>
+  );
+}
+
+/**
+ * 12. Clean Green Community Track Badge (Campus Cleaner, Shramadana, Nature Guardian)
+ */
+export function BadgeCleanCommunity({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
+  if (!unlocked) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+        <circle cx="48" cy="48" r="46" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="2" />
+        <rect x="42" y="44" width="12" height="10" rx="2" fill="#94A3B8" />
+        <path d="M45 44V40C45 38.3431 46.3431 37 48 37C49.6569 37 51 38.3431 51 40V44" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+      <circle cx="48" cy="48" r="46" fill="#115E59" />
+      <circle cx="48" cy="48" r="43" fill="#0D9488" />
+      <circle cx="48" cy="48" r="40" fill="#0F766E" />
+      {/* Radiant Sun in Sky */}
+      <circle cx="48" cy="30" r="8" fill="#FBBF24" />
+      <path d="M48 18V20M48 40V42M36 30H38M58 30H60" stroke="#FDE68A" strokeWidth="2" strokeLinecap="round" />
+      {/* Lush Green Trees & Campus Hillside */}
+      <path d="M22 66C32 54 44 56 54 58C64 60 72 52 74 66H22Z" fill="#047857" />
+      <circle cx="38" cy="50" r="10" fill="#10B981" />
+      <circle cx="48" cy="46" r="12" fill="#34D399" />
+      <circle cx="58" cy="50" r="10" fill="#10B981" />
+      <rect x="46" y="54" width="4" height="14" fill="#78350F" />
+    </svg>
+  );
+}
+
+/**
+ * 13. Green Charter School Track Badge (Principal Support, Clean Canteen, Model School)
+ */
+export function BadgeGreenCharter({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
+  if (!unlocked) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+        <circle cx="48" cy="48" r="46" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="2" />
+        <rect x="42" y="44" width="12" height="10" rx="2" fill="#94A3B8" />
+        <path d="M45 44V40C45 38.3431 46.3431 37 48 37C49.6569 37 51 38.3431 51 40V44" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" className={className}>
+      <circle cx="48" cy="48" r="46" fill="#991B1B" />
+      <circle cx="48" cy="48" r="43" fill="#DC2626" />
+      <circle cx="48" cy="48" r="40" fill="#B91C1C" />
+      {/* Charter Document / Parchment */}
+      <rect x="32" y="24" width="32" height="42" rx="3" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5" />
+      {/* Document Text Lines */}
+      <line x1="38" y1="32" x2="58" y2="32" stroke="#B45309" strokeWidth="2" strokeLinecap="round" />
+      <line x1="38" y1="38" x2="54" y2="38" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="38" y1="44" x2="56" y2="44" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Official Green School Wax Seal */}
+      <circle cx="48" cy="54" r="7" fill="#059669" stroke="#34D399" strokeWidth="1.5" />
+      <path d="M45 54L47 56L51 52" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Seal Hanging Ribbons */}
+      <path d="M45 60L42 70L48 66L54 70L51 60" fill="#047857" />
+    </svg>
+  );
+}

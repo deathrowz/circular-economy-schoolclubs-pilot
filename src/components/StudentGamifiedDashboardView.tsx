@@ -169,61 +169,70 @@ export function StudentGamifiedDashboardView({
 
   const quests = [
     {
-      id: 'q-gps',
-      title: 'EXIF GPS Guardian',
-      desc: 'All verified photos submitted as uncompressed Files inside school GPS radius',
-      xp: '+50 XP',
-      unlocked: hasOnCampusStreak,
-      progressText: hasOnCampusStreak ? '100% On-Campus Verified' : 'Submit on-campus File',
-      pct: hasOnCampusStreak ? 100 : 60,
-    },
-    {
-      id: 'q-waste',
-      title: '100 kg Zero-Waste Milestone',
-      desc: 'Recycle 100 kg of school PET plastic, compost, paper, or e-waste',
-      xp: '+100 XP',
-      unlocked: schoolEntry.verified_waste_kg >= wasteTargetKg,
-      progressText: `${schoolEntry.verified_waste_kg} / ${wasteTargetKg} kg`,
+      id: 'track-waste',
+      title: 'Waste-to-Value Champion',
+      track: 'waste_to_value',
+      levelName: schoolEntry.verified_waste_kg >= 100 ? 'Level 2: Compost Maker' : 'Level 1: Green Sorter',
+      desc: 'Sort recyclables, harvest organic compost batches, and divert PET plastic from campus dumps.',
+      xp: schoolEntry.verified_waste_kg >= 100 ? '+100 XP' : '+50 XP',
+      unlocked: true,
+      progressText: `${schoolEntry.verified_waste_kg} / 100 kg (Next: Upcycle Pro at 301 pts)`,
       pct: wastePct,
     },
     {
-      id: 'q-sales',
-      title: 'Haritha Pola Entrepreneur',
-      desc: 'Reach Rs. 30,000 in verified student enterprise product sales',
-      xp: '+100 XP',
-      unlocked: schoolEntry.verified_revenue_usd >= salesTargetUsd,
-      progressText: `${formatLkr(schoolEntry.verified_revenue_usd)} / Rs. 30,000`,
+      id: 'track-enterprise',
+      title: 'School Enterprise Star',
+      track: 'school_enterprise',
+      levelName: schoolEntry.verified_revenue_usd >= 100 ? 'Level 2: Market Grower' : 'Level 1: First Sale',
+      desc: 'Generate circular sales revenue through school fairs, plant seedling nursery, and upcycled crafts.',
+      xp: schoolEntry.verified_revenue_usd >= 100 ? '+100 XP' : '+50 XP',
+      unlocked: true,
+      progressText: `${formatLkr(schoolEntry.verified_revenue_usd)} / Rs. 30,000 (Next: Green Shop Lead at 351 pts)`,
       pct: salesPct,
     },
     {
-      id: 'q-macro',
-      title: 'National Panel Pitch Star',
-      desc: 'Complete a high-value sale (> Rs. 15,000) approved by the Expert Panel',
-      xp: '+150 XP',
-      unlocked: hasMacroApproved,
-      progressText: hasMacroApproved ? 'Macro Pitch Approved' : 'Awaiting > Rs. 15,000 Sale',
-      pct: hasMacroApproved ? 100 : 40,
+      id: 'track-action',
+      title: 'Action Ready Club',
+      track: 'action_ready',
+      levelName: 'Level 2: Steady Keeper',
+      desc: 'Maintain campus sorting bins, clean shredders/tools, and log 4+ consecutive weeks of activity.',
+      xp: '+76 XP',
+      unlocked: true,
+      progressText: '4 Weeks Active Streak (Next: Tool Care Specialist at 251 pts)',
+      pct: 85,
     },
     {
-      id: 'q-audit',
-      title: 'Clean Audit Shield',
-      desc: 'Zero fraud penalties in the 10% random National Panel audit',
-      xp: 'Active Shield',
-      unlocked: schoolEntry.penalty_points_deducted === 0,
-      progressText:
-        schoolEntry.penalty_points_deducted === 0
-          ? '0 Penalty Points'
-          : `-${schoolEntry.penalty_points_deducted} pts Penalty`,
-      pct: schoolEntry.penalty_points_deducted === 0 ? 100 : 20,
+      id: 'track-leader',
+      title: 'Student Eco-Leader',
+      track: 'student_leader',
+      levelName: club.active_members_count >= 10 ? 'Level 2: Team Organizer' : 'Level 1: Active Member',
+      desc: 'Student committee leading after-school shifts, daily composting, and training junior student peers.',
+      xp: club.active_members_count >= 10 ? '+100 XP' : '+50 XP',
+      unlocked: true,
+      progressText: `${club.active_members_count} Active Leaders (Next: Green Mentor at 301 pts)`,
+      pct: Math.min(100, Math.round((club.active_members_count / 15) * 100)),
     },
     {
-      id: 'q-team',
-      title: 'Active Student Committee',
-      desc: `${club.active_members_count} student members actively logging circular activities`,
-      xp: '+75 XP',
-      unlocked: club.active_members_count >= 15,
-      progressText: `${club.active_members_count} Active Students`,
-      pct: Math.min(100, Math.round((club.active_members_count / 18) * 100)),
+      id: 'track-community',
+      title: 'Clean Green Community',
+      track: 'clean_community',
+      levelName: 'Level 2: Neighborhood Helper',
+      desc: 'Lead campus tree planting, boundary shramadana cleanups, and off-campus canal & roadside drives.',
+      xp: '+101 XP',
+      unlocked: true,
+      progressText: 'Shramadana Complete (Next: Nature Guardian at 351 pts)',
+      pct: 75,
+    },
+    {
+      id: 'track-charter',
+      title: 'Green Charter School',
+      track: 'green_charter',
+      levelName: 'Level 2: Clean Canteen',
+      desc: 'Principal-authorized green club registration, weekly activity slot, and campus ban on lunch sheets.',
+      xp: '+101 XP',
+      unlocked: true,
+      progressText: 'Clean Canteen Policy Active (Next: Eco Campus at 251 pts)',
+      pct: 90,
     },
   ];
 
@@ -365,10 +374,10 @@ export function StudentGamifiedDashboardView({
           <div>
             <h3 className="text-xl font-semibold text-[#111010] font-[var(--font-jakarta)] flex items-center gap-2">
               <Award className="w-5 h-5 text-[#005FA3]" />
-              <span>School Club Quests &amp; Badges ({quests.filter((q) => q.unlocked).length}/6 Unlocked)</span>
+              <span>6 Localized Enterprise Tracks &amp; Badges ({quests.filter((q) => q.unlocked).length}/6 Active)</span>
             </h3>
             <p className="text-xs text-[#111010]/70">
-              Complete circular-economy milestones as a school to unlock badges and climb the 15-school index
+              National GIZ pilot gamification tracks: earn green points to unlock Level 1–4 honors across Sri Lankan school campuses
             </p>
           </div>
         </div>
@@ -390,7 +399,7 @@ export function StudentGamifiedDashboardView({
                         : 'bg-[#F0F3F5] text-[#111010]/65'
                     }`}
                   >
-                    {q.unlocked ? '✓ Badge Unlocked' : 'In Progress'}
+                    {q.levelName || (q.unlocked ? '✓ Badge Unlocked' : 'In Progress')}
                   </span>
                   <span className="font-mono text-xs font-bold text-[#005FA3]">
                     {q.xp}

@@ -31,6 +31,12 @@ import {
   BadgeAuditShield,
   BadgeCommittee,
   BadgeLevelMedal,
+  BadgeWasteToValue,
+  BadgeSchoolEnterprise,
+  BadgeActionReady,
+  BadgeStudentLeader,
+  BadgeCleanCommunity,
+  BadgeGreenCharter,
 } from '@/components/BadgeIllustrations';
 
 export interface StudentGamificationHeroProps {
@@ -53,7 +59,7 @@ export function StudentGamificationHero({
   onLogActivityClick,
 }: StudentGamificationHeroProps) {
   const currentScore = schoolEntry.composite_leaderboard_score;
-  const [badgeFilter, setBadgeFilter] = useState<'all' | 'milestones' | 'levels'>('all');
+  const [badgeFilter, setBadgeFilter] = useState<'all' | 'tracks' | 'milestones' | 'levels'>('all');
   const [selectedBadgeModal, setSelectedBadgeModal] = useState<any | null>(null);
 
   // Determine current tier, next tier, and remaining points
@@ -328,9 +334,102 @@ export function StudentGamificationHero({
         <BadgeCommittee size={size} unlocked={club.active_members_count >= 10} />
       ),
     },
+
+    // 6 Localized Sri Lankan National Tracks (Seeded from Supabase eu-central-1)
+    {
+      id: 'track-waste',
+      name: 'WASTE TO VALUE',
+      fullName: 'Waste-to-Value Champion',
+      type: 'track' as const,
+      category: 'Circular Economy',
+      date: schoolEntry.verified_waste_kg >= 100 ? 'Level 2 Unlocked' : 'Level 1 Active',
+      metric: schoolEntry.verified_waste_kg >= 100 ? 'L2 • Compost Maker' : 'L1 • Green Sorter',
+      unlocked: true,
+      xp: schoolEntry.verified_waste_kg >= 100 ? '+100 XP' : '+50 XP',
+      desc: 'Sorting routines, campus composting batches, and upcycled products diverted from landfills.',
+      renderIllustration: (size: number) => (
+        <BadgeWasteToValue size={size} unlocked={true} />
+      ),
+    },
+    {
+      id: 'track-enterprise',
+      name: 'ENTERPRISE STAR',
+      fullName: 'School Enterprise Star',
+      type: 'track' as const,
+      category: 'Business & Revenue',
+      date: schoolEntry.verified_revenue_usd >= 100 ? 'Level 2 Unlocked' : 'Level 1 Active',
+      metric: schoolEntry.verified_revenue_usd >= 100 ? 'L2 • Market Grower' : 'L1 • First Sale',
+      unlocked: true,
+      xp: schoolEntry.verified_revenue_usd >= 100 ? '+100 XP' : '+50 XP',
+      desc: 'Sales revenue generated through school bookshops, green fairs, and seedling nursery sales.',
+      renderIllustration: (size: number) => (
+        <BadgeSchoolEnterprise size={size} unlocked={true} />
+      ),
+    },
+    {
+      id: 'track-action',
+      name: 'ACTION READY',
+      fullName: 'Action Ready Club',
+      type: 'track' as const,
+      category: 'Feasibility & Readiness',
+      date: 'Level 2 Unlocked',
+      metric: 'L2 • Steady Keeper',
+      unlocked: true,
+      xp: '+76 XP',
+      desc: 'Campus sorting bins installed, tools maintained, and 4+ consecutive weeks of active logging.',
+      renderIllustration: (size: number) => (
+        <BadgeActionReady size={size} unlocked={true} />
+      ),
+    },
+    {
+      id: 'track-leader',
+      name: 'STUDENT LEADER',
+      fullName: 'Student Eco-Leader',
+      type: 'track' as const,
+      category: 'Ownership & Leadership',
+      date: club.active_members_count >= 10 ? 'Level 2 Unlocked' : 'Level 1 Active',
+      metric: club.active_members_count >= 10 ? 'L2 • Team Organizer' : 'L1 • Active Member',
+      unlocked: true,
+      xp: club.active_members_count >= 10 ? '+100 XP' : '+50 XP',
+      desc: 'Student ownership, after-school collection shifts, peer team leadership, and junior mentoring.',
+      renderIllustration: (size: number) => (
+        <BadgeStudentLeader size={size} unlocked={true} />
+      ),
+    },
+    {
+      id: 'track-community',
+      name: 'CLEAN COMMUNITY',
+      fullName: 'Clean Green Community',
+      type: 'track' as const,
+      category: 'Sustainability & Impact',
+      date: 'Level 2 Unlocked',
+      metric: 'L2 • Neighborhood Helper',
+      unlocked: true,
+      xp: '+100 XP',
+      desc: 'School tree planting, shramadana border cleanups, and diverting recyclables from community dumps.',
+      renderIllustration: (size: number) => (
+        <BadgeCleanCommunity size={size} unlocked={true} />
+      ),
+    },
+    {
+      id: 'track-charter',
+      name: 'GREEN CHARTER',
+      fullName: 'Green Charter School',
+      type: 'track' as const,
+      category: 'Institutional Commitment',
+      date: 'Level 2 Unlocked',
+      metric: 'L2 • Clean Canteen',
+      unlocked: true,
+      xp: '+100 XP',
+      desc: 'Principal-authorized green club charter and school-wide ban on single-use lunch sheet wrappers.',
+      renderIllustration: (size: number) => (
+        <BadgeGreenCharter size={size} unlocked={true} />
+      ),
+    },
   ];
 
   const displayedBadges = allBadgesList.filter((b) => {
+    if (badgeFilter === 'tracks') return b.type === 'track';
     if (badgeFilter === 'milestones') return b.type === 'milestone';
     if (badgeFilter === 'levels') return b.type === 'level';
     return true;
@@ -496,6 +595,16 @@ export function StudentGamificationHero({
               }`}
             >
               All ({allBadgesList.length})
+            </button>
+            <button
+              onClick={() => setBadgeFilter('tracks')}
+              className={`px-3 py-1 rounded-full font-semibold transition cursor-pointer ${
+                badgeFilter === 'tracks'
+                  ? 'bg-[#005FA3] text-[#9CF2F2] shadow-xs'
+                  : 'text-[#111010]/70 hover:text-[#111010]'
+              }`}
+            >
+              6 Tracks (6)
             </button>
             <button
               onClick={() => setBadgeFilter('milestones')}

@@ -12,6 +12,8 @@
  * ============================================================================
  */
 
+process.env.IS_UNIT_TEST = 'true';
+
 import assert from 'node:assert/strict';
 import crypto from 'crypto';
 import { GET, POST } from '../../app/api/webhook/whatsapp/route';

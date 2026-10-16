@@ -344,60 +344,62 @@ export async function createStudentImpactSubmission(params: {
   };
   store.auditLogs.unshift(auditEntry);
 
-  // Sync to Supabase if configured
-  try {
-    const supabase = getSupabaseServiceClient();
-    if (supabase) {
-      const { error: insertError } = await supabase.from('impact_logs').insert({
-        id: newLog.id,
-        club_id: newLog.club_id,
-        club_name: newLog.club_name,
-        school_id: newLog.school_id,
-        school_name: newLog.school_name,
-        school_code: newLog.school_code,
-        student_id: newLog.student_id,
-        student_name: newLog.student_name,
-        telegram_username: newLog.telegram_username,
-        telegram_message_id: newLog.telegram_message_id,
-        file_name: newLog.file_name,
-        mime_type: newLog.mime_type,
-        is_uncompressed_document: true,
-        s3_url: newLog.s3_url,
-        s3_key: newLog.s3_key,
-        exif_timestamp: newLog.exif_timestamp,
-        exif_lat: newLog.exif_lat,
-        exif_lng: newLog.exif_lng,
-        exif_device_make: newLog.exif_device_make,
-        exif_device_model: newLog.exif_device_model,
-        campus_distance_meters: newLog.campus_distance_meters,
-        on_campus_verified: newLog.on_campus_verified,
-        activity_title: newLog.activity_title,
-        activity_category: newLog.activity_category,
-        description: newLog.description,
-        waste_kg: newLog.waste_kg,
-        revenue_usd: newLog.revenue_usd,
-        co2_saved_kg: newLog.co2_saved_kg,
-        is_final_pitch: newLog.is_final_pitch,
-        transaction_type: newLog.transaction_type,
-        status: newLog.status,
-        random_audit_selected: newLog.random_audit_selected,
-        audit_status: newLog.audit_status,
-        audit_flagged_fraud: newLog.audit_flagged_fraud,
-        points_awarded: newLog.points_awarded,
-        penalty_points: newLog.penalty_points,
-        resubmission_count: newLog.resubmission_count,
-        resubmission_parent_log_id: newLog.parent_log_id,
-        created_at: newLog.created_at,
-        updated_at: newLog.updated_at,
-      });
-      if (insertError) {
-        console.error('❌ Supabase impact_logs insert error:', insertError);
-      } else {
-        console.log(`✅ Synced new submission "${newLog.id}" to Supabase!`);
+  // Sync to Supabase if configured (skip in unit test runs to prevent test pollution)
+  if (process.env.IS_UNIT_TEST !== 'true') {
+    try {
+      const supabase = getSupabaseServiceClient();
+      if (supabase) {
+        const { error: insertError } = await supabase.from('impact_logs').insert({
+          id: newLog.id,
+          club_id: newLog.club_id,
+          club_name: newLog.club_name,
+          school_id: newLog.school_id,
+          school_name: newLog.school_name,
+          school_code: newLog.school_code,
+          student_id: newLog.student_id,
+          student_name: newLog.student_name,
+          telegram_username: newLog.telegram_username,
+          telegram_message_id: newLog.telegram_message_id,
+          file_name: newLog.file_name,
+          mime_type: newLog.mime_type,
+          is_uncompressed_document: true,
+          s3_url: newLog.s3_url,
+          s3_key: newLog.s3_key,
+          exif_timestamp: newLog.exif_timestamp,
+          exif_lat: newLog.exif_lat,
+          exif_lng: newLog.exif_lng,
+          exif_device_make: newLog.exif_device_make,
+          exif_device_model: newLog.exif_device_model,
+          campus_distance_meters: newLog.campus_distance_meters,
+          on_campus_verified: newLog.on_campus_verified,
+          activity_title: newLog.activity_title,
+          activity_category: newLog.activity_category,
+          description: newLog.description,
+          waste_kg: newLog.waste_kg,
+          revenue_usd: newLog.revenue_usd,
+          co2_saved_kg: newLog.co2_saved_kg,
+          is_final_pitch: newLog.is_final_pitch,
+          transaction_type: newLog.transaction_type,
+          status: newLog.status,
+          random_audit_selected: newLog.random_audit_selected,
+          audit_status: newLog.audit_status,
+          audit_flagged_fraud: newLog.audit_flagged_fraud,
+          points_awarded: newLog.points_awarded,
+          penalty_points: newLog.penalty_points,
+          resubmission_count: newLog.resubmission_count,
+          resubmission_parent_log_id: newLog.parent_log_id,
+          created_at: newLog.created_at,
+          updated_at: newLog.updated_at,
+        });
+        if (insertError) {
+          console.error('❌ Supabase impact_logs insert error:', insertError);
+        } else {
+          console.log(`✅ Synced new submission "${newLog.id}" to Supabase!`);
+        }
       }
+    } catch (err) {
+      console.warn('Supabase sync exception:', err);
     }
-  } catch (err) {
-    console.warn('Supabase sync exception:', err);
   }
 
   await dispatchTelegramNotification({

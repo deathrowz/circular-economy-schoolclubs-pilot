@@ -1,3 +1,5 @@
+process.env.IS_UNIT_TEST = 'true';
+
 import assert from 'node:assert/strict';
 import {
   createSampleExifDocumentBuffer,

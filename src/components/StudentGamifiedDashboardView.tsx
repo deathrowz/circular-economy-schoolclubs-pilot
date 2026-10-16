@@ -33,6 +33,7 @@ import {
 } from '@/types/domain';
 import { formatLkr } from '@/lib/gamification/engine';
 import { postWhatsAppWebhookClient } from '@/lib/client/platform-bridge';
+import { StudentGamificationHero } from '@/components/StudentGamificationHero';
 
 interface StudentGamifiedDashboardViewProps {
   activeUser: UserProfile;
@@ -343,136 +344,18 @@ export function StudentGamifiedDashboardView({
       </div>
 
       {/* ====================================================================
-       * Gamified School Hero Banner (Stanford HAI Zeal Cobalt #005FA3)
+       * Gamified School Hero Banner with Animated Badges & Progress Mechanics
        * ==================================================================== */}
-      <section className="hai-zeal-banner p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-[#9CF2F2] text-[#005FA3] font-mono text-xs font-bold">
-                National Rank #{schoolEntry.rank} of 15
-              </span>
-              <span className="px-3 py-1 rounded-full bg-white/15 text-white text-xs font-semibold border border-white/25">
-                {nextTierInfo.currentLevel}
-              </span>
-              <span className="px-3 py-1 rounded-full bg-white/15 text-[#9CF2F2] text-xs font-mono">
-                {currentStudentUser.email}
-              </span>
-            </div>
+      <StudentGamificationHero
+        school={school}
+        club={club}
+        schoolEntry={schoolEntry}
+        activeUser={currentStudentUser}
+        leaderboard={leaderboard}
+        approvedLogsCount={approvedLogs.length}
+        onLogActivityClick={() => sendSchoolBotUpdate({ text: '/log_impact' }, '📸 Log New Activity')}
+      />
 
-            <h2 className="text-2xl sm:text-4xl font-bold text-white font-[var(--font-jakarta)] tracking-tight">
-              {school.name} — {club.name}
-            </h2>
-            <p className="text-sm text-white/85 max-w-2xl">
-              {club.tagline} • Student Lead:{' '}
-              <strong className="text-[#9CF2F2]">
-                {club.org_chart[0]?.holder_name}
-              </strong>{' '}
-              • Teacher Validator:{' '}
-              <strong className="text-white">
-                {club.org_chart[3]?.holder_name}
-              </strong>
-            </p>
-          </div>
-
-          {/* Total School Score Badge */}
-          <div className="bg-white/10 border border-white/25 rounded-[20px_20px_20px_4px] px-6 py-4 text-center shrink-0">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-[#9CF2F2]">
-              Total School Points
-            </div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-white font-mono mt-1">
-              {currentScore} <span className="text-lg font-normal text-[#9CF2F2]">pts</span>
-            </div>
-            <div className="text-xs text-white/80 mt-1">
-              Grant Tier: <strong>{schoolEntry.topoff_funding_tier}</strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Gamified XP / Seed Grant Unlock Progress Bar */}
-        <div className="bg-white/10 border border-white/20 rounded-[18px_18px_18px_4px] p-5 space-y-2.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <span className="font-bold text-[#9CF2F2] flex items-center gap-1.5">
-              <Flame className="w-4 h-4" />
-              {nextTierInfo.nextLabel}
-            </span>
-            <span className="font-mono text-white font-semibold">
-              {nextTierInfo.pointsNeeded > 0
-                ? `${nextTierInfo.pointsNeeded} more pts needed to level up (${currentScore} / ${nextTierInfo.targetScore} pts)`
-                : `Top Platinum Tier Achieved! (${currentScore} pts)`}
-            </span>
-          </div>
-          <div className="w-full h-3.5 rounded-full bg-black/25 overflow-hidden p-0.5">
-            <div
-              className="h-full rounded-full bg-[#9CF2F2] transition-all duration-500"
-              style={{ width: `${nextTierInfo.progressPct}%` }}
-            />
-          </div>
-        </div>
-
-        {/* 4 School KPI Tiles */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white/10 border border-white/20 rounded-[16px_16px_16px_4px] p-4">
-            <div className="text-xs text-[#9CF2F2] font-semibold flex items-center gap-1.5">
-              <Leaf className="w-4 h-4" /> Our Waste Recycled
-            </div>
-            <div className="text-2xl font-bold text-white font-mono mt-1.5">
-              {schoolEntry.verified_waste_kg} kg
-            </div>
-            <div className="text-[11px] text-white/75 mt-0.5">
-              {schoolEntry.verified_co2_kg} kg CO₂e saved
-            </div>
-          </div>
-
-          <div className="bg-white/10 border border-white/20 rounded-[16px_16px_16px_4px] p-4">
-            <div className="text-xs text-[#9CF2F2] font-semibold flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4" /> Our Verified Sales
-            </div>
-            <div className="text-2xl font-bold text-white font-mono mt-1.5">
-              {formatLkr(schoolEntry.verified_revenue_usd)}
-            </div>
-            <div className="text-[11px] text-white/75 mt-0.5">
-              {approvedLogs.length} approved activities
-            </div>
-          </div>
-
-          <div className="bg-white/10 border border-white/20 rounded-[16px_16px_16px_4px] p-4">
-            <div className="text-xs text-[#9CF2F2] font-semibold flex items-center gap-1.5">
-              <Coins className="w-4 h-4" /> Seed Grant Unlocked
-            </div>
-            <div className="text-2xl font-bold text-white font-mono mt-1.5">
-              {formatLkr(
-                school.seed_funding_base_usd + schoolEntry.topoff_funding_amount_usd
-              )}
-            </div>
-            <div className="text-[11px] text-white/75 mt-0.5">
-              Rs. 450k Base + {formatLkr(schoolEntry.topoff_funding_amount_usd)} Top-Off
-            </div>
-          </div>
-
-          <div className="bg-white/10 border border-white/20 rounded-[16px_16px_16px_4px] p-4">
-            <div className="text-xs text-[#9CF2F2] font-semibold flex items-center gap-1.5">
-              <Target className="w-4 h-4" /> Rivalry Gap
-            </div>
-            <div className="text-base font-bold text-white mt-1.5 truncate">
-              {aboveEntry
-                ? `${(
-                    aboveEntry.composite_leaderboard_score - currentScore
-                  ).toFixed(1)} pts behind #${aboveEntry.rank}`
-                : 'Leading #1 Nationally!'}
-            </div>
-            <div className="text-[11px] text-white/75 mt-0.5 truncate">
-              {aboveEntry
-                ? `Chasing ${aboveEntry.school.name}`
-                : belowEntry
-                ? `${(
-                    currentScore - belowEntry.composite_leaderboard_score
-                  ).toFixed(1)} pts ahead of #2`
-                : ''}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ====================================================================
        * Gamified School Quests & Badges (6 Interactive School Badges)

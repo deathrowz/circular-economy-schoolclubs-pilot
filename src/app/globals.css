@@ -144,3 +144,61 @@ body {
   border-radius: 9999px;
   padding: 2px 10px;
 }
+
+/* ============================================================================
+ * Gamification Animations & Keyframes (Badge Floating, Glow & Shimmer)
+ * ============================================================================ */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes spin_slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse_subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes badge_shine {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(200%) rotate(45deg);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin_slow 14s linear infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse_subtle 3s ease-in-out infinite;
+}
+
+.animate-badge-shine {
+  animation: badge_shine 3.5s ease-in-out infinite;
+}
+

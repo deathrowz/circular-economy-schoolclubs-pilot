@@ -116,6 +116,14 @@ export function RoleLoginPortalView({
         return;
       }
 
+      // Set pilot auth session cookie & localStorage for Zero-Trust Middleware
+      if (typeof document !== 'undefined') {
+        document.cookie = `haritha_auth_user_id=${matched.id}; path=/; max-age=2592000; SameSite=Lax`;
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('haritha_auth_user_id', matched.id);
+      }
+
       // Automated Role-to-Dashboard Dispatch (Industry Gold Standard)
       if (matched.role === 'student') {
         onSelectUserAndNavigate(matched.id, 'student_gamified');
@@ -131,6 +139,7 @@ export function RoleLoginPortalView({
       setIsSubmitting(false);
     }, 250);
   };
+
 
   /**
    * Helper to fill credentials into the universal login form for evaluators
@@ -288,16 +297,12 @@ export function RoleLoginPortalView({
             </button>
           </form>
 
-          {/* Public Index Fallback Link */}
-          <div className="pt-4 border-t border-[#111010]/10 text-center text-xs text-[#111010]/65">
-            <span>Want to browse public standings first? </span>
-            <button
-              onClick={() => onSelectUserAndNavigate(users[0].id, 'leaderboard')}
-              className="text-[#005FA3] font-bold hover:underline cursor-pointer"
-            >
-              View 15-School Public Index →
-            </button>
+          {/* Zero-Trust Institutional Security Notice (Replaces Public Index Bypass) */}
+          <div className="pt-3 border-t border-[#111010]/10 text-center text-xs text-[#111010]/65 flex items-center justify-center gap-1.5">
+            <Lock className="w-3.5 h-3.5 text-[#005FA3]" />
+            <span>Zero-Trust Security • Authenticate with role credentials to access school dashboards</span>
           </div>
+
 
           {/* Direct Role Route Shortcuts */}
           <div className="pt-3 border-t border-[#111010]/10 space-y-2">

@@ -120,6 +120,9 @@ export default function PlatformDashboardPage() {
   const handleSwitchUser = (newUserId: string, targetTab?: NavTab) => {
     setActiveUserId(newUserId);
     setIsAuthenticated(true);
+    if (typeof document !== 'undefined') {
+      document.cookie = `haritha_auth_user_id=${newUserId}; path=/; max-age=2592000; SameSite=Lax`;
+    }
     if (typeof window !== 'undefined') {
       localStorage.setItem('haritha_auth_user_id', newUserId);
     }
@@ -147,6 +150,9 @@ export default function PlatformDashboardPage() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    if (typeof document !== 'undefined') {
+      document.cookie = 'haritha_auth_user_id=; path=/; max-age=0; SameSite=Lax';
+    }
     if (typeof window !== 'undefined') {
       localStorage.removeItem('haritha_auth_user_id');
     }
@@ -155,7 +161,7 @@ export default function PlatformDashboardPage() {
   };
 
   const handleTabClick = (tabId: NavTab) => {
-    if (!isAuthenticated && (tabId === 'verification' || tabId === 'student_gamified' || tabId === 'health_risk')) {
+    if (!isAuthenticated) {
       setActiveTab('login_portal');
       return;
     }
@@ -184,18 +190,9 @@ export default function PlatformDashboardPage() {
     icon: React.ComponentType<{ className?: string }>;
     count?: number;
   }> = (() => {
-    if (!snapshot || !activeUser) {
+    if (!snapshot || !activeUser || !isAuthenticated) {
       return [
-        { id: 'leaderboard' as NavTab, label: '15-School Public Index', icon: Trophy },
-        { id: 'clubs' as NavTab, label: 'School Clubs & Models', icon: Building2 },
-      ];
-    }
-
-    if (!isAuthenticated) {
-      return [
-        { id: 'leaderboard' as NavTab, label: '15-School Public Index', icon: Trophy },
-        { id: 'clubs' as NavTab, label: 'School Clubs & Models', icon: Building2 },
-        { id: 'login_portal' as NavTab, label: '🔑 Sign In to Your Role', icon: KeyRound },
+        { id: 'login_portal' as NavTab, label: '🔑 Sign In to Platform', icon: KeyRound },
       ];
     }
 
@@ -323,32 +320,15 @@ export default function PlatformDashboardPage() {
   // Role-customized Page Editorial Headers
   const getPageHeaderMeta = () => {
     if (!isAuthenticated) {
-      if (activeTab === 'clubs') {
-        return {
-          eyebrow: 'Haritha Pasal • Participating Schools & Enterprises',
-          title: 'School Clubs & Upcycling Models',
-          subtitle:
-            'Explore each school’s circular-economy enterprise, student office bearers, teacher-in-charge, and verified impact ledger.',
-          badge: '15 Schools',
-        };
-      }
-      if (activeTab === 'login_portal') {
-        return {
-          eyebrow: 'Universal Authentication Gateway • Role-Based Access Control',
-          title: 'Sign In to Your Dashboard',
-          subtitle:
-            'Enter your Login ID or Email address and password. The platform automatically verifies your credentials and dispatches you to your customized role dashboard.',
-          badge: 'Universal Sign-In',
-        };
-      }
       return {
-        eyebrow: 'Haritha Pasal • 2026 National Pilot Report',
-        title: 'Sri Lanka School Circular Index',
+        eyebrow: 'Universal Authentication Gateway • Zero-Trust Security',
+        title: 'Sign In to Your Dashboard',
         subtitle:
-          'Tracking verified school waste recycled (kg), student enterprise sales (Rs.), and top-off seed funding across 15 participating Sri Lankan schools.',
-        badge: '15 Schools Public',
+          'Authentication required. Enter your Login ID, School Code, or Email address to access school circular metrics, teacher approvals, and expert evaluation ledgers.',
+        badge: 'Zero-Trust RBAC',
       };
     }
+
 
     if (activeUser.role === 'super_admin') {
       if (activeTab === 'verification') {

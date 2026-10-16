@@ -21,7 +21,8 @@ import { ImpactLog } from '@/types/domain';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'fra1'; // Strictly Vercel Frankfurt, Germany (EU GDPR)
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-static';
+
 
 interface WhatsAppWebhookMessage {
   from: string;

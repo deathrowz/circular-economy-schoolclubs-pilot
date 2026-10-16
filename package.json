@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node -r ./patch-fs.js ./node_modules/next/dist/bin/next dev",
     "build": "node -r ./patch-fs.js ./node_modules/next/dist/bin/next build",
-    "start": "next start",
+    "start": "node -r ./patch-fs.js ./node_modules/next/dist/bin/next start",
     "lint": "next lint",
     "test": "npx tsx src/lib/__tests__/validation-engine.test.ts && npx tsx src/lib/__tests__/whatsapp-webhook.test.ts",
     "test:integration": "npx tsx src/lib/__tests__/supabase-log-lookup.test.ts",

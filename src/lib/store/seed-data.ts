@@ -730,6 +730,19 @@ export const DEMO_USERS: UserProfile[] = [
   // Realistic Operational Pilot Personas (Supabase Cloud eu-central-1 Authenticated)
   // Default test password across accounts: Haritha2026!Secure
   // ------------------------------------------------------------------------
+  // Persona 0: GIZ Super Admin (Budhikka Gunasekera)
+  {
+    id: 'usr-giz-superadmin-budhikka',
+    auth_user_id: 'e6535656-badd-447f-bf31-dbf208e68871',
+    email: 'budhikka.gunasekera@giz.de',
+    login_code: 'GIZ-SUPER-ADMIN',
+    phone_number: '94770001100',
+    organization: 'GIZ Sri Lanka / Circular Economy Project',
+    full_name: 'Budhikka Gunasekera (GIZ Super Admin)',
+    role: 'super_admin',
+    school_id: null,
+    club_id: null,
+  },
   // Persona 1: GIZ Project Lead / National Auditor (Admin Role)
   {
     id: 'usr-giz-admin-01',

@@ -42,3 +42,22 @@ if (fs.promises && fs.promises.readlink) {
     }
   };
 }
+
+const origReadFileSync = fs.readFileSync;
+fs.readFileSync = function (p, opts) {
+  let attempts = 0;
+  while (true) {
+    try {
+      return origReadFileSync.call(fs, p, opts);
+    } catch (e) {
+      if (e && e.code === 'EBUSY' && attempts < 10) {
+        attempts++;
+        try {
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+        } catch (_) {}
+        continue;
+      }
+      throw e;
+    }
+  }
+};

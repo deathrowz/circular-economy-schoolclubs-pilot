@@ -55,13 +55,12 @@ function LoginContent() {
 
   const handleSelectUserAndNavigate = (userId: string) => {
     const matched = snapshot.users.find((u) => u.id === userId || u.auth_user_id === userId);
-    if (!matched) return;
 
     if (typeof document !== 'undefined') {
-      document.cookie = `haritha_auth_user_id=${matched.id}; path=/; max-age=2592000; SameSite=Lax`;
+      document.cookie = `haritha_auth_user_id=${userId}; path=/; max-age=2592000; SameSite=Lax`;
     }
     if (typeof window !== 'undefined') {
-      localStorage.setItem('haritha_auth_user_id', matched.id);
+      localStorage.setItem('haritha_auth_user_id', userId);
     }
 
     if (redirectTo && redirectTo.startsWith('/')) {
@@ -70,11 +69,11 @@ function LoginContent() {
     }
 
     // Role-based target route
-    if (matched.role === 'student') {
+    if (matched?.role === 'student') {
       router.push('/dashboard/student');
-    } else if (matched.role === 'teacher') {
+    } else if (matched?.role === 'teacher') {
       router.push('/dashboard/teacher');
-    } else if (matched.role === 'expert_admin' || matched.role === 'expert') {
+    } else if (matched?.role === 'expert_admin' || matched?.role === 'expert') {
       router.push('/dashboard/expert');
     } else {
       // super_admin / admin -> Platform GIZ Oversight

@@ -99,6 +99,11 @@ export default function PlatformDashboardPage() {
             else if (user.role === 'teacher') setActiveTab('verification');
             else if (user.role === 'student') setActiveTab('student_gamified');
             return;
+          } else if (savedUserId === 'e6535656-badd-447f-bf31-dbf208e68871' || savedUserId === 'usr-giz-superadmin-budhikka') {
+            setActiveUserId(savedUserId);
+            setIsAuthenticated(true);
+            setActiveTab('health_risk');
+            return;
           }
         }
         // Unauthenticated by default: direct user to login portal

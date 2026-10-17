@@ -5,7 +5,6 @@ import {
   Activity,
   Bot,
   Building2,
-  KeyRound,
   Lock,
   LogOut,
   Phone,
@@ -204,9 +203,7 @@ export default function PlatformDashboardPage() {
     count?: number;
   }> = (() => {
     if (!snapshot || !activeUser || !isAuthenticated) {
-      return [
-        { id: 'login_portal' as NavTab, label: '🔑 Sign In to Platform', icon: KeyRound },
-      ];
+      return [];
     }
 
     // Category 1: GIZ Super Admin Dashboard
@@ -616,62 +613,66 @@ export default function PlatformDashboardPage() {
           </button>
 
           {/* Right: Spacious Horizontal Navigation Tabs */}
-          <nav
-            aria-label="Primary Navigation"
-            className="hidden lg:flex items-center gap-2"
-          >
+          {navItems.length > 0 && (
+            <nav
+              aria-label="Primary Navigation"
+              className="hidden lg:flex items-center gap-2"
+            >
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabClick(item.id)}
+                    className={`px-4 py-2 rounded-full text-xs sm:text-[13px] font-semibold flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? 'bg-[#005FA3] text-[#9CF2F2]'
+                        : 'text-[#111010]/80 hover:bg-[#9CF2F2]/60 hover:text-[#005FA3]'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <span>{item.label}</span>
+                    {item.count !== undefined && (
+                      <span
+                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                          isActive
+                            ? 'bg-[#9CF2F2] text-[#005FA3]'
+                            : 'bg-[#FFFFFF] text-[#005FA3]'
+                        }`}
+                      >
+                        {item.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          )}
+        </div>
+
+        {/* Mobile / Tablet Navigation Strip */}
+        {navItems.length > 0 && (
+          <div className="lg:hidden border-t border-[#111010]/10 px-4 py-2 flex items-center gap-2 overflow-x-auto">
             {navItems.map((item) => {
-              const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => handleTabClick(item.id)}
-                  className={`px-4 py-2 rounded-full text-xs sm:text-[13px] font-semibold flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                     isActive
                       ? 'bg-[#005FA3] text-[#9CF2F2]'
-                      : 'text-[#111010]/80 hover:bg-[#9CF2F2]/60 hover:text-[#005FA3]'
+                      : 'bg-[#FFFFFF] text-[#111010]/80 border border-[#111010]/15'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  <span>{item.label}</span>
-                  {item.count !== undefined && (
-                    <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                        isActive
-                          ? 'bg-[#9CF2F2] text-[#005FA3]'
-                          : 'bg-[#FFFFFF] text-[#005FA3]'
-                      }`}
-                    >
-                      {item.count}
-                    </span>
-                  )}
+                  {item.label}
+                  {item.count !== undefined ? ` (${item.count})` : ''}
                 </button>
               );
             })}
-          </nav>
-        </div>
-
-        {/* Mobile / Tablet Navigation Strip */}
-        <div className="lg:hidden border-t border-[#111010]/10 px-4 py-2 flex items-center gap-2 overflow-x-auto">
-          {navItems.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleTabClick(item.id)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                  isActive
-                    ? 'bg-[#005FA3] text-[#9CF2F2]'
-                    : 'bg-[#FFFFFF] text-[#111010]/80 border border-[#111010]/15'
-                }`}
-              >
-                {item.label}
-                {item.count !== undefined ? ` (${item.count})` : ''}
-              </button>
-            );
-          })}
-        </div>
+          </div>
+        )}
       </header>
 
       {/* ====================================================================

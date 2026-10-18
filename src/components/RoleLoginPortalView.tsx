@@ -176,9 +176,11 @@ export function RoleLoginPortalView({
       // 4. Set secure session cookies & storage for Next.js Middleware
       if (typeof document !== 'undefined') {
         const maxAge = rememberMe ? 2592000 : 86400;
+        document.cookie = `i2i_auth_user_id=${activePersona.id}; path=/; max-age=${maxAge}; SameSite=Lax`;
         document.cookie = `haritha_auth_user_id=${activePersona.id}; path=/; max-age=${maxAge}; SameSite=Lax`;
       }
       if (typeof window !== 'undefined') {
+        localStorage.setItem('i2i_auth_user_id', activePersona.id);
         localStorage.setItem('haritha_auth_user_id', activePersona.id);
       }
 
@@ -209,7 +211,7 @@ export function RoleLoginPortalView({
         </div>
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111010] font-[var(--font-jakarta)]">
-            Sign In to Haritha Pasal
+            Sign In to I2I Clubs (Idea2Impact)
           </h1>
           <p className="text-xs sm:text-sm text-[#111010]/70 mt-1">
             Sri Lanka School Circular Economy Platform • GIZ National Pilot
@@ -248,7 +250,7 @@ export function RoleLoginPortalView({
                   setLoginIdentifier(e.target.value);
                   if (errorMessage) setErrorMessage(null);
                 }}
-                placeholder="e.g. auditor.giz@harithapasal.lk or SCH-01-TEACHER"
+                placeholder="e.g. budhikka.gunasekera@giz.de, auditor.giz@harithapasal.lk or SCH-01-TEACHER"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#111010]/20 bg-[#F8FAFC] text-xs font-semibold text-[#111010] placeholder:text-[#111010]/40 focus:bg-white focus:border-[#005FA3] focus:ring-2 focus:ring-[#005FA3]/15 outline-none transition"
               />
             </div>

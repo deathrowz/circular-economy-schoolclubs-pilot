@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * WHATSAPP CLOUD API (GRAPH API v20.0+) WEBHOOK TEST SUITE
- * Haritha Pasal (Green Schools) • GIZ Sri Lanka Pilot
+ * I2I Clubs (Idea2Impact) • GIZ Sri Lanka Pilot
  *
  * Validates:
  * 1. Meta Webhook Subscription Verification (hub.mode, hub.verify_token, hub.challenge)
@@ -79,7 +79,7 @@ async function runWhatsAppWebhookTests() {
                   id: 'wamid.HBgTEST001',
                   timestamp: '1728800000',
                   type: 'text',
-                  text: { body: 'Hello Haritha Pasal' },
+                  text: { body: 'Hello I2I Clubs' },
                 },
               ],
             },

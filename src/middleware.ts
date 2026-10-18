@@ -49,7 +49,9 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Pilot cookie fallback: checks verified pilot identity cookie
-  const pilotAuthUser = request.cookies.get('haritha_auth_user_id')?.value;
+  const pilotAuthUser =
+    request.cookies.get('i2i_auth_user_id')?.value ||
+    request.cookies.get('haritha_auth_user_id')?.value;
   const isAuthenticated = Boolean(user || pilotAuthUser);
 
   const pathname = request.nextUrl.pathname;

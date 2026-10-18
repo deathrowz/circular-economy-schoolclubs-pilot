@@ -171,7 +171,7 @@ export function WhatsAppCloudWorkbench({
       id: 'init-1',
       sender: 'bot',
       text:
-        `Ayubowan / Vanakkam! 🌿 Welcome to the *Haritha Pasal (Green Schools)* WhatsApp Cloud Ingestion Gateway.\n\n` +
+        `Ayubowan / Vanakkam! 🌿 Welcome to the *I2I Clubs (Idea2Impact)* WhatsApp Cloud Ingestion Gateway.\n\n` +
         `📱 Connected Account: *${selectedClub.name} • ${selectedSchool.name}*\n` +
         `🇪🇺 Compliance: Vercel Frankfurt (fra1) • Supabase Frankfurt (eu-central-1)\n` +
         `🔒 Security: Meta Graph API v20.0 • SHA-256 HMAC & E.164 Identity Resolution Active.\n\n` +
@@ -547,11 +547,11 @@ export function WhatsAppCloudWorkbench({
           <div className="bg-[#075E54] text-white px-5 py-3.5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center text-white font-bold text-sm shadow">
-                HP
+                I2I
               </div>
               <div>
                 <div className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <span>Haritha Pasal Sri Lanka</span>
+                  <span>I2I Clubs (Idea2Impact) Sri Lanka</span>
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#25D366] fill-[#25D366] text-white" />
                 </div>
                 <div className="text-[11px] text-white/80">
@@ -656,7 +656,7 @@ export function WhatsAppCloudWorkbench({
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               disabled={isSending}
-              placeholder={`Message Haritha Pasal (+94 11 234 5678) as +${activePhoneNumber}...`}
+              placeholder={`Message I2I Clubs (+94 11 234 5678) as +${activePhoneNumber}...`}
               className="flex-1 bg-white border border-[#111010]/15 rounded-xl px-4 py-2 text-xs text-[#111010] focus:outline-none focus:ring-1 focus:ring-[#25D366]"
             />
             <button

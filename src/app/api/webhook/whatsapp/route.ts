@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * WHATSAPP CLOUD API (GRAPH API v20.0+) WEBHOOK INGESTION ROUTE HANDLER
- * Haritha Pasal (Green Schools) • GIZ Sri Lanka 15-School Pilot Platform
+ * I2I Clubs (Idea2Impact) • GIZ Sri Lanka 15-School Pilot Platform
  *
  * Compliance:
  * - Execution Target: Vercel Frankfurt (fra1) strictly for EU GDPR / AVV compliance
@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
       await sendWhatsAppTextMessage({
         to: rawFrom,
         text:
-          `⚠️ *Haritha Pasal (Green Schools) Alert*\n\n` +
+          `⚠️ *I2I Clubs (Idea2Impact) Alert*\n\n` +
           `Your mobile number (+${normalizedPhone}) is not registered as an authorized student enterprise or supervising teacher.\n\n` +
           `Please contact your school's Supervising Teacher or the GIZ Sri Lanka Program Secretariat to register your mobile number.`,
       });
@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
       await sendWhatsAppTextMessage({
         to: rawFrom,
         text:
-          `👋 Welcome to *Haritha Pasal* (${profile.club_name || profile.school_name || 'Pilot'})!\n\n` +
+          `👋 Welcome to *I2I Clubs (Idea2Impact)* (${profile.club_name || profile.school_name || 'Pilot'})!\n\n` +
           `• Enterprise: ${profile.club_name || 'School Enterprise'}\n` +
           `• Member: ${profile.full_name}\n\n` +
           `📸 *To log a circular activity:* Tap the 📎 icon and send an uncompressed Photo or Document of your recycling, upcycling, or sales evidence.\n` +

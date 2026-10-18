@@ -105,7 +105,7 @@ jobs:
 
       - name: Write Deployment Summary
         run: |
-          echo "## 🚀 Circular-Economy Pilot Site Published" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 I2I Clubs (Idea2Impact) Pilot Site Published" >> $GITHUB_STEP_SUMMARY
           echo "- **Static Export Branch:** Published to [\`gh-pages\`](https://github.com/${{ github.repository }}/tree/gh-pages)" >> $GITHUB_STEP_SUMMARY
           echo "- **Live Site URL:** \`https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/\`" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.config_pages.outcome }}" != "success" ]; then

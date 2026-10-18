@@ -179,7 +179,7 @@ export function LeaderboardView({
               {formatLkr(totalRevenue)}
             </div>
             <p className="text-xs text-white/80 mt-1.5">
-              From school bookshops, Haritha Pola stalls &amp; local orders
+              From school bookshops, I2I Pola stalls &amp; local orders
             </p>
           </div>
 

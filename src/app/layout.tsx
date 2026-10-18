@@ -16,7 +16,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Haritha Pasal | Sri Lanka School Circular Index (15-School Pilot)',
+  title: 'I2I Clubs (Idea2Impact) | Sri Lanka School Circular Index (15-School Pilot)',
   description:
     'Tracking verified school waste recycled (kg), student enterprise sales (Rs.), and top-off seed funding across 15 participating Sri Lankan schools.',
 };

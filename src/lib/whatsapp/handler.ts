@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * WHATSAPP CLOUD API (GRAPH API v20.0+) INGESTION & CONVERSATION HANDLER
- * Haritha Pasal (Green Schools) • GIZ Sri Lanka 15-School Pilot Platform
+ * I2I Clubs (Idea2Impact) • GIZ Sri Lanka 15-School Pilot Platform
  *
  * Full-stack / Client Isomorphic Bridge:
  * - Direct webhook execution in Vercel Frankfurt (fra1) + Supabase Frankfurt (eu-central-1)
@@ -174,7 +174,7 @@ export async function handleWhatsAppCloudUpdate(
     return {
       ok: false,
       botReply:
-        `⚠️ *Haritha Pasal (Green Schools) Alert*\n\n` +
+        `⚠️ *I2I Clubs (Idea2Impact) Alert*\n\n` +
         `Your mobile number (+${sessionKey}) is not registered with any of the 15 pilot school circular enterprises.\n\n` +
         `Please contact your school's Supervising Teacher or the GIZ Sri Lanka Program Secretariat to register your mobile number.`,
       stage: 'IDLE',
@@ -665,7 +665,7 @@ export async function handleWhatsAppCloudUpdate(
   return {
     ok: true,
     botReply:
-      `👋 Welcome to *Haritha Pasal* (${club.name} • ${school.name})!\n\n` +
+      `👋 Welcome to *I2I Clubs (Idea2Impact)* (${club.name} • ${school.name})!\n\n` +
       `• Enterprise: ${club.name}\n` +
       `• Mobile: +${sessionKey}\n\n` +
       `To log an activity: Tap 📸 Log Activity or type \`/log_impact\`\n` +

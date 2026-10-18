@@ -163,7 +163,7 @@ export function AuthLoginPromptModal({
           <div>
             <div className="flex items-center gap-2 text-[#9CF2F2] text-xs font-mono font-bold uppercase tracking-wider">
               <Lock className="w-4 h-4" />
-              <span>Haritha Pasal • Authentication Gateway</span>
+              <span>I2I Clubs (Idea2Impact) • Authentication Gateway</span>
             </div>
             <h2 className="text-xl font-bold tracking-tight text-white mt-1">
               Sign In to Your Account
@@ -203,7 +203,7 @@ export function AuthLoginPromptModal({
                   setLoginInput(e.target.value);
                   if (errorMessage) setErrorMessage(null);
                 }}
-                placeholder="e.g. auditor.giz@harithapasal.lk or SCH-01-TEACHER"
+                placeholder="e.g. budhikka.gunasekera@giz.de, auditor.giz@harithapasal.lk or SCH-01-TEACHER"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#111010]/20 bg-white text-xs font-semibold text-[#111010] placeholder:text-[#111010]/40 focus:border-[#005FA3] focus:ring-2 focus:ring-[#005FA3]/15 outline-none transition"
                 autoFocus
               />

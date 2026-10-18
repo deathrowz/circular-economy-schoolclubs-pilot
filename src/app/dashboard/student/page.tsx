@@ -169,7 +169,7 @@ export default function StudentDashboardPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-base font-bold text-[#111010] font-[var(--font-jakarta)]">
-                  Haritha Pasal
+                  I2I Clubs (Idea2Impact)
                 </span>
                 <span className="hai-cyan-pill text-[10px] font-bold uppercase tracking-wider">
                   Student Mode

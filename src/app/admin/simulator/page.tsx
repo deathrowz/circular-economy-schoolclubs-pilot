@@ -91,7 +91,7 @@ export default function AdminSimulatorPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-base font-bold text-[#111010] font-[var(--font-jakarta)]">
-                  Haritha Pasal
+                  I2I Clubs (Idea2Impact)
                 </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-300">
                   DEVELOPER / ADMIN SIMULATOR

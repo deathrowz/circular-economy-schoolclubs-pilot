@@ -81,9 +81,11 @@ export default function PlatformDashboardPage() {
       if (!isMounted) return;
       setSnapshot(data);
       if (typeof window !== 'undefined') {
-        let savedUserId = localStorage.getItem('haritha_auth_user_id');
+        let savedUserId =
+          localStorage.getItem('i2i_auth_user_id') ||
+          localStorage.getItem('haritha_auth_user_id');
         if (!savedUserId) {
-          const match = document.cookie.match(/haritha_auth_user_id=([^;]+)/);
+          const match = document.cookie.match(/(?:i2i_auth_user_id|haritha_auth_user_id)=([^;]+)/);
           if (match) savedUserId = match[1];
         }
         if (savedUserId) {
@@ -133,9 +135,11 @@ export default function PlatformDashboardPage() {
     setActiveUserId(newUserId);
     setIsAuthenticated(true);
     if (typeof document !== 'undefined') {
+      document.cookie = `i2i_auth_user_id=${newUserId}; path=/; max-age=2592000; SameSite=Lax`;
       document.cookie = `haritha_auth_user_id=${newUserId}; path=/; max-age=2592000; SameSite=Lax`;
     }
     if (typeof window !== 'undefined') {
+      localStorage.setItem('i2i_auth_user_id', newUserId);
       localStorage.setItem('haritha_auth_user_id', newUserId);
     }
     const found = snapshot?.users.find((u) => u.id === newUserId || u.auth_user_id === newUserId);
@@ -163,9 +167,11 @@ export default function PlatformDashboardPage() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     if (typeof document !== 'undefined') {
+      document.cookie = 'i2i_auth_user_id=; path=/; max-age=0; SameSite=Lax';
       document.cookie = 'haritha_auth_user_id=; path=/; max-age=0; SameSite=Lax';
     }
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('i2i_auth_user_id');
       localStorage.removeItem('haritha_auth_user_id');
     }
     setActiveTab('login_portal');
@@ -331,7 +337,7 @@ export default function PlatformDashboardPage() {
       <div className="min-h-screen bg-[#E6F1FA] flex items-center justify-center p-6">
         <div className="hai-card px-6 py-4 flex items-center gap-3 text-[#005FA3] font-semibold text-sm shadow-xs">
           <Recycle className="w-5 h-5 animate-spin" />
-          <span>Loading Haritha Pasal • Sri Lanka School Circular Index...</span>
+          <span>Loading I2I Clubs (Idea2Impact) • Sri Lanka School Circular Index...</span>
         </div>
       </div>
     );
@@ -589,13 +595,13 @@ export default function PlatformDashboardPage() {
                 <div className="text-base sm:text-lg font-bold tracking-tight text-[#111010] leading-none">
                   {isAuthenticated
                     ? activeUser.role === 'super_admin' || activeUser.role === 'admin'
-                      ? 'Haritha Pasal • GIZ Governance'
+                      ? 'I2I Clubs • GIZ Governance'
                       : activeUser.role === 'expert_admin' || activeUser.role === 'expert'
-                      ? 'Haritha Pasal • Expert Panel'
+                      ? 'I2I Clubs • Expert Panel'
                       : activeUser.role === 'teacher'
-                      ? `Haritha Pasal • ${activeUser.school_code || 'School'}`
-                      : `Haritha Pasal • ${activeUser.school_code || 'Eco Club'}`
-                    : 'Haritha Pasal'}
+                      ? `I2I Clubs • ${activeUser.school_code || 'School'}`
+                      : `I2I Clubs • ${activeUser.school_code || 'Eco Club'}`
+                    : 'I2I Clubs (Idea2Impact)'}
                 </div>
                 <div className="text-[11px] font-medium text-[#111010]/65 mt-0.5">
                   {isAuthenticated
@@ -834,7 +840,7 @@ export default function PlatformDashboardPage() {
                   <Recycle className="w-4 h-4" />
                 </div>
                 <span className="font-bold text-base text-[#111010]">
-                  Haritha Pasal • GIZ Sri Lanka Pilot
+                  I2I Clubs (Idea2Impact) • GIZ Sri Lanka Pilot
                 </span>
               </div>
               <p className="text-xs text-[#111010]/70 leading-relaxed">

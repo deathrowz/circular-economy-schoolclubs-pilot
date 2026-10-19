@@ -6,9 +6,9 @@ const repoBasePath = process.env.NEXT_PUBLIC_BASE_PATH || '/circular-economy-sch
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  output: isGithubPages ? 'export' : 'standalone',
   ...(isGithubPages
     ? {
-        output: 'export',
         basePath: repoBasePath,
         assetPrefix: `${repoBasePath}/`,
         trailingSlash: true,

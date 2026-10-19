@@ -5,7 +5,7 @@ import {
   getPlatformStore,
 } from '@/lib/store/platform-store';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const store = getPlatformStore();

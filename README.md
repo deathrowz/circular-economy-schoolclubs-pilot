@@ -1,6 +1,6 @@
 # Circular-Economy Student Enterprise — 15-School Pilot Platform
 
-Full-stack platform managing student-led circular-economy enterprises across **15 pilot schools**, tracking verified financial and environmental metrics, enforcing uncompressed EXIF document telemetry via a Node.js Telegram Bot, and adjudicating top-off seed funding through a two-tier gamified validation engine.
+Full-stack platform managing student-led circular-economy enterprises across **15 pilot schools**, tracking verified financial and environmental metrics, enforcing uncompressed EXIF document telemetry via Meta's WhatsApp Cloud API (Graph API v20.0+), and adjudicating top-off seed funding through a two-tier gamified validation engine.
 
 [![CI/CD — Verify & Publish Circular-Economy Pilot Site](https://github.com/deathrowz/circular-economy-schoolclubs-pilot/actions/workflows/deploy-pilot-site.yml/badge.svg)](https://github.com/deathrowz/circular-economy-schoolclubs-pilot/actions/workflows/deploy-pilot-site.yml)
 
@@ -11,10 +11,10 @@ Full-stack platform managing student-led circular-economy enterprises across **1
 
 ## 1. Core Architecture & Tech Stack
 
-### Client 1: Telegram Bot (`bot/index.ts` & `src/lib/telegram/bot-handler.ts`)
-- **The Metadata Constraint:** Instructs students to send photos as uncompressed **Documents/Files** (`message.document`) rather than compressed Telegram photos (`message.photo`) to preserve binary EXIF metadata.
+### Client 1: WhatsApp Cloud Workbench & API (`src/app/api/webhook/whatsapp` & `src/lib/whatsapp/handler.ts`)
+- **The Metadata Constraint:** Instructs students to send photos as uncompressed **Documents/Files** (`message.document`) rather than compressed photos to preserve binary EXIF metadata.
 - **6-Step Workflow:**
-  1. Listens for `/log_impact`, `/resubmit <log_id>`, and `/status`.
+  1. Listens for `/log_impact`, `/resubmit <log_id>`, `/score`, and `/status`.
   2. Rejects standard compressed photos (`COMPRESSED_PHOTO_REJECTED`).
   3. Extracts EXIF `DateTimeOriginal` timestamp and `GPSLatitude`/`GPSLongitude` via `exifr` (`src/lib/exif/parser.ts`) and computes Haversine campus geofence distance.
   4. Uploads verified files to S3 (`src/lib/storage/s3.ts`).
@@ -28,7 +28,7 @@ Styled using tokens and SVG vector icons extracted via the **Figma MCP** server 
 - **Two-Tier Verification Engine (`src/components/VerificationEngineView.tsx`):**
   - **Tier 1 (Supervising Teacher):** Campus geofence review (`Approve`, `Reject`, `Flag`). Micro-transactions (`<= $50`) release points immediately and roll a **10% random Expert Panel audit**. Macro-transactions (`> $50` or Final Pitches) route to `pending_expert_review`.
   - **Tier 2 (Expert Panel / Admin):** Scores Macro-transactions across the 6 criteria, audits the 10% random Micro-transaction sample (applying `-75 pt` fraud penalties when flagged), and tunes algorithm weights.
-  - **Step 5 Resolution Loop:** Any rejection dispatches a Telegram message back to the student with the exact reason and unlocks a **single (`1x`) resubmission attempt**.
+  - **Step 5 Resolution Loop:** Any rejection dispatches a WhatsApp message back to the student with the exact reason and unlocks a **single (`1x`) resubmission attempt**.
 - **Health, Risk & Audit Dashboard (`src/components/HealthRiskDashboardView.tsx`):** Flags high-revenue/zero-impact anomalies, inactive clubs, off-campus EXIF drift, and displays the immutable `public.audit_logs` PostgreSQL trigger stream.
 
 ### Backend: Supabase PostgreSQL (`supabase/migrations/0001_circular_economy_schema.sql`)
@@ -43,12 +43,9 @@ Styled using tokens and SVG vector icons extracted via the **Figma MCP** server 
 # Install dependencies
 npm install
 
-# Run the 7-step architectural, EXIF, RBAC, and validation unit test suite
+# Run the 16-step architectural, EXIF, RBAC, WhatsApp Cloud webhook, and validation unit test suite
 npm test
 
 # Start the Next.js development server
 npm run dev
-
-# Start the standalone Telegram Bot (requires TELEGRAM_BOT_TOKEN in .env.local)
-npm run bot
 ```

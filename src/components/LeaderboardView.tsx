@@ -26,7 +26,6 @@ interface LeaderboardViewProps {
   activeSchoolId?: string | null;
   onSelectClubProfile: (clubId: string) => void;
   onOpenWhatsAppWorkbench?: () => void;
-  onOpenTelegramWorkbench?: () => void;
   onOpenVerification?: () => void;
 }
 
@@ -36,7 +35,6 @@ export function LeaderboardView({
   activeSchoolId,
   onSelectClubProfile,
   onOpenWhatsAppWorkbench,
-  onOpenTelegramWorkbench,
   onOpenVerification,
 }: LeaderboardViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -125,9 +123,9 @@ export function LeaderboardView({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            {(onOpenWhatsAppWorkbench || onOpenTelegramWorkbench) && (
+            {onOpenWhatsAppWorkbench && (
               <button
-                onClick={onOpenWhatsAppWorkbench || onOpenTelegramWorkbench}
+                onClick={onOpenWhatsAppWorkbench}
                 className="hai-btn-on-zeal px-5 py-2.5 text-xs sm:text-sm inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <span>Submit via WhatsApp</span>

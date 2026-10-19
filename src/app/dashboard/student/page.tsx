@@ -18,8 +18,8 @@ import {
   ImpactLog,
   LeaderboardSchoolScore,
   School,
-  TelegramBotOutboundMessage,
   UserProfile,
+  WhatsAppBotOutboundMessage,
 } from '@/types/domain';
 import { fetchPlatformSnapshotClient } from '@/lib/client/platform-bridge';
 import { StudentGamifiedDashboardView } from '@/components/StudentGamifiedDashboardView';
@@ -34,7 +34,8 @@ interface SnapshotData {
   impactLogs: ImpactLog[];
   auditLogs: AuditLogEntry[];
   gamificationConfig: GamificationConfig;
-  telegramMessages: TelegramBotOutboundMessage[];
+  whatsappMessages: WhatsAppBotOutboundMessage[];
+  telegramMessages?: any[];
   leaderboard: LeaderboardSchoolScore[];
   healthAlerts: HealthRiskAlert[];
 }
@@ -291,7 +292,7 @@ export default function StudentDashboardPage() {
             schools={snapshot.schools}
             users={snapshot.users}
             impactLogs={snapshot.impactLogs}
-            whatsappMessages={snapshot.telegramMessages}
+            whatsappMessages={snapshot.whatsappMessages || snapshot.telegramMessages}
             activeUser={studentUser}
             isAdmin={false}
             isDev={false}
@@ -318,7 +319,7 @@ export default function StudentDashboardPage() {
             config={snapshot.gamificationConfig}
             activeSchoolId={studentSchool.id}
             onSelectClubProfile={() => setActiveTab('clubs')}
-            onOpenTelegramWorkbench={() => setActiveTab('whatsapp_ingestion')}
+            onOpenWhatsAppWorkbench={() => setActiveTab('whatsapp_ingestion')}
             onOpenVerification={() => setActiveTab('student_gamified')}
           />
         )}

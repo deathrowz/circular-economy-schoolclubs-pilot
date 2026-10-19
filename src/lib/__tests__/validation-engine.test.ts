@@ -5,7 +5,7 @@ import {
   createSampleExifDocumentBuffer,
   extractAndValidateExif,
 } from '../exif/parser';
-import { handleTelegramBotUpdate } from '../telegram/bot-handler';
+import { handleWhatsAppCloudUpdate } from '../whatsapp/handler';
 import {
   findOrFetchImpactLog,
   getFullPlatformSnapshot,
@@ -22,7 +22,7 @@ async function runVerificationSuite() {
   });
   assert.equal(compressedRes.valid, false);
   assert.equal(compressedRes.errorCode, 'COMPRESSED_PHOTO_REJECTED');
-  console.log('✅ [1/7] Metadata Constraint: Compressed Telegram photos rejected.');
+  console.log('✅ [1/7] Metadata Constraint: Compressed photos rejected.');
 
   // 2. Test EXIF Validation: Reject missing GPS & accept valid Uncompressed Document
   const noGpsBuf = createSampleExifDocumentBuffer({
@@ -44,16 +44,16 @@ async function runVerificationSuite() {
   assert.equal(validExifRes.metadata?.lat, 45.523062);
   console.log('✅ [2/7] EXIF Parser: Missing GPS rejected; valid uncompressed EXIF extracted.');
 
-  // 3. Test Telegram Bot 6-Step Student Submission Workflow (Macro > $50)
+  // 3. Test WhatsApp Cloud 6-Step Student Submission Workflow (Macro > $50)
   const chatId = 999001;
-  await handleTelegramBotUpdate({
+  await handleWhatsAppCloudUpdate({
     chatId,
     studentId: 'usr-student-01',
     clubId: 'club-01',
     text: '/log_impact',
   });
 
-  const stepDoc = await handleTelegramBotUpdate({
+  const stepDoc = await handleWhatsAppCloudUpdate({
     chatId,
     document: {
       fileName: 'SOLAR_BATCH_EVIDENCE.JPG',
@@ -68,22 +68,22 @@ async function runVerificationSuite() {
   assert.equal(stepDoc.ok, true);
   assert.equal(stepDoc.stage, 'AWAITING_ACTIVITY_TITLE');
 
-  await handleTelegramBotUpdate({
+  await handleWhatsAppCloudUpdate({
     chatId,
     text: 'Refurbished Solar Lab Bench Power Supply Sale',
   });
-  await handleTelegramBotUpdate({
+  await handleWhatsAppCloudUpdate({
     chatId,
     text: '16.5',
   });
-  const finalStep = await handleTelegramBotUpdate({
+  const finalStep = await handleWhatsAppCloudUpdate({
     chatId,
     text: '125', // $125 > $50 threshold -> Macro-Transaction!
   });
   assert.equal(finalStep.ok, true);
   assert.ok(finalStep.createdLogId);
   console.log(
-    `✅ [3/7] Telegram Bot Workflow: Created Macro-Transaction ${finalStep.createdLogId} (status: pending).`
+    `✅ [3/7] WhatsApp Cloud Workflow: Created Macro-Transaction ${finalStep.createdLogId} (status: pending).`
   );
 
   // 4. Test RBAC School Isolation (Teacher from SCH-02 cannot approve SCH-01's log)
@@ -167,14 +167,14 @@ async function runVerificationSuite() {
 
   // 7. Test Step 5 Resolution Loop: Single Resubmission Attempt Enforcement
   const resubmitChatId = 999002;
-  const resubStart = await handleTelegramBotUpdate({
+  const resubStart = await handleWhatsAppCloudUpdate({
     chatId: resubmitChatId,
     text: '/resubmit log-108',
   });
   assert.equal(resubStart.ok, true);
   assert.equal(resubStart.stage, 'AWAITING_DOCUMENT');
 
-  await handleTelegramBotUpdate({
+  await handleWhatsAppCloudUpdate({
     chatId: resubmitChatId,
     document: {
       fileName: 'CLEAR_SCALE_RESUBMIT.JPG',
@@ -186,19 +186,19 @@ async function runVerificationSuite() {
       },
     },
   });
-  await handleTelegramBotUpdate({
+  await handleWhatsAppCloudUpdate({
     chatId: resubmitChatId,
     text: 'Copper Heat-Sink Recovery Batch #4 (Resubmitted)',
   });
-  await handleTelegramBotUpdate({ chatId: resubmitChatId, text: '9.5' });
-  const resubComplete = await handleTelegramBotUpdate({
+  await handleWhatsAppCloudUpdate({ chatId: resubmitChatId, text: '9.5' });
+  const resubComplete = await handleWhatsAppCloudUpdate({
     chatId: resubmitChatId,
     text: '32',
   });
   assert.equal(resubComplete.ok, true);
 
   // Attempting a 2nd resubmission on `log-108` MUST be rejected!
-  const secondResubAttempt = await handleTelegramBotUpdate({
+  const secondResubAttempt = await handleWhatsAppCloudUpdate({
     chatId: resubmitChatId,
     text: '/resubmit log-108',
   });
@@ -211,7 +211,7 @@ async function runVerificationSuite() {
   // 8. Test Telegram Documentation Pipeline: Teacher uploads verified invoice/receipt via bot
   // Teacher for Royal College (usr-teacher-01) initiates invoice upload for log-102
   const teacherChatId = 888001;
-  const teacherUploadStart = await handleTelegramBotUpdate({
+  const teacherUploadStart = await handleWhatsAppCloudUpdate({
     chatId: teacherChatId,
     actorRole: 'teacher',
     actorId: 'usr-teacher-01',
@@ -221,7 +221,7 @@ async function runVerificationSuite() {
   assert.equal(teacherUploadStart.stage, 'AWAITING_TEACHER_INVOICE_DOC');
 
   // Teacher submits official invoice document (PDF)
-  const teacherUploadDoc = await handleTelegramBotUpdate({
+  const teacherUploadDoc = await handleWhatsAppCloudUpdate({
     chatId: teacherChatId,
     actorRole: 'teacher',
     actorId: 'usr-teacher-01',
@@ -238,32 +238,32 @@ async function runVerificationSuite() {
   assert.equal(teacherUploadDoc.ok, true);
   assert.ok(teacherUploadDoc.botReply.includes('TEACHER-VERIFIED INVOICE'));
 
-  // Verify log-102 now has verified_documents and telegram_dossier_sent_to_experts
+  // Verify log-102 now has verified_documents and whatsapp_dossier_sent_to_experts
   const snapAfterInvoice = getFullPlatformSnapshot();
   const log102 = snapAfterInvoice.impactLogs.find((l) => l.id === 'log-102')!;
   assert.ok(log102.verified_documents && log102.verified_documents.length > 0);
   assert.equal(log102.verified_documents[0].file_name, 'INV-RC-2026-081_ZONAL_DELIVERY.PDF');
-  assert.equal(log102.verified_documents[0].uploaded_via_telegram, true);
-  assert.equal(log102.telegram_dossier_sent_to_experts, true);
+  assert.equal(log102.verified_documents[0].uploaded_via_whatsapp, true);
+  assert.equal(log102.whatsapp_dossier_sent_to_experts, true);
   console.log(
-    '✅ [8/9] Telegram Invoice Pipeline: Teacher uploaded verified invoice, attached to log, and dispatched dossier to GIZ/Expert group.'
+    '✅ [8/9] WhatsApp Invoice Pipeline: Teacher uploaded verified invoice, attached to log, and dispatched dossier to GIZ/Expert group.'
   );
 
-  // 9. Test Telegram Expert Criteria Scoring: Expert submits 6 criteria scores via Telegram bot
+  // 9. Test WhatsApp Expert Criteria Scoring: Expert submits 6 criteria scores via WhatsApp bot
   const expertChatId = 800999;
-  const expertScoreResult = await handleTelegramBotUpdate({
+  const expertScoreResult = await handleWhatsAppCloudUpdate({
     chatId: expertChatId,
     actorRole: 'expert_admin',
     actorId: 'usr-expert-01',
     text: '/score log-102 92 88 86 94 95 90',
   });
   assert.equal(expertScoreResult.ok, true);
-  assert.ok(expertScoreResult.botReply.includes('SCORED & SUBMITTED VIA TELEGRAM'));
+  assert.ok(expertScoreResult.botReply.includes('SCORED & SUBMITTED VIA WHATSAPP'));
 
   const snapAfterScore = getFullPlatformSnapshot();
   const scoredLog102 = snapAfterScore.impactLogs.find((l) => l.id === 'log-102')!;
   assert.equal(scoredLog102.status, 'approved');
-  assert.equal(scoredLog102.scored_via_telegram, true);
+  assert.equal(scoredLog102.scored_via_whatsapp, true);
   assert.ok(scoredLog102.points_awarded > 0);
   assert.equal(scoredLog102.criteria_scores?.relevance, 92);
   assert.equal(scoredLog102.criteria_scores?.institutional_commitment, 90);
@@ -272,7 +272,7 @@ async function runVerificationSuite() {
   const royalScore = snapAfterScore.leaderboard.find((s) => s.school.id === 'sch-01')!;
   assert.ok(royalScore.composite_leaderboard_score > 0);
   console.log(
-    `✅ [9/9] Telegram Expert Scoring: Expert scored 6 criteria via Telegram (/score log-102), released +${scoredLog102.points_awarded} pts live to dashboard.`
+    `✅ [9/9] WhatsApp Expert Scoring: Expert scored 6 criteria via WhatsApp (/score log-102), released +${scoredLog102.points_awarded} pts live to dashboard.`
   );
 
   // 10. Test Dynamic Log Lookup & Store Hydration

@@ -33,6 +33,7 @@ import {
   School,
   TelegramBotOutboundMessage,
   UserProfile,
+  WhatsAppBotOutboundMessage,
 } from '@/types/domain';
 
 type NavTab =
@@ -41,7 +42,6 @@ type NavTab =
   | 'verification'
   | 'clubs'
   | 'whatsapp_ingestion'
-  | 'telegram_bot'
   | 'health_risk'
   | 'login_portal';
 
@@ -52,7 +52,8 @@ interface SnapshotData {
   impactLogs: ImpactLog[];
   auditLogs: AuditLogEntry[];
   gamificationConfig: GamificationConfig;
-  telegramMessages: TelegramBotOutboundMessage[];
+  whatsappMessages: WhatsAppBotOutboundMessage[];
+  telegramMessages?: TelegramBotOutboundMessage[];
   leaderboard: LeaderboardSchoolScore[];
   healthAlerts: HealthRiskAlert[];
 }
@@ -113,10 +114,10 @@ export default function PlatformDashboardPage() {
       }
     });
 
-    // Real-time synchronization polling every 4 seconds (captures live Telegram bot logs)
+    // Real-time synchronization polling every 4 seconds (captures live WhatsApp activity logs)
     const interval = setInterval(refreshData, 4000);
 
-    // Refresh on window focus (e.g., when teacher returns from Telegram app)
+    // Refresh on window focus (e.g., when teacher returns from WhatsApp app)
     const handleFocus = () => refreshData();
     window.addEventListener('focus', handleFocus);
 
@@ -394,7 +395,7 @@ export default function PlatformDashboardPage() {
     }
 
     if (activeUser.role === 'expert_admin' || activeUser.role === 'expert') {
-      if (activeTab === 'whatsapp_ingestion' || activeTab === 'telegram_bot') {
+      if (activeTab === 'whatsapp_ingestion') {
         return {
           eyebrow: 'Category 2 • National Expert Evaluation Panel',
           title: 'Teacher WhatsApp Invoices & Scoring Dossiers',
@@ -431,7 +432,7 @@ export default function PlatformDashboardPage() {
     }
 
     if (activeUser.role === 'teacher') {
-      if (activeTab === 'whatsapp_ingestion' || activeTab === 'telegram_bot') {
+      if (activeTab === 'whatsapp_ingestion') {
         return {
           eyebrow: `Category 3 • Supervising Teacher • ${activeUser.school_name} (${activeUser.school_code})`,
           title: 'Teacher Activity & Receipt Approval',
@@ -465,7 +466,7 @@ export default function PlatformDashboardPage() {
     }
 
     // Category 4: Student Role
-    if (activeTab === 'whatsapp_ingestion' || activeTab === 'telegram_bot') {
+    if (activeTab === 'whatsapp_ingestion') {
       return {
         eyebrow: `Category 4 • Student Enterprise • ${activeUser.school_name} (${activeUser.school_code})`,
         title: 'WhatsApp Cloud Activity Logger (+94 11 234 5678)',
@@ -723,7 +724,7 @@ export default function PlatformDashboardPage() {
               setSelectedClubId(clubId);
               setActiveTab('clubs');
             }}
-            onOpenTelegramWorkbench={() => setActiveTab('student_gamified')}
+            onOpenWhatsAppWorkbench={() => setActiveTab('student_gamified')}
             onOpenVerification={() => setActiveTab('verification')}
           />
         )}
@@ -778,13 +779,13 @@ export default function PlatformDashboardPage() {
           />
         )}
 
-        {(activeTab === 'whatsapp_ingestion' || activeTab === 'telegram_bot') && (
+        {activeTab === 'whatsapp_ingestion' && (
           <WhatsAppCloudWorkbench
             clubs={snapshot.clubs}
             schools={snapshot.schools}
             users={snapshot.users}
             impactLogs={snapshot.impactLogs}
-            whatsappMessages={snapshot.telegramMessages}
+            whatsappMessages={snapshot.whatsappMessages || snapshot.telegramMessages}
             activeUser={activeUser}
             isAdmin={activeUser.role === 'super_admin' || activeUser.role === 'admin'}
             isDev={false}

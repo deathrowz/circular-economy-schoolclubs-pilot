@@ -24,10 +24,10 @@ import { uploadDocumentBufferToS3 } from '@/lib/storage/s3';
 import {
   attachTeacherVerifiedDocumentToLog,
   createStudentImpactSubmission,
-  dispatchTelegramNotification,
+  dispatchWhatsAppNotification,
   findOrFetchImpactLog,
   getPlatformStore,
-  submitExpertScoresViaTelegram,
+  submitExpertScoresViaWhatsApp,
 } from '@/lib/store/platform-store';
 import { computeSchoolLeaderboard, formatLkr } from '@/lib/gamification/engine';
 import { getSupabaseBrowserClient, getSupabaseServiceClient } from '@/lib/supabase/client';
@@ -402,7 +402,7 @@ export async function handleWhatsAppCloudUpdate(
       return { ok: false, botReply: `Log "${logId}" not found.`, stage: 'IDLE' };
     }
 
-    const scoreResult = await submitExpertScoresViaTelegram({
+    const scoreResult = await submitExpertScoresViaWhatsApp({
       actorId: actor.id,
       logId: targetLog.id,
       criteriaScores: scores,
@@ -412,7 +412,7 @@ export async function handleWhatsAppCloudUpdate(
     return {
       ok: true,
       botReply:
-        `🏆 *SCORED & SUBMITTED VIA WHATSAPP (SCORED & SUBMITTED VIA TELEGRAM) (${targetLog.id})*\n\n` +
+        `🏆 *SCORED & SUBMITTED VIA WHATSAPP (${targetLog.id})*\n\n` +
         `• Activity: "${targetLog.activity_title}" (${targetLog.school_name})\n` +
         `• Points Awarded: +${scoreResult.log.points_awarded} pts\n` +
         `• Status: APPROVED\n` +

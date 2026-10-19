@@ -6,6 +6,7 @@ import {
   School,
   TelegramBotOutboundMessage,
   UserProfile,
+  WhatsAppBotOutboundMessage,
 } from '@/types/domain';
 
 export const INITIAL_GAMIFICATION_CONFIG: GamificationConfig = {
@@ -621,7 +622,7 @@ export const PILOT_CLUBS: Club[] = CLUB_DEFINITIONS.map((def) => {
         holder_name: def.studentLead,
         tier: 'executive',
         department: 'Student Executive',
-        responsibilities: 'Leads club strategy, final funding pitches, and Telegram reporting.',
+        responsibilities: 'Leads club strategy, final funding pitches, and WhatsApp reporting.',
       },
       {
         id: `${def.id}-org-2`,
@@ -667,7 +668,7 @@ export const PILOT_CLUBS: Club[] = CLUB_DEFINITIONS.map((def) => {
         completed_at: '2026-09-25T14:00:00Z',
         verified_by: 'Dr. Nuwan Gunasekara (National Panel)',
         seed_tranche_unlocked_usd: school.seed_funding_topoff_usd > 0 ? 1000 : 500,
-        impact_summary: '120+ kg waste recycled with GPS-verified Telegram logs',
+        impact_summary: '120+ kg waste recycled with GPS-verified WhatsApp logs',
       },
     ],
     criteria_baseline: {
@@ -1365,9 +1366,10 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
     new_status: 'rejected',
     points_delta: 0,
     reason_or_notes:
-      'Hanging scale weight display is blurry in the photo. Sent to student via Telegram for 1x resubmission.',
+      'Hanging scale weight display is blurry in the photo. Sent to student via WhatsApp for 1x resubmission.',
     metadata: {
       resubmissions_remaining: 1,
+      whatsapp_notified: true,
       telegram_notified: true,
     },
     created_at: '2026-10-09T14:15:00Z',
@@ -1397,12 +1399,13 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
   },
 ];
 
-export const INITIAL_TELEGRAM_MESSAGES: TelegramBotOutboundMessage[] = [
+export const INITIAL_WHATSAPP_MESSAGES: WhatsAppBotOutboundMessage[] = [
   {
     id: 'tg-out-01',
     chat_id: 800101,
     student_name: 'Kavindu Perera',
     telegram_username: '@kavindu_rc',
+    whatsapp_number: '+94771234501',
     log_id: 'log-108',
     type: 'REJECTION_RESOLUTION',
     text: '⚠️ RESOLUTION LOOP (log-108): Your submission "Canteen HDPE Bottle Cap Shredding Batch #4" was rejected by Mrs. Kumari Senanayake.\nReason: "Hanging scale weight display is blurry in the photo. Please re-photograph the 14.0 kg reading clearly as an uncompressed File."\n👉 You have 1 single resubmission attempt remaining. Reply with /resubmit log-108.',
@@ -1413,6 +1416,7 @@ export const INITIAL_TELEGRAM_MESSAGES: TelegramBotOutboundMessage[] = [
     chat_id: 800108,
     student_name: 'Dhanushka Kumara',
     telegram_username: '@dhanushka_acc',
+    whatsapp_number: '+94771234508',
     log_id: 'log-105',
     type: 'FRAUD_PENALTY_NOTICE',
     text: '🚨 RANDOM AUDIT PENALTY (log-105): National Panel flagged "Unverified Off-Campus Clipboard Resale Claim" during the 10% random audit. Original points revoked and -75 penalty points deducted from Anuradhapura Central College (SCH-08).',
@@ -1423,9 +1427,12 @@ export const INITIAL_TELEGRAM_MESSAGES: TelegramBotOutboundMessage[] = [
     chat_id: 800101,
     student_name: 'Kavindu Perera',
     telegram_username: '@kavindu_rc',
+    whatsapp_number: '+94771234501',
     log_id: 'log-101',
     type: 'SUBMISSION_RECEIPT',
     text: '✅ RECEIVED (log-101): Uncompressed Document verified! EXIF Timestamp: 2026-10-12 06:30:15 | GPS: 6.9048, 79.8613 (16m from Royal College Colombo). Status: PENDING Teacher Review (24.5 kg, Rs. 11,400).',
     sent_at: '2026-10-12T06:45:02Z',
   },
 ];
+
+export const INITIAL_TELEGRAM_MESSAGES = INITIAL_WHATSAPP_MESSAGES;

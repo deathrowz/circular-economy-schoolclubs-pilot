@@ -13,8 +13,8 @@ import {
   ImpactLog,
   LeaderboardSchoolScore,
   School,
-  TelegramBotOutboundMessage,
   UserProfile,
+  WhatsAppBotOutboundMessage,
 } from '@/types/domain';
 
 interface SnapshotData {
@@ -24,7 +24,8 @@ interface SnapshotData {
   impactLogs: ImpactLog[];
   auditLogs: AuditLogEntry[];
   gamificationConfig: GamificationConfig;
-  telegramMessages: TelegramBotOutboundMessage[];
+  whatsappMessages: WhatsAppBotOutboundMessage[];
+  telegramMessages?: any[];
   leaderboard: LeaderboardSchoolScore[];
   healthAlerts: HealthRiskAlert[];
 }

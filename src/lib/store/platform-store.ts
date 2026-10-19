@@ -10,6 +10,7 @@ import {
   TelegramBotOutboundMessage,
   UserProfile,
   VerifiedDocument,
+  WhatsAppBotOutboundMessage,
 } from '@/types/domain';
 import {
   APPROVED_HISTORICAL_LOGS,
@@ -18,6 +19,7 @@ import {
   INITIAL_GAMIFICATION_CONFIG,
   INITIAL_IMPACT_LOGS,
   INITIAL_TELEGRAM_MESSAGES,
+  INITIAL_WHATSAPP_MESSAGES,
   PILOT_CLUBS,
   PILOT_SCHOOLS,
 } from './seed-data';
@@ -40,6 +42,7 @@ interface PlatformState {
   impactLogs: ImpactLog[];
   auditLogs: AuditLogEntry[];
   gamificationConfig: GamificationConfig;
+  whatsappMessages: WhatsAppBotOutboundMessage[];
   telegramMessages: TelegramBotOutboundMessage[];
 }
 
@@ -49,6 +52,7 @@ const globalForStore = globalThis as unknown as {
 };
 
 function createInitialState(): PlatformState {
+  const initialMessages = structuredClone(INITIAL_WHATSAPP_MESSAGES);
   return {
     schools: structuredClone(PILOT_SCHOOLS),
     clubs: structuredClone(PILOT_CLUBS),
@@ -59,7 +63,8 @@ function createInitialState(): PlatformState {
     ],
     auditLogs: structuredClone(INITIAL_AUDIT_LOGS),
     gamificationConfig: structuredClone(INITIAL_GAMIFICATION_CONFIG),
-    telegramMessages: structuredClone(INITIAL_TELEGRAM_MESSAGES),
+    whatsappMessages: initialMessages,
+    telegramMessages: initialMessages,
   };
 }
 
@@ -115,21 +120,23 @@ export async function findOrFetchImpactLog(logId: string): Promise<ImpactLog | u
 }
 
 /**
- * Helper to dispatch a Telegram Bot message to the student (and optionally call live Telegram Bot API if token is set)
+ * Helper to dispatch a WhatsApp notification to the student
  */
-export async function dispatchTelegramNotification(params: {
+export async function dispatchWhatsAppNotification(params: {
   chatId: number | string;
   studentName: string;
-  telegramUsername: string;
+  telegramUsername?: string;
+  whatsappNumber?: string;
   logId?: string;
-  type: TelegramBotOutboundMessage['type'];
+  type: WhatsAppBotOutboundMessage['type'];
   text: string;
-}): Promise<TelegramBotOutboundMessage> {
+}): Promise<WhatsAppBotOutboundMessage> {
   const store = getPlatformStore();
-  const message: TelegramBotOutboundMessage = {
-    id: `tg-out-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+  const message: WhatsAppBotOutboundMessage = {
+    id: `wa-out-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     chat_id: params.chatId,
     student_name: params.studentName,
+    whatsapp_number: params.whatsappNumber || (typeof params.chatId === 'string' ? params.chatId : undefined),
     telegram_username: params.telegramUsername,
     log_id: params.logId,
     type: params.type,
@@ -137,30 +144,16 @@ export async function dispatchTelegramNotification(params: {
     sent_at: new Date().toISOString(),
   };
 
+  store.whatsappMessages.unshift(message);
   store.telegramMessages.unshift(message);
-
-  // If live TELEGRAM_BOT_TOKEN is configured and chatId is numeric, fire real Telegram HTTP request
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  if (botToken && !botToken.includes('your-telegram-bot-token') && typeof params.chatId === 'number') {
-    try {
-      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: params.chatId,
-          text: params.text,
-        }),
-      });
-    } catch {
-      // Ignore network errors in offline/sandbox mode
-    }
-  }
 
   return message;
 }
 
+export const dispatchTelegramNotification = dispatchWhatsAppNotification;
+
 /**
- * STEP 1: Student Submission via Telegram Bot (Creates `status: 'pending'` record)
+ * STEP 1: Student Submission via WhatsApp Cloud API (Creates `status: 'pending'` record)
  */
 export async function createStudentImpactSubmission(params: {
   actorId: string;
@@ -331,7 +324,7 @@ export async function createStudentImpactSubmission(params: {
     reason_or_notes:
       resubmissionCount > 0
         ? `Student resubmitted transaction (Attempt 1/1) for "${newLog.activity_title}"`
-        : `Submitted via Telegram Bot as ${transactionType.toUpperCase()} transaction (${formatLkr(newLog.revenue_usd)} sales, ${newLog.waste_kg} kg waste)`,
+        : `Submitted via WhatsApp as ${transactionType.toUpperCase()} transaction (${formatLkr(newLog.revenue_usd)} sales, ${newLog.waste_kg} kg waste)`,
     metadata: {
       transaction_type: transactionType,
       exif_lat: newLog.exif_lat,
@@ -502,7 +495,7 @@ export async function performTeacherReview(params: {
     // STEP 5: Resolution Loop
     if (!params.notesOrReason || params.notesOrReason.trim().length < 4) {
       throw new Error(
-        'RESOLUTION_LOOP_VIOLATION: A specific rejection reason is required to notify the student via Telegram.'
+        'RESOLUTION_LOOP_VIOLATION: A specific rejection reason is required to notify the student via WhatsApp.'
       );
     }
     log.status = 'rejected';
@@ -517,6 +510,8 @@ export async function performTeacherReview(params: {
         ? `⚠️ RESOLUTION LOOP (Tier 1 Teacher Rejection): Your submission "${log.activity_title}" (${log.id}) was rejected by ${log.teacher_reviewer_name}.\n\nReason: "${log.rejection_reason}"\n\n👉 You have 1 single resubmission attempt allowed. Use /resubmit ${log.id} with a corrected uncompressed Document.`
         : `❌ FINAL REJECTION: Your resubmission "${log.activity_title}" (${log.id}) was rejected by ${log.teacher_reviewer_name}. Reason: "${log.rejection_reason}". Maximum resubmission attempts (1/1) reached.`;
 
+    log.whatsapp_notification_sent = true;
+    log.whatsapp_last_message = tgText;
     log.telegram_notification_sent = true;
     log.telegram_last_message = tgText;
 
@@ -674,7 +669,7 @@ export async function performExpertAdjudication(params: {
     // STEP 5: Resolution Loop from Expert Panel stage
     if (!params.notesOrReason || params.notesOrReason.trim().length < 4) {
       throw new Error(
-        'RESOLUTION_LOOP_VIOLATION: Expert Panel rejection requires a specific reason to send back to the student via Telegram.'
+        'RESOLUTION_LOOP_VIOLATION: Expert Panel rejection requires a specific reason to send back to the student via WhatsApp.'
       );
     }
 
@@ -691,6 +686,8 @@ export async function performExpertAdjudication(params: {
         ? `⚠️ RESOLUTION LOOP (Tier 2 Expert Panel Rejection): Your Macro-Transaction "${log.activity_title}" (${log.id}) was rejected by ${log.expert_reviewer_name}.\n\nReason: "${log.rejection_reason}"\n\n👉 You have 1 single resubmission attempt allowed via /resubmit ${log.id}.`
         : `❌ FINAL REJECTION: Macro-Transaction "${log.activity_title}" (${log.id}) was rejected. Maximum resubmission attempts (1/1) reached.`;
 
+    log.whatsapp_notification_sent = true;
+    log.whatsapp_last_message = tgText;
     log.telegram_notification_sent = true;
     log.telegram_last_message = tgText;
 
@@ -798,8 +795,8 @@ export async function performExpertAdjudication(params: {
 /**
  * TEACHER DOCUMENT VERIFICATION PIPELINE:
  * Once verified locally by the school's supervising teacher, the teacher uploads
- * the sales invoice, official receipt, or scale ticket to the Telegram Bot.
- * The bot logs the document, marks the transaction, and automatically sends a review
+ * the sales invoice, official receipt, or scale ticket via WhatsApp Cloud or web interface.
+ * The system logs the document, marks the transaction, and automatically sends a review
  * package to the GIZ & National Expert Panel channel!
  */
 export async function attachTeacherVerifiedDocumentToLog(params: {
@@ -882,12 +879,13 @@ export async function attachTeacherVerifiedDocumentToLog(params: {
     previous_status: log.status,
     new_status: log.status,
     points_delta: 0,
-    reason_or_notes: `Teacher uploaded verified ${params.docCategory.replace(/_/g, ' ')} (${params.fileName}) via Telegram Bot. Forwarded to GIZ & National Expert Panel.`,
+    reason_or_notes: `Teacher uploaded verified ${params.docCategory.replace(/_/g, ' ')} (${params.fileName}) via WhatsApp. Forwarded to GIZ & National Expert Panel.`,
     metadata: {
       doc_id: verifiedDoc.id,
       doc_category: params.docCategory,
       s3_url: params.s3Url,
       verified_amount_lkr: verifiedDoc.verified_amount_lkr,
+      uploaded_via_whatsapp: verifiedDoc.uploaded_via_whatsapp,
       uploaded_via_telegram: verifiedDoc.uploaded_via_telegram,
     },
     created_at: now,
@@ -895,11 +893,12 @@ export async function attachTeacherVerifiedDocumentToLog(params: {
 
   store.auditLogs.unshift(auditEntry);
 
-  // Dispatch notification to GIZ & Expert Panel in Telegram
-  await dispatchTelegramNotification({
-    chatId: 800999, // GIZ & Expert Panel channel
+  // Dispatch notification to GIZ & Expert Panel in WhatsApp
+  await dispatchWhatsAppNotification({
+    chatId: '+94701234567', // GIZ & Expert Panel channel
     studentName: 'GIZ & National Expert Panel',
     telegramUsername: '@giz_cea_expert_panel',
+    whatsappNumber: '+94701234567',
     logId: log.id,
     type: 'APPROVAL_NOTICE',
     text:
@@ -909,7 +908,7 @@ export async function attachTeacherVerifiedDocumentToLog(params: {
       `• Verified Revenue: Rs. ${(verifiedDoc.verified_amount_lkr || 0).toLocaleString()} | Recycled: ${log.waste_kg} kg\n` +
       `• Document Attached: 📄 ${verifiedDoc.file_name} (${verifiedDoc.doc_category.replace(/_/g, ' ')})\n` +
       `• Teacher Endorser: ${verifiedDoc.verified_by_teacher_name}\n\n` +
-      `⚖️ EXPERT REVIEW ACTION VIA TELEGRAM:\n` +
+      `⚖️ EXPERT REVIEW ACTION VIA WHATSAPP:\n` +
       `Reply to score this activity across the 6 criteria:\n` +
       `👉 /score ${log.id} <relevance> <business> <feasibility> <ownership> <sustainability> <commitment>\n` +
       `Example: /score ${log.id} 92 88 86 94 95 90\n` +
@@ -921,6 +920,7 @@ export async function attachTeacherVerifiedDocumentToLog(params: {
     if (supabase) {
       await supabase.from('impact_logs').update({
         verified_documents: log.verified_documents,
+        whatsapp_dossier_sent_to_experts: true,
         telegram_dossier_sent_to_experts: log.telegram_dossier_sent_to_experts,
         updated_at: now,
       }).eq('id', log.id);
@@ -934,9 +934,13 @@ export async function attachTeacherVerifiedDocumentToLog(params: {
  * EXPERT TELEGRAM SCORING PIPELINE:
  * Experts review the invoice, sales receipt, and environmental data directly in Telegram.
  * When the expert submits their selection criteria scores via Telegram,
+/**
+ * EXPERT WHATSAPP SCORING PIPELINE:
+ * Experts review the invoice, sales receipt, and environmental data directly in WhatsApp or web.
+ * When the expert submits their selection criteria scores via WhatsApp,
  * points are calculated, posted to the Leaderboard, and reflected live on the Dashboard!
  */
-export async function submitExpertScoresViaTelegram(params: {
+export async function submitExpertScoresViaWhatsApp(params: {
   actorId: string;
   logId: string;
   criteriaScores: CriteriaScores;
@@ -953,7 +957,7 @@ export async function submitExpertScoresViaTelegram(params: {
       actor.role !== 'admin')
   ) {
     throw new Error(
-      'RBAC_ROLE_VIOLATION: Only an Expert Panel member or GIZ Super Admin can submit selection criteria scores via Telegram.'
+      'RBAC_ROLE_VIOLATION: Only an Expert Panel member or GIZ Super Admin can submit selection criteria scores via WhatsApp.'
     );
   }
 
@@ -982,7 +986,7 @@ export async function submitExpertScoresViaTelegram(params: {
   log.expert_reviewed_at = now;
   log.expert_notes =
     params.notesOrReason ||
-    'Scored via Telegram Bot after reviewing teacher-verified sales invoice & environmental evidence.';
+    'Scored via WhatsApp Cloud API after reviewing teacher-verified sales invoice & environmental evidence.';
   log.updated_at = now;
 
   const auditEntry: AuditLogEntry = {
@@ -996,13 +1000,14 @@ export async function submitExpertScoresViaTelegram(params: {
     actor_id: actor.id,
     actor_name: actor.full_name,
     actor_role: actor.role,
-    action_type: 'EXPERT_SCORED_VIA_TELEGRAM',
+    action_type: 'EXPERT_SCORED_VIA_WHATSAPP',
     previous_status: previousStatus,
     new_status: 'approved',
     points_delta: awardedPoints,
-    reason_or_notes: `Expert submitted criteria scores via Telegram: [${params.criteriaScores.relevance}, ${params.criteriaScores.business}, ${params.criteriaScores.feasibility}, ${params.criteriaScores.student_ownership}, ${params.criteriaScores.sustainability}, ${params.criteriaScores.institutional_commitment}]. Released +${awardedPoints} pts to ${log.school_name}.`,
+    reason_or_notes: `Expert submitted criteria scores via WhatsApp: [${params.criteriaScores.relevance}, ${params.criteriaScores.business}, ${params.criteriaScores.feasibility}, ${params.criteriaScores.student_ownership}, ${params.criteriaScores.sustainability}, ${params.criteriaScores.institutional_commitment}]. Released +${awardedPoints} pts to ${log.school_name}.`,
     metadata: {
       criteria_scores: params.criteriaScores,
+      scored_via_whatsapp: true,
       scored_via_telegram: true,
       points_awarded: awardedPoints,
       verified_documents_count: log.verified_documents?.length || 0,
@@ -1013,14 +1018,15 @@ export async function submitExpertScoresViaTelegram(params: {
   store.auditLogs.unshift(auditEntry);
 
   // Send confirmation to Student, Teacher, and GIZ
-  await dispatchTelegramNotification({
-    chatId: 800101,
+  await dispatchWhatsAppNotification({
+    chatId: log.phone_number || 800101,
     studentName: log.student_name,
     telegramUsername: log.telegram_username || '@student',
+    whatsappNumber: log.phone_number,
     logId: log.id,
     type: 'APPROVAL_NOTICE',
     text:
-      `🏆 SELECTION CRITERIA SCORED VIA TELEGRAM (${log.id}):\n` +
+      `🏆 SELECTION CRITERIA SCORED VIA WHATSAPP (${log.id}):\n` +
       `• Evaluator: ${log.expert_reviewer_name} (National Expert Panel)\n` +
       `• School: ${log.school_name} — "${log.activity_title}"\n` +
       `• Criteria Scores: Relevance: ${params.criteriaScores.relevance} | Business: ${params.criteriaScores.business} | Feasibility: ${params.criteriaScores.feasibility} | Student Leadership: ${params.criteriaScores.student_ownership} | Sustainability: ${params.criteriaScores.sustainability} | School Support: ${params.criteriaScores.institutional_commitment}\n` +
@@ -1035,6 +1041,7 @@ export async function submitExpertScoresViaTelegram(params: {
         status: log.status,
         criteria_scores: log.criteria_scores,
         points_awarded: log.points_awarded,
+        scored_via_whatsapp: true,
         scored_via_telegram: true,
         expert_reviewer_id: log.expert_reviewer_id,
         expert_reviewer_name: log.expert_reviewer_name,
@@ -1103,12 +1110,11 @@ export function getFullPlatformSnapshot() {
     impactLogs: store.impactLogs,
     auditLogs: store.auditLogs,
     gamificationConfig: store.gamificationConfig,
-    whatsappMessages: store.telegramMessages,
+    whatsappMessages: store.whatsappMessages,
     telegramMessages: store.telegramMessages,
     leaderboard,
     healthAlerts,
   };
 }
 
-export const submitExpertScoresViaWhatsApp = submitExpertScoresViaTelegram;
-export const dispatchWhatsAppNotification = dispatchTelegramNotification;
+export const submitExpertScoresViaTelegram = submitExpertScoresViaWhatsApp;

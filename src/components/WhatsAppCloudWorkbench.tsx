@@ -886,8 +886,3 @@ export function WhatsAppCloudWorkbench({
     </div>
   );
 }
-
-/**
- * @deprecated Use `WhatsAppCloudWorkbench`
- */
-export const TelegramBotWorkbench = WhatsAppCloudWorkbench;

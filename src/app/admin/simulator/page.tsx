@@ -18,8 +18,8 @@ import {
   ImpactLog,
   LeaderboardSchoolScore,
   School,
-  TelegramBotOutboundMessage,
   UserProfile,
+  WhatsAppBotOutboundMessage,
 } from '@/types/domain';
 import { fetchPlatformSnapshotClient } from '@/lib/client/platform-bridge';
 import { WhatsAppCloudWorkbench } from '@/components/WhatsAppCloudWorkbench';
@@ -31,7 +31,8 @@ interface SnapshotData {
   impactLogs: ImpactLog[];
   auditLogs: AuditLogEntry[];
   gamificationConfig: GamificationConfig;
-  telegramMessages: TelegramBotOutboundMessage[];
+  whatsappMessages: WhatsAppBotOutboundMessage[];
+  telegramMessages?: any[];
   leaderboard: LeaderboardSchoolScore[];
   healthAlerts: HealthRiskAlert[];
 }
@@ -147,7 +148,7 @@ export default function AdminSimulatorPage() {
           schools={snapshot.schools}
           users={snapshot.users}
           impactLogs={snapshot.impactLogs}
-          whatsappMessages={snapshot.telegramMessages}
+          whatsappMessages={snapshot.whatsappMessages || snapshot.telegramMessages}
           activeUser={adminUser}
           isAdmin={true}
           isDev={true}

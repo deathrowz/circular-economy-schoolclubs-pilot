@@ -3,7 +3,7 @@ import {
   getPlatformStore,
   performTeacherReview,
 } from '@/lib/store/platform-store';
-import { handleTelegramBotUpdate } from '@/lib/telegram/bot-handler';
+import { handleWhatsAppCloudUpdate } from '@/lib/whatsapp/handler';
 
 async function testSupabaseLogLookupAndReview() {
   console.log('🧪 Testing findOrFetchImpactLog with real Supabase log "log-51343"...');
@@ -28,8 +28,8 @@ async function testSupabaseLogLookupAndReview() {
     throw new Error(`Expected log-51343, got ${log.id}`);
   }
 
-  // 2. Test Telegram Bot /review log-51343 lookup
-  const botReviewRes = await handleTelegramBotUpdate({
+  // 2. Test WhatsApp Bot /review log-51343 lookup
+  const botReviewRes = await handleWhatsAppCloudUpdate({
     chatId: 999001,
     actorRole: 'expert_admin',
     actorId: 'usr-expert-01',
@@ -37,9 +37,9 @@ async function testSupabaseLogLookupAndReview() {
   });
 
   if (!botReviewRes.ok || !botReviewRes.botReply.includes('EXPERT DOSSIER REVIEW (log-51343)')) {
-    throw new Error(`FAILED: Telegram Bot /review log-51343 failed! Reply: ${botReviewRes.botReply}`);
+    throw new Error(`FAILED: WhatsApp Bot /review log-51343 failed! Reply: ${botReviewRes.botReply}`);
   }
-  console.log('✅ [2/3] Telegram Bot successfully retrieved and formatted /review log-51343!');
+  console.log('✅ [2/3] WhatsApp Bot successfully retrieved and formatted /review log-51343!');
 
   // 3. Test Teacher Review (Royal College Teacher usr-teacher-01)
   console.log('🧪 Testing performTeacherReview by usr-teacher-01 on log-51343...');

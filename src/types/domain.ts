@@ -337,13 +337,16 @@ export interface HealthRiskAlert {
   detected_at: string;
 }
 
-export interface TelegramBotOutboundMessage {
+export interface WhatsAppBotOutboundMessage {
   id: string;
   chat_id: number | string;
   student_name: string;
-  telegram_username: string;
+  whatsapp_number?: string;
+  telegram_username?: string;
   log_id?: string;
   type: 'REJECTION_RESOLUTION' | 'SUBMISSION_RECEIPT' | 'METADATA_REJECTION' | 'APPROVAL_NOTICE' | 'FRAUD_PENALTY_NOTICE';
   text: string;
   sent_at: string;
 }
+
+export type TelegramBotOutboundMessage = WhatsAppBotOutboundMessage;

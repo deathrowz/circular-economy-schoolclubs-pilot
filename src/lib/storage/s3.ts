@@ -92,7 +92,7 @@ export async function generatePresignedUploadUrl(params: {
 }
 
 /**
- * Uploads an uncompressed document buffer directly to S3 from the Telegram Bot handler
+ * Uploads an uncompressed document buffer directly to S3 from the WhatsApp Cloud webhook handler
  */
 export async function uploadDocumentBufferToS3(params: {
   buffer: Uint8Array;

@@ -60,7 +60,7 @@ export async function extractAndValidateExif(
       valid: false,
       errorCode: 'COMPRESSED_PHOTO_REJECTED',
       errorMessage:
-        '⚠️ METADATA CONSTRAINT VIOLATION: You sent a compressed Telegram Photo, which strips EXIF data. Please re-send the image as an uncompressed "Document / File" (Tap Paperclip 📎 → File → Select original photo) so GPS and Timestamp EXIF tags are preserved.',
+        '⚠️ METADATA CONSTRAINT VIOLATION: You sent a compressed photo, which strips EXIF data. Please re-send the image as an uncompressed "Document / File" (Tap Paperclip 📎 → Document → Select original photo) so GPS and Timestamp EXIF tags are preserved.',
     };
   }
 

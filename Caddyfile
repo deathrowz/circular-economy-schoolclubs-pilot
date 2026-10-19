@@ -1,0 +1,20 @@
+161.118.247.101.sslip.io {
+    # Forward Supabase API endpoints directly to colocated Kong gateway
+    handle /auth/v1/* {
+        reverse_proxy kong:8000
+    }
+    handle /rest/v1/* {
+        reverse_proxy kong:8000
+    }
+    handle /storage/v1/* {
+        reverse_proxy kong:8000
+    }
+    handle /realtime/v1/* {
+        reverse_proxy kong:8000
+    }
+
+    # Forward all other requests to Next.js Web App
+    handle {
+        reverse_proxy web:3000
+    }
+}

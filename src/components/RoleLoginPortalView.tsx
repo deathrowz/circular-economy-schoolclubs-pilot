@@ -162,6 +162,7 @@ export function RoleLoginPortalView({
       const isValidPassword =
         supabaseAuthenticated ||
         passwordInput === '#password123' ||
+        passwordInput === 'I2IClubs2026!Secure' ||
         passwordInput === 'Haritha2026!Secure' ||
         passwordInput === 'Pilot2026!';
 
@@ -177,11 +178,11 @@ export function RoleLoginPortalView({
       if (typeof document !== 'undefined') {
         const maxAge = rememberMe ? 2592000 : 86400;
         document.cookie = `i2i_auth_user_id=${activePersona.id}; path=/; max-age=${maxAge}; SameSite=Lax`;
-        document.cookie = `haritha_auth_user_id=${activePersona.id}; path=/; max-age=${maxAge}; SameSite=Lax`;
+        document.cookie = `haritha_auth_user_id=; path=/; max-age=0; SameSite=Lax`;
       }
       if (typeof window !== 'undefined') {
         localStorage.setItem('i2i_auth_user_id', activePersona.id);
-        localStorage.setItem('haritha_auth_user_id', activePersona.id);
+        localStorage.removeItem('haritha_auth_user_id');
       }
 
       // 5. Automated Role-to-Dashboard Dispatch (Strict RBAC Routing)
@@ -250,7 +251,7 @@ export function RoleLoginPortalView({
                   setLoginIdentifier(e.target.value);
                   if (errorMessage) setErrorMessage(null);
                 }}
-                placeholder="e.g. budhikka.gunasekera@giz.de, auditor.giz@harithapasal.lk or SCH-01-TEACHER"
+                placeholder="e.g. budhikka.gunasekera@giz.de, auditor.giz@giz.de, student.lead@i2iclubs.lk or SCH-01-TEACHER"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#111010]/20 bg-[#F8FAFC] text-xs font-semibold text-[#111010] placeholder:text-[#111010]/40 focus:bg-white focus:border-[#005FA3] focus:ring-2 focus:ring-[#005FA3]/15 outline-none transition"
               />
             </div>

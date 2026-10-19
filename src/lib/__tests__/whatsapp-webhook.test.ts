@@ -20,8 +20,8 @@ import { GET, POST } from '../../app/api/webhook/whatsapp/route';
 import { NextRequest } from 'next/server';
 import { getSupabaseServiceClient } from '../supabase/client';
 
-const TEST_APP_SECRET = 'giz-haritha-test-secret-1234567890';
-const TEST_VERIFY_TOKEN = 'haritha-pasal-verify-token-2026';
+const TEST_APP_SECRET = 'giz-i2i-test-secret-1234567890';
+const TEST_VERIFY_TOKEN = 'i2i-clubs-verify-token-2026';
 
 process.env.WHATSAPP_APP_SECRET = TEST_APP_SECRET;
 process.env.WHATSAPP_VERIFY_TOKEN = TEST_VERIFY_TOKEN;

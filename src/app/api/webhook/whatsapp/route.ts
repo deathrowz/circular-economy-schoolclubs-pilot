@@ -6,7 +6,7 @@
  * Compliance:
  * - Execution Target: Vercel Frankfurt (fra1) strictly for EU GDPR / AVV compliance
  * - Zero OCI / Non-EU proxying (Never route through 168.107.65.183 Singapore OCI)
- * - Stateless Ingestion: Stream binary buffers directly into Supabase Frankfurt (haritha-proofs)
+ * - Stateless Ingestion: Stream binary buffers directly into Supabase Storage (i2i-proofs / haritha-proofs)
  * - Strict Webhook Security: SHA-256 HMAC verification via crypto.timingSafeEqual
  * - Identity Resolution: E.164 MSISDN normalization against public.profiles
  * ============================================================================
@@ -313,17 +313,30 @@ export async function POST(req: NextRequest) {
     // 8. Upload Memory Buffer Directly to Private Supabase Storage Bucket 'haritha-proofs'
     const storagePath = `schools/${profile.school_code || 'SCH-01'}/${profile.club_id || 'general'}/${Date.now()}_${mediaId}.${ext}`;
 
+    // 8. Upload Memory Buffer Directly to Private Supabase Storage Bucket ('i2i-proofs' / 'haritha-proofs')
+    const primaryBucket = process.env.SUPABASE_STORAGE_BUCKET || 'i2i-proofs';
+    let activeBucket = primaryBucket;
+
     if (supabase) {
       try {
-        const { error: uploadError } = await supabase.storage
-          .from('haritha-proofs')
+        let uploadRes = await supabase.storage
+          .from(primaryBucket)
           .upload(storagePath, mediaBuffer, {
             contentType: mimeType,
             upsert: false,
           });
 
-        if (uploadError) {
-          console.error('❌ [WhatsApp Ingestion] Supabase Storage upload error:', uploadError);
+        if (uploadRes.error && primaryBucket !== 'haritha-proofs') {
+          // Fall back to legacy bucket name if primary doesn't exist yet
+          const fallbackRes = await supabase.storage
+            .from('haritha-proofs')
+            .upload(storagePath, mediaBuffer, {
+              contentType: mimeType,
+              upsert: false,
+            });
+          if (!fallbackRes.error) {
+            activeBucket = 'haritha-proofs';
+          }
         }
       } catch (uploadErr) {
         console.warn('⚠️ [WhatsApp Ingestion] Storage upload skipped in offline/CI mode:', uploadErr);
@@ -374,7 +387,7 @@ export async function POST(req: NextRequest) {
           ...submissionRecord,
           file_name: originalFileName,
           is_uncompressed_document: true,
-          s3_url: `${process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:8000'}/storage/v1/object/authenticated/haritha-proofs/${storagePath}`,
+          s3_url: `${process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:8000'}/storage/v1/object/authenticated/${activeBucket}/${storagePath}`,
           s3_key: storagePath,
           verified_documents: [],
         });

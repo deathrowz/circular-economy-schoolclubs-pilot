@@ -50,11 +50,11 @@ export default function TeacherDashboardPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('haritha_auth_user_id');
+      const stored = localStorage.getItem('i2i_auth_user_id') || localStorage.getItem('haritha_auth_user_id');
       if (stored) {
         setSessionUserId(stored);
       } else {
-        const match = document.cookie.match(/haritha_auth_user_id=([^;]+)/);
+        const match = document.cookie.match(/(?:i2i_auth_user_id|haritha_auth_user_id)=([^;]+)/);
         if (match) setSessionUserId(match[1]);
       }
     }
@@ -154,9 +154,11 @@ export default function TeacherDashboardPage() {
 
   const handleLogout = () => {
     if (typeof document !== 'undefined') {
+      document.cookie = 'i2i_auth_user_id=; path=/; max-age=0; SameSite=Lax';
       document.cookie = 'haritha_auth_user_id=; path=/; max-age=0; SameSite=Lax';
     }
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('i2i_auth_user_id');
       localStorage.removeItem('haritha_auth_user_id');
     }
     window.location.href = '/login';

@@ -8,7 +8,7 @@ ALTER TABLE IF EXISTS public.schools
 INSERT INTO public.schools (id, code, name, district, city, division, enterprise_name, campus_lat, campus_lng, campus_radius_meters, institutional_commitment_score, penalty_points_deducted, seed_funding_base_usd, seed_funding_topoff_usd)
 VALUES 
     ('11111111-1111-1111-1111-111111111111', 'SCH-01-RC', 'Royal College Colombo', 'Western Province', 'Colombo', 'Colombo South', 'Royal Eco-Plast Upcyclers', 6.9044, 79.8612, 500, 95, 0, 1500, 3000),
-    ('22222222-2222-2222-2222-222222222222', 'SCH-02-VV', 'Visakha Vidyalaya Colombo', 'Western Province', 'Colombo', 'Colombo South', 'Visakha Haritha Compost', 6.8904, 79.8576, 450, 93, 0, 1500, 3000)
+    ('22222222-2222-2222-2222-222222222222', 'SCH-02-VV', 'Visakha Vidyalaya Colombo', 'Western Province', 'Colombo', 'Colombo South', 'Visakha Bio-Compost', 6.8904, 79.8576, 450, 93, 0, 1500, 3000)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     enterprise_name = EXCLUDED.enterprise_name,
@@ -16,7 +16,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- ============================================================================
 -- 2. CREATE AUTH USERS & LINKED PROFILES
--- Default test password across accounts: Haritha2026!Secure
+-- Default test password across accounts: I2IClubs2026!Secure
 -- ============================================================================
 
 DO $$
@@ -33,7 +33,7 @@ DECLARE
     v_school_id UUID := '11111111-1111-1111-1111-111111111111';
 BEGIN
     -- Hash password using Supabase-compatible blowfish
-    v_encrypted_pw := crypt('Haritha2026!Secure', gen_salt('bf'));
+    v_encrypted_pw := crypt('I2IClubs2026!Secure', gen_salt('bf'));
 
     -- ------------------------------------------------------------------------
     -- Persona 1: GIZ Project Lead / National Auditor (Admin Role)
@@ -47,7 +47,7 @@ BEGIN
         '00000000-0000-0000-0000-000000000000',
         'authenticated',
         'authenticated',
-        'auditor.giz@harithapasal.lk',
+        'auditor.giz@giz.de',
         v_encrypted_pw,
         now(),
         '{"provider":"email","providers":["email"]}',
@@ -63,8 +63,8 @@ BEGIN
     INSERT INTO auth.identities (
         id, user_id, provider_id, identity_data, provider, created_at, updated_at
     ) VALUES (
-        v_giz_auth_id, v_giz_auth_id, 'auditor.giz@harithapasal.lk',
-        jsonb_build_object('sub', v_giz_auth_id::text, 'email', 'auditor.giz@harithapasal.lk'),
+        v_giz_auth_id, v_giz_auth_id, 'auditor.giz@giz.de',
+        jsonb_build_object('sub', v_giz_auth_id::text, 'email', 'auditor.giz@giz.de'),
         'email', now(), now()
     ) ON CONFLICT (provider, provider_id) DO NOTHING;
 
@@ -93,7 +93,7 @@ BEGIN
         '00000000-0000-0000-0000-000000000000',
         'authenticated',
         'authenticated',
-        'expert.evaluator@harithapasal.lk',
+        'expert.evaluator@i2iclubs.lk',
         v_encrypted_pw,
         now(),
         '{"provider":"email","providers":["email"]}',
@@ -109,8 +109,8 @@ BEGIN
     INSERT INTO auth.identities (
         id, user_id, provider_id, identity_data, provider, created_at, updated_at
     ) VALUES (
-        v_expert_auth_id, v_expert_auth_id, 'expert.evaluator@harithapasal.lk',
-        jsonb_build_object('sub', v_expert_auth_id::text, 'email', 'expert.evaluator@harithapasal.lk'),
+        v_expert_auth_id, v_expert_auth_id, 'expert.evaluator@i2iclubs.lk',
+        jsonb_build_object('sub', v_expert_auth_id::text, 'email', 'expert.evaluator@i2iclubs.lk'),
         'email', now(), now()
     ) ON CONFLICT (provider, provider_id) DO NOTHING;
 
@@ -139,7 +139,7 @@ BEGIN
         '00000000-0000-0000-0000-000000000000',
         'authenticated',
         'authenticated',
-        'teacher.royal@harithapasal.lk',
+        'teacher.royal@i2iclubs.lk',
         v_encrypted_pw,
         now(),
         '{"provider":"email","providers":["email"]}',
@@ -155,8 +155,8 @@ BEGIN
     INSERT INTO auth.identities (
         id, user_id, provider_id, identity_data, provider, created_at, updated_at
     ) VALUES (
-        v_teacher_auth_id, v_teacher_auth_id, 'teacher.royal@harithapasal.lk',
-        jsonb_build_object('sub', v_teacher_auth_id::text, 'email', 'teacher.royal@harithapasal.lk'),
+        v_teacher_auth_id, v_teacher_auth_id, 'teacher.royal@i2iclubs.lk',
+        jsonb_build_object('sub', v_teacher_auth_id::text, 'email', 'teacher.royal@i2iclubs.lk'),
         'email', now(), now()
     ) ON CONFLICT (provider, provider_id) DO NOTHING;
 
@@ -185,11 +185,11 @@ BEGIN
         '00000000-0000-0000-0000-000000000000',
         'authenticated',
         'authenticated',
-        'student.lead@harithapasal.lk',
+        'student.lead@i2iclubs.lk',
         v_encrypted_pw,
         now(),
         '{"provider":"email","providers":["email"]}',
-        '{"full_name":"Senura Perera (Eco Club Lead)"}',
+        '{"full_name":"Senura Perera (I2I Club Lead)"}',
         now(),
         now()
     ) ON CONFLICT (id) DO UPDATE SET
@@ -201,8 +201,8 @@ BEGIN
     INSERT INTO auth.identities (
         id, user_id, provider_id, identity_data, provider, created_at, updated_at
     ) VALUES (
-        v_student_auth_id, v_student_auth_id, 'student.lead@harithapasal.lk',
-        jsonb_build_object('sub', v_student_auth_id::text, 'email', 'student.lead@harithapasal.lk'),
+        v_student_auth_id, v_student_auth_id, 'student.lead@i2iclubs.lk',
+        jsonb_build_object('sub', v_student_auth_id::text, 'email', 'student.lead@i2iclubs.lk'),
         'email', now(), now()
     ) ON CONFLICT (provider, provider_id) DO NOTHING;
 

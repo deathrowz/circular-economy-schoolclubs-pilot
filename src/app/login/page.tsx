@@ -58,10 +58,12 @@ function LoginContent() {
     const matched = snapshot.users.find((u) => u.id === userId || u.auth_user_id === userId);
 
     if (typeof document !== 'undefined') {
-      document.cookie = `haritha_auth_user_id=${userId}; path=/; max-age=2592000; SameSite=Lax`;
+      document.cookie = `i2i_auth_user_id=${userId}; path=/; max-age=2592000; SameSite=Lax`;
+      document.cookie = `haritha_auth_user_id=; path=/; max-age=0; SameSite=Lax`;
     }
     if (typeof window !== 'undefined') {
-      localStorage.setItem('haritha_auth_user_id', userId);
+      localStorage.setItem('i2i_auth_user_id', userId);
+      localStorage.removeItem('haritha_auth_user_id');
     }
 
     if (redirectTo && redirectTo.startsWith('/')) {

@@ -281,14 +281,14 @@ const CLUB_DEFINITIONS: Array<{
     id: 'club-02',
     schoolIdx: 1,
     slug: 'visakha-bio-compost',
-    name: 'Visakha Haritha Compost',
+    name: 'Visakha Bio-Compost',
     tagline: 'Canteen rice & king coconut husk bio-compost for Colombo home gardens',
     sector: 'Organic Waste & Bio-Compost',
     feedstock: 'School canteen food waste, king coconut shells & dry leaves',
     valueProp:
       'Converts daily school canteen waste and king coconut husks into organic potting mix and liquid fertilizer.',
     revenueStreams: [
-      '5 kg Haritha Organic Compost bags (Rs. 1,200/bag)',
+      '5 kg Organic Bio-Compost bags (Rs. 1,200/bag)',
       'King coconut coir seedling pots for urban gardeners',
       'Parent-Teacher Association weekend Pola sales',
     ],
@@ -690,19 +690,17 @@ export const SCHOOL_STUDENT_LOGINS: UserProfile[] = CLUB_DEFINITIONS.map((def, i
   const num = String(idx + 1).padStart(2, '0');
   return {
     id: `usr-student-${num}`,
-    email: `${school.code.toLowerCase()}.club@harithapasal.lk`,
+    email: `${school.code.toLowerCase()}.club@i2iclubs.lk`,
     login_code: `${school.code}-STUDENT`,
     phone_number: `947712345${num}`,
     organization: school.name,
-    full_name: `${school.name} Eco Club (Student Portal)`,
+    full_name: `${school.name} I2I Club (Student Portal)`,
     role: 'student',
     school_id: school.id,
     school_name: school.name,
     school_code: school.code,
     club_id: def.id,
     club_name: def.name,
-    telegram_user_id: 800100 + idx + 1,
-    telegram_username: `@haritha_${school.code.toLowerCase().replace('-', '_')}`,
   };
 });
 
@@ -712,7 +710,7 @@ export const SCHOOL_TEACHER_LOGINS: UserProfile[] = CLUB_DEFINITIONS.map((def, i
   const num = String(idx + 1).padStart(2, '0');
   return {
     id: `usr-teacher-${num}`,
-    email: `${school.code.toLowerCase()}.teacher@harithapasal.lk`,
+    email: `${school.code.toLowerCase()}.teacher@i2iclubs.lk`,
     login_code: `${school.code}-TEACHER`,
     phone_number: `947722345${num}`,
     organization: school.name,
@@ -728,8 +726,8 @@ export const SCHOOL_TEACHER_LOGINS: UserProfile[] = CLUB_DEFINITIONS.map((def, i
 
 export const DEMO_USERS: UserProfile[] = [
   // ------------------------------------------------------------------------
-  // Realistic Operational Pilot Personas (Supabase Cloud eu-central-1 Authenticated)
-  // Default test password across accounts: Haritha2026!Secure
+  // Realistic Operational Pilot Personas (Supabase Cloud Authenticated)
+  // Default test password across accounts: I2IClubs2026!Secure
   // ------------------------------------------------------------------------
   // Persona 0: GIZ Super Admin (Budhikka Gunasekera)
   {
@@ -748,9 +746,9 @@ export const DEMO_USERS: UserProfile[] = [
   {
     id: 'usr-giz-admin-01',
     auth_user_id: 'a1111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-    email: 'auditor.giz@harithapasal.lk',
+    email: 'auditor.giz@giz.de',
     login_code: 'GIZ-LEAD',
-    phone_number: '94770001100',
+    phone_number: '94770001101',
     organization: 'GIZ Sri Lanka / Circular Economy Project',
     full_name: 'Elena Schmidt (GIZ Lead)',
     role: 'admin',
@@ -761,7 +759,7 @@ export const DEMO_USERS: UserProfile[] = [
   {
     id: 'usr-expert-01',
     auth_user_id: 'b2222222-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-    email: 'expert.evaluator@harithapasal.lk',
+    email: 'expert.evaluator@i2iclubs.lk',
     login_code: 'EXP-PANEL',
     phone_number: '94771000001',
     organization: 'National Technical Evaluation Committee',
@@ -774,7 +772,7 @@ export const DEMO_USERS: UserProfile[] = [
   {
     id: 'usr-teacher-01',
     auth_user_id: 'c3333333-cccc-cccc-cccc-cccccccccccc',
-    email: 'teacher.royal@harithapasal.lk',
+    email: 'teacher.royal@i2iclubs.lk',
     login_code: 'SCH-01-TEACHER',
     phone_number: '94772234501',
     organization: 'Royal College Colombo',
@@ -790,24 +788,22 @@ export const DEMO_USERS: UserProfile[] = [
   {
     id: 'usr-student-01',
     auth_user_id: 'd4444444-dddd-dddd-dddd-dddddddddddd',
-    email: 'student.lead@harithapasal.lk',
+    email: 'student.lead@i2iclubs.lk',
     login_code: 'SCH-01-STUDENT',
     phone_number: '94771234501',
     organization: 'Royal College Colombo',
-    full_name: 'Senura Perera (Eco Club Lead)',
+    full_name: 'Senura Perera (I2I Club Lead)',
     role: 'student',
     school_id: 'sch-01',
     school_name: 'Royal College Colombo',
     school_code: 'SCH-01',
     club_id: 'club-01',
     club_name: 'Royal Eco-Plast Upcyclers',
-    telegram_user_id: 800101,
-    telegram_username: '@senura_rc',
   },
   // Additional National Expert
   {
     id: 'usr-expert-02',
-    email: 'priyanthi.fernando@cea-panel.lk',
+    email: 'priyanthi.fernando@i2iclubs.lk',
     login_code: 'EXPERT-PANEL-02',
     phone_number: '94779000003',
     organization: 'National Expert Panel (Circular Economy)',
@@ -823,7 +819,7 @@ export const DEMO_USERS: UserProfile[] = [
   // Read-Only Industry Mentor
   {
     id: 'usr-mentor-01',
-    email: 'chamari.abeysekera@mentor.lk',
+    email: 'chamari.abeysekera@i2iclubs.lk',
     login_code: 'MENTOR-01',
     phone_number: '94779000004',
     organization: 'Ceylon Chamber Circular Mentors',
@@ -928,19 +924,17 @@ export const INITIAL_IMPACT_LOGS: ImpactLog[] = [
   {
     id: 'log-103',
     club_id: 'club-02',
-    club_name: 'Visakha Haritha Compost',
+    club_name: 'Visakha Bio-Compost',
     school_id: 'sch-02',
     school_name: 'Visakha Vidyalaya',
     school_code: 'SCH-02',
     student_id: 'usr-student-02',
     student_name: 'Nethmi Wickramasinghe',
-    telegram_username: '@nethmi_vv',
-    telegram_message_id: 'tg-msg-9884',
-    file_name: 'DOC_20261011_VISAKHA_HARITHA_POLA.JPG',
+    file_name: 'DOC_20261011_VISAKHA_POLA.JPG',
     mime_type: 'image/jpeg',
     is_uncompressed_document: true,
-    s3_url: 'https://s3.ap-south-1.amazonaws.com/srilanka-circular-schools/sch-02/DOC_20261011_VISAKHA_HARITHA_POLA.JPG',
-    s3_key: 'sch-02/club-02/DOC_20261011_VISAKHA_HARITHA_POLA.JPG',
+    s3_url: 'https://s3.ap-south-1.amazonaws.com/srilanka-circular-schools/sch-02/DOC_20261011_VISAKHA_POLA.JPG',
+    s3_key: 'sch-02/club-02/DOC_20261011_VISAKHA_POLA.JPG',
     exif_timestamp: '2026-10-11T14:55:20Z',
     exif_lat: 6.8906,
     exif_lng: 79.8577,
@@ -948,7 +942,7 @@ export const INITIAL_IMPACT_LOGS: ImpactLog[] = [
     exif_device_model: 'Note 13 Pro (Uncompressed Document)',
     campus_distance_meters: 15,
     on_campus_verified: true,
-    activity_title: 'Final Seed Pitch & 60-Bag Haritha Compost Sale at School Pola',
+    activity_title: 'Final Seed Pitch & 60-Bag Compost Sale at School Pola',
     activity_category: 'final_funding_pitch',
     description:
       'Sold 60 bags of organic canteen-waste compost and king-coconut coir pots during the school environmental fair (Rs. 73,500).',
@@ -968,24 +962,24 @@ export const INITIAL_IMPACT_LOGS: ImpactLog[] = [
         id: 'doc-seed-103',
         log_id: 'log-103',
         doc_category: 'sales_invoice',
-        file_name: 'INV-VV-2026-104_HARITHA_COMPOST_SALES.PDF',
+        file_name: 'INV-VV-2026-104_COMPOST_SALES.PDF',
         mime_type: 'application/pdf',
         s3_url:
-          'https://s3.ap-south-1.amazonaws.com/srilanka-circular-schools/sch-02/invoices/INV-VV-2026-104_HARITHA_COMPOST_SALES.PDF',
-        s3_key: 'sch-02/club-02/invoices/INV-VV-2026-104_HARITHA_COMPOST_SALES.PDF',
+          'https://s3.ap-south-1.amazonaws.com/srilanka-circular-schools/sch-02/invoices/INV-VV-2026-104_COMPOST_SALES.PDF',
+        s3_key: 'sch-02/club-02/invoices/INV-VV-2026-104_COMPOST_SALES.PDF',
         uploaded_by_role: 'teacher',
         uploaded_by_id: 'usr-teacher-02',
         uploaded_by_name: 'Mr. Rohan Wijesinghe',
         verified_by_teacher_id: 'usr-teacher-02',
         verified_by_teacher_name: 'Mr. Rohan Wijesinghe',
         verified_amount_lkr: 73500,
-        uploaded_via_telegram: true,
+        uploaded_via_whatsapp: true,
         notes:
           'Official PTA Pola Sales Invoice & Weighbridge Ticket attached. Verified on campus.',
         created_at: '2026-10-11T17:15:00Z',
       },
     ],
-    telegram_dossier_sent_to_experts: true,
+    whatsapp_dossier_sent_to_experts: true,
     random_audit_selected: false,
     audit_status: 'not_selected',
     audit_flagged_fraud: false,
@@ -1101,14 +1095,12 @@ export const INITIAL_IMPACT_LOGS: ImpactLog[] = [
   {
     id: 'log-106',
     club_id: 'club-02',
-    club_name: 'Visakha Haritha Compost',
+    club_name: 'Visakha Bio-Compost',
     school_id: 'sch-02',
     school_name: 'Visakha Vidyalaya',
     school_code: 'SCH-02',
     student_id: 'usr-student-02',
     student_name: 'Nethmi Wickramasinghe',
-    telegram_username: '@nethmi_vv',
-    telegram_message_id: 'tg-msg-9910',
     file_name: 'DOC_20261012_MERCH_RESALE_CLAIM.JPG',
     mime_type: 'image/jpeg',
     is_uncompressed_document: true,
@@ -1306,7 +1298,7 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
     id: 'aud-01',
     impact_log_id: 'log-103',
     club_id: 'club-02',
-    club_name: 'Visakha Haritha Compost',
+    club_name: 'Visakha Bio-Compost',
     school_id: 'sch-02',
     school_name: 'Visakha Vidyalaya',
     school_code: 'SCH-02',

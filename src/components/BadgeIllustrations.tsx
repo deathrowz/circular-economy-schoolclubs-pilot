@@ -99,7 +99,7 @@ export function BadgeZeroWaste({ size = 88, className = '', unlocked = true }: B
 }
 
 /**
- * 3. Haritha Pola Pioneer Badge (Market Stall & Gold Tokens)
+ * 3. I2I Pola Pioneer Badge (Market Stall & Gold Tokens)
  */
 export function BadgePolaPioneer({ size = 88, className = '', unlocked = true }: BadgeIllustrationProps) {
   if (!unlocked) {

@@ -136,6 +136,7 @@ export function AuthLoginPromptModal({
       const isValidPassword =
         supabaseAuthenticated ||
         passwordInput === '#password123' ||
+        passwordInput === 'I2IClubs2026!Secure' ||
         passwordInput === 'Haritha2026!Secure' ||
         passwordInput === 'Pilot2026!';
 
@@ -203,7 +204,7 @@ export function AuthLoginPromptModal({
                   setLoginInput(e.target.value);
                   if (errorMessage) setErrorMessage(null);
                 }}
-                placeholder="e.g. budhikka.gunasekera@giz.de, auditor.giz@harithapasal.lk or SCH-01-TEACHER"
+                placeholder="e.g. budhikka.gunasekera@giz.de, auditor.giz@giz.de, student.lead@i2iclubs.lk or SCH-01-TEACHER"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#111010]/20 bg-white text-xs font-semibold text-[#111010] placeholder:text-[#111010]/40 focus:border-[#005FA3] focus:ring-2 focus:ring-[#005FA3]/15 outline-none transition"
                 autoFocus
               />

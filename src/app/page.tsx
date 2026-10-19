@@ -137,11 +137,11 @@ export default function PlatformDashboardPage() {
     setIsAuthenticated(true);
     if (typeof document !== 'undefined') {
       document.cookie = `i2i_auth_user_id=${newUserId}; path=/; max-age=2592000; SameSite=Lax`;
-      document.cookie = `haritha_auth_user_id=${newUserId}; path=/; max-age=2592000; SameSite=Lax`;
+      document.cookie = `haritha_auth_user_id=; path=/; max-age=0; SameSite=Lax`;
     }
     if (typeof window !== 'undefined') {
       localStorage.setItem('i2i_auth_user_id', newUserId);
-      localStorage.setItem('haritha_auth_user_id', newUserId);
+      localStorage.removeItem('haritha_auth_user_id');
     }
     const found = snapshot?.users.find((u) => u.id === newUserId || u.auth_user_id === newUserId);
     if (found?.club_id) {

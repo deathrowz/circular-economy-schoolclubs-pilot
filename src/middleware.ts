@@ -13,7 +13,7 @@ const DEFAULT_SUPABASE_ANON_KEY =
  * - /index/:path*
  *
  * Verifies Supabase Auth JWT token via @supabase/ssr getUser()
- * and checks the platform pilot session cookie (haritha_auth_user_id).
+ * and checks the platform pilot session cookie (i2i_auth_user_id).
  * Unauthenticated requests are immediately redirected to /login with redirectTo preserve.
  */
 export async function middleware(request: NextRequest) {

@@ -37,8 +37,8 @@ jobs:
 
       - name: Run 7-Step Validation, EXIF & RBAC Unit Test Suite
         env:
-          WHATSAPP_APP_SECRET: 'giz-haritha-test-secret-1234567890'
-          WHATSAPP_VERIFY_TOKEN: 'haritha-pasal-verify-token-2026'
+          WHATSAPP_APP_SECRET: 'giz-i2i-test-secret-1234567890'
+          WHATSAPP_VERIFY_TOKEN: 'i2i-clubs-verify-token-2026'
         run: npm test
 
       - name: Verify Full-Stack Next.js Build (App Router + API Routes)

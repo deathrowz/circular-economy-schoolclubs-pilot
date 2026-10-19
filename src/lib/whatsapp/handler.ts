@@ -7,7 +7,7 @@
  * - Direct webhook execution in Vercel Frankfurt (fra1) + Supabase Frankfurt (eu-central-1)
  * - In-browser fallback for static GitHub Pages export and interactive UI workbench
  * - Identity resolution via E.164 phone numbers (MSISDN)
- * - Stateless media buffer ingestion into private 'haritha-proofs' bucket
+ * - Stateless media buffer ingestion into private 'i2i-proofs' bucket
  * ============================================================================
  */
 
@@ -348,7 +348,7 @@ export async function handleWhatsAppCloudUpdate(
       docCategory,
       fileName: update.document.fileName,
       mimeType: update.document.mimeType,
-      s3Url: `https://dqrdhvrunmnufxpcxnuq.supabase.co/storage/v1/object/authenticated/haritha-proofs/${update.document.fileName}`,
+      s3Url: `https://dqrdhvrunmnufxpcxnuq.supabase.co/storage/v1/object/authenticated/i2i-proofs/${update.document.fileName}`,
       s3Key: `invoices/${targetLog.school_code}/${update.document.fileName}`,
       notes: 'Supervising teacher uploaded verified official invoice via WhatsApp Cloud API.',
       uploadedViaTelegram: true, // Backwards-compatible flag
@@ -559,7 +559,7 @@ export async function handleWhatsAppCloudUpdate(
 
     session.fileName = update.document.fileName;
     session.mimeType = update.document.mimeType;
-    session.s3Url = `https://dqrdhvrunmnufxpcxnuq.supabase.co/storage/v1/object/authenticated/haritha-proofs/${update.document.fileName}`;
+    session.s3Url = `https://dqrdhvrunmnufxpcxnuq.supabase.co/storage/v1/object/authenticated/i2i-proofs/${update.document.fileName}`;
     session.s3Key = `evidence/${school.code}/${update.document.fileName}`;
     session.exif = parsed.metadata;
     session.stage = 'AWAITING_ACTIVITY_TITLE';

@@ -378,7 +378,7 @@ export function WhatsAppCloudWorkbench({
             </div>
             <div className="flex items-center gap-1.5 text-blue-800 font-semibold bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
               <Lock className="w-3.5 h-3.5 text-blue-600" />
-              <span>Zero OCI Proxying • Buffer Stream to haritha-proofs</span>
+              <span>Zero OCI Proxying • Buffer Stream to i2i-proofs</span>
             </div>
           </div>
 
@@ -417,7 +417,7 @@ export function WhatsAppCloudWorkbench({
                     endpoint: '/api/webhook/whatsapp',
                     region: 'fra1 (Frankfurt)',
                     hub_verify: 'passed',
-                    storage_bucket: 'haritha-proofs (private)',
+                    storage_bucket: 'i2i-proofs (private)',
                     status: 'Awaiting next action trigger...',
                   },
                   null,

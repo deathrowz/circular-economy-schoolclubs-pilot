@@ -42,6 +42,7 @@ import {
   BadgeCenturyGrove,
   BadgePilotVanguard,
 } from '@/components/BadgeIllustrations';
+import { GameAnimatedXpMeter } from '@/components/GameAnimatedXpMeter';
 
 export interface StudentGamificationHeroProps {
   school: School;
@@ -537,43 +538,18 @@ export function StudentGamificationHero({
           </div>
         </div>
 
-        {/* Middle Section: Visual Progression Bar Mechanics */}
-        <div className="relative z-10 py-5 space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <span className="font-bold text-[#9CF2F2] flex items-center gap-1.5 text-xs sm:text-sm">
-              <Flame className="w-4 h-4 text-amber-300" />
-              <span>{tierConfig.transitionLabel}</span>
-            </span>
-            <span className="font-mono text-white/90 font-semibold text-xs sm:text-sm">
-              {tierConfig.pointsRemaining > 0
-                ? `${tierConfig.pointsRemaining} pts needed for next tier (${currentScore} / ${tierConfig.targetScore} pts)`
-                : `Top Platinum Tier Achieved! (${currentScore} pts)`}
-            </span>
-          </div>
-
-          <div className="relative w-full h-3.5 rounded-full bg-black/35 overflow-hidden p-0.5 border border-white/20">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-[#9CF2F2] via-emerald-300 to-[#9CF2F2] transition-all duration-700 shadow-[0_0_12px_rgba(156,242,242,0.8)] relative"
-              style={{ width: `${tierConfig.progressPct}%` }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-badge-shine" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-[11px] font-mono text-white/70 pt-0.5">
-            <span className={currentScore >= 0 ? 'text-[#9CF2F2] font-bold' : ''}>
-              Level 1 (0 pts)
-            </span>
-            <span className={currentScore >= 260 ? 'text-[#9CF2F2] font-bold' : ''}>
-              Level 2 Silver (260 pts)
-            </span>
-            <span className={currentScore >= 340 ? 'text-[#9CF2F2] font-bold' : ''}>
-              Level 3 Gold (340 pts)
-            </span>
-            <span className={currentScore >= 420 ? 'text-[#9CF2F2] font-bold' : ''}>
-              Level 4 Platinum (420+ pts)
-            </span>
-          </div>
+        {/* Middle Section: Modern Video-Game Inspired Animated XP Fill-Up Meter */}
+        <div className="relative z-10 py-4">
+          <GameAnimatedXpMeter
+            currentScore={currentScore}
+            targetScore={tierConfig.targetScore}
+            level={tierConfig.level}
+            tierName={tierConfig.tierName}
+            nextTierName={tierConfig.nextTierName}
+            pointsRemaining={tierConfig.pointsRemaining}
+            schoolCode={school.code}
+            onLogActivityClick={onLogActivityClick}
+          />
         </div>
 
         {/* Dynamic Action-Oriented Coaching Callout */}
